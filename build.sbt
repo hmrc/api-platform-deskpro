@@ -33,9 +33,6 @@ lazy val it = (project in file("it"))
   .settings(
     name := "integration-tests",
     Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
-    headerSettings(Test) ++ automateHeaderSettings(Test),
-    inConfig(Test)(BloopDefaults.configSettings),
-    addTestReportOption(Test, "int-test-reports")
   )
 
 
