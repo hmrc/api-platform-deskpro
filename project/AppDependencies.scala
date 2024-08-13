@@ -19,7 +19,7 @@ object AppDependencies {
   val test = Seq(
     "uk.gov.hmrc"             %% "bootstrap-test-play-30"          % bootstrapVersion            % Test,
     "uk.gov.hmrc.mongo"       %% "hmrc-mongo-test-play-30"         % hmrcMongoVersion            % Test,
-    "uk.gov.hmrc"             %% "api-platform-test-common-domain" % commonDomainVersion
+    "uk.gov.hmrc"             %% "api-platform-test-common-domain" % commonDomainVersion         % Test
   )
 
   val it = Seq.empty
