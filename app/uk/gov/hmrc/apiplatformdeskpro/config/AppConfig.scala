@@ -23,5 +23,13 @@ import play.api.Configuration
 @Singleton
 class AppConfig @Inject() (config: Configuration) {
 
-  val appName: String = config.get[String]("appName")
+  val appName: String                = config.get[String]("appName")
+  val deskproUrl: String             = config.get[String]("deskpro.uri")
+  val deskproApiKey: String          = config.get[String]("deskpro.api-key")
+  val deskproBrand: Int              = config.get[Int]("deskpro.brand")
+  val deskproOrganisation: String    = config.get[String]("deskpro.organisation")
+  val deskproTeamMemberEmail: String = config.get[String]("deskpro.team-member-email")
+  val deskproSupportReason: String   = config.get[String]("deskpro.support-reason")
+  val deskproApplicationId: String   = config.get[String]("deskpro.application-id")
+  val deskproApiName: String         = config.get[String]("deskpro.api-name")
 }

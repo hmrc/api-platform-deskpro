@@ -14,17 +14,22 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apiplatformdeskpro.config
+package uk.gov.hmrc.apiplatformdeskpro.utils
 
-import com.google.inject.AbstractModule
+import play.api.Configuration
 
-import uk.gov.hmrc.apiplatformdeskpro.connector.{ConnectorMetrics, ConnectorMetricsImpl}
+trait ConfigBuilder {
 
-class Module extends AbstractModule {
+  protected def stubConfig(stubPort: Int) = Configuration(
+    "deskpro.uri"               -> s"http://localhost:$stubPort",
+    "metrics.enabled"           -> false,
+    "deskpro.brand"             -> 1,
+    "deskpro.api-name"          -> "2",
+    "deskpro.support-reason"    -> "3",
+    "deskpro.organisation"      -> "4",
+    "deskpro.application-id"    -> "5",
+    "deskpro.team-member-email" -> "6",
+    "metrics.jvm"               -> false
+  )
 
-  override def configure(): Unit = {
-
-    bind(classOf[AppConfig]).asEagerSingleton()
-    bind(classOf[ConnectorMetrics]).to(classOf[ConnectorMetricsImpl])
-  }
 }
