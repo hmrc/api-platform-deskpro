@@ -25,7 +25,7 @@ class AppConfig @Inject() (config: Configuration) {
 
   val appName: String                = config.get[String]("appName")
   val deskproUrl: String             = config.get[String]("deskpro.uri")
-  val deskproApiKey: String          = config.get[String]("deskpro.api-key")
+  val deskproApiKey: String          = config.getOptional[String]("deskpro.api-key").map(key => s"key $key").getOrElse("")
   val deskproBrand: Int              = config.get[Int]("deskpro.brand")
   val deskproOrganisation: String    = config.get[String]("deskpro.organisation")
   val deskproTeamMemberEmail: String = config.get[String]("deskpro.team-member-email")
