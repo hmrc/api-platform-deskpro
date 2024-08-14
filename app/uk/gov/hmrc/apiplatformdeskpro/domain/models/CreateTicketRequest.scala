@@ -23,7 +23,7 @@ case class DeskproPerson(
     email: String
   )
 
-case class CreateDeskproTicketRequest(
+case class CreateTicketRequest(
     person: DeskproPerson,
     subject: String,
     message: String,
@@ -34,8 +34,8 @@ case class CreateDeskproTicketRequest(
     teamMemberEmailAddress: Option[String] // Leaving as a string as that's what's in DevHub
   )
 
-object CreateDeskproTicketRequest {
-  implicit val createPersonFormat: OFormat[DeskproPerson]              = Json.format[DeskproPerson]
-  implicit val createTicketFormat: OFormat[CreateDeskproTicketRequest] = Json.format[CreateDeskproTicketRequest]
+object CreateTicketRequest {
+  implicit val createPersonFormat: OFormat[DeskproPerson]       = Json.format[DeskproPerson]
+  implicit val createTicketFormat: OFormat[CreateTicketRequest] = Json.format[CreateTicketRequest]
 
 }

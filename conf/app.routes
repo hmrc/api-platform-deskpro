@@ -1,2 +1,3 @@
 # microservice specific routes
 
+POST    /ticket             uk.gov.hmrc.apiplatformdeskpro.controller.CreateTicketController.createTicket()

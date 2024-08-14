@@ -25,12 +25,11 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.DeskproTicketCreationFailed
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproTicket, DeskproTicketCreated}
+import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
 import uk.gov.hmrc.play.http.metrics.common.API
-
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 
 class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics: ConnectorMetrics)(implicit val ec: ExecutionContext)
     extends ApplicationLogger {
@@ -38,7 +37,7 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
   lazy val serviceBaseUrl: String = config.deskproUrl
   val api                         = API("deskpro")
 
-  def createTicket(deskproTicket: DeskproTicket)(implicit hc: HeaderCarrier): Future[DeskproTicketCreated] = metrics.record(api) {
+  def createTicket(deskproTicket: DeskproTicket)(implicit hc: HeaderCarrier): Future[Either[DeskproTicketCreationFailed, DeskproTicketCreated]] = metrics.record(api) {
     http.post(url"${requestUrl("/api/v2/tickets")}")
       .withProxy
       .withBody(Json.toJson(deskproTicket))
@@ -48,15 +47,15 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
         response.status match {
           case CREATED      =>
             logger.info(s"Deskpro ticket '${deskproTicket.subject}' created successfully")
-            response.json.as[DeskproTicketCreated]
+            Right(response.json.as[DeskproTicketCreated])
           case UNAUTHORIZED =>
             logger.error(s"Deskpro ticket creation failed for: ${deskproTicket.subject}")
             logger.error(response.body)
-            throw new DeskproTicketCreationFailed("Missing authorization")
+            Left(new DeskproTicketCreationFailed("Missing authorization"))
           case _            =>
             logger.error(s"Deskpro ticket creation failed for: ${deskproTicket.subject}")
             logger.error(response.body)
-            throw new DeskproTicketCreationFailed("Unknown reason")
+            Left(new DeskproTicketCreationFailed("Unknown reason"))
         }
       )
   }

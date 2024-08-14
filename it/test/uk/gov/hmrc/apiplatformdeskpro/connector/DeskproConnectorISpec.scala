@@ -99,26 +99,24 @@ class DeskproConnectorISpec
     "return DeskproTicketCreated with reference returned in response body when 201 returned with valid response from deskpro" in new Setup {
       stubCreateTicketSuccess()
 
-      val result: DeskproTicketCreated = await(objInTest.createTicket(deskproTicket))
-      result shouldBe DeskproTicketCreated("SDST-1234")
+      val result: Either[DeskproTicketCreationFailed, DeskproTicketCreated] = await(objInTest.createTicket(deskproTicket))
+      result shouldBe Right(DeskproTicketCreated("SDST-1234"))
     }
 
     "return DeskproTicketCreationFailed with 'missing authorisation' when 401 returned from deskpro" in new Setup {
       stubCreateTicketUnauthorised()
 
-      val error: DeskproTicketCreationFailed = intercept[DeskproTicketCreationFailed] {
-        await(objInTest.createTicket(deskproTicket))
-      }
-      error.getMessage() shouldBe "Failed to create deskpro ticket: Missing authorization"
+      val error: Either[DeskproTicketCreationFailed, DeskproTicketCreated] = await(objInTest.createTicket(deskproTicket))
+
+      error.left.getOrElse(fail("should not reach here")).message shouldBe "Failed to create deskpro ticket: Missing authorization"
     }
 
     "return DeskproTicketCreationFailed with 'Unknown reason' when 500 returned from deskpro" in new Setup {
       stubCreateTicketInternalServerError()
 
-      val error: DeskproTicketCreationFailed = intercept[DeskproTicketCreationFailed] {
-        await(objInTest.createTicket(deskproTicket))
-      }
-      error.getMessage() shouldBe "Failed to create deskpro ticket: Unknown reason"
+      val error: Either[DeskproTicketCreationFailed, DeskproTicketCreated] = await(objInTest.createTicket(deskproTicket))
+
+      error.left.getOrElse(fail("should not reach here")).message shouldBe "Failed to create deskpro ticket: Unknown reason"
     }
   }
 }
