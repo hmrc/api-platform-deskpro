@@ -1,7 +1,7 @@
 
-# api-platform-deskpro
+# API Platform Deskpro
 
-This is a placeholder README.md for a new repository
+Service for interfacing with Deskpro Horizon for use by API Platform
 
 ### License
 

@@ -14,19 +14,22 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apiplatformdeskpro.controllers
+package uk.gov.hmrc.apiplatformdeskpro.utils
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.Future
+import play.api.Configuration
 
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
-import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+trait ConfigBuilder {
 
-@Singleton()
-class MicroserviceHelloWorldController @Inject() (cc: ControllerComponents)
-    extends BackendController(cc) {
+  protected def stubConfig(stubPort: Int) = Configuration(
+    "deskpro.uri"               -> s"http://localhost:$stubPort",
+    "metrics.enabled"           -> false,
+    "deskpro.brand"             -> 1,
+    "deskpro.api-name"          -> "2",
+    "deskpro.support-reason"    -> "3",
+    "deskpro.organisation"      -> "4",
+    "deskpro.application-id"    -> "5",
+    "deskpro.team-member-email" -> "6",
+    "metrics.jvm"               -> false
+  )
 
-  def hello(): Action[AnyContent] = Action.async { implicit request =>
-    Future.successful(Ok("Hello world"))
-  }
 }
