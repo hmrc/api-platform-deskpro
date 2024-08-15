@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.apiplatformdeskpro.domain.models.connector
 
+import scala.util.Properties
+
 import play.api.libs.json._
 
 case class DeskproTicketPerson(
@@ -28,10 +30,9 @@ case class DeskproTicketMessage(
     format: String = "html"
   )
 
-// object DeskproTicketMessage {
-//   def fromRaw(message: String): DeskproTicketMessage = DeskproTicketMessage(message.replaceAll(Properties.lineSeparator, "<br>"))
-
-// }
+object DeskproTicketMessage {
+  def fromRaw(message: String): DeskproTicketMessage = DeskproTicketMessage(message.replaceAll(Properties.lineSeparator, "<br>"))
+}
 
 case class DeskproTicket(
     person: DeskproTicketPerson,

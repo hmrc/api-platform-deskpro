@@ -28,10 +28,10 @@ case class CreateTicketRequest(
     subject: String,
     message: String,
     apiName: Option[String],
-    applicationId: Option[String],         // Leaving as a string as that's what's in DevHub
+    applicationId: Option[String],
     organisation: Option[String],
     supportReason: Option[String],
-    teamMemberEmailAddress: Option[String] // Leaving as a string as that's what's in DevHub
+    teamMemberEmailAddress: Option[String]
   )
 
 object CreateTicketRequest {

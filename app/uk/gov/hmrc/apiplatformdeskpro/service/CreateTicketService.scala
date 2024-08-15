@@ -49,6 +49,12 @@ class CreateTicketService @Inject() (
 
     val fields = maybeOrganisation ++ maybeTeamMemberEmailAddress ++ maybeApiName ++ maybeApplicationId ++ maybeSupportReason
 
-    DeskproTicket(DeskproTicketPerson(request.person.name, request.person.email), request.subject, DeskproTicketMessage(request.message), config.deskproBrand, fields)
+    DeskproTicket(
+      DeskproTicketPerson(request.person.name, request.person.email),
+      request.subject,
+      DeskproTicketMessage.fromRaw(request.message),
+      config.deskproBrand,
+      fields
+    )
   }
 }

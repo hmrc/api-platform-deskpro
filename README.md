@@ -1,7 +1,7 @@
 
 # API Platform Deskpro
 
-Service for the creation of Deskpro Horizon tickets for use by API Platform
+Service for interfacing with Deskpro Horizon for use by API Platform
 
 ### License
 
