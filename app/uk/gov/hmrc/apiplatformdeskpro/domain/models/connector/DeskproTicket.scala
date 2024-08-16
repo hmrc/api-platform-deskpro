@@ -20,10 +20,10 @@ import scala.util.Properties
 
 import play.api.libs.json._
 
-case class DeskproTicketPerson(
-    name: String,
-    email: String
-  )
+// case class DeskproTicketPerson(
+//     name: String,
+//     email: String
+//   )
 
 case class DeskproTicketMessage(
     message: String,
@@ -35,7 +35,7 @@ object DeskproTicketMessage {
 }
 
 case class DeskproTicket(
-    person: DeskproTicketPerson,
+    person: DeskproPerson,
     subject: String,
     message: DeskproTicketMessage,
     brand: Int,
@@ -43,7 +43,6 @@ case class DeskproTicket(
   )
 
 object DeskproTicket {
-  implicit val ticketPersonFormat: OFormat[DeskproTicketPerson]   = Json.format[DeskproTicketPerson]
   implicit val ticketMessageFormat: OFormat[DeskproTicketMessage] = Json.format[DeskproTicketMessage]
   implicit val ticketFormat: OFormat[DeskproTicket]               = Json.format[DeskproTicket]
 

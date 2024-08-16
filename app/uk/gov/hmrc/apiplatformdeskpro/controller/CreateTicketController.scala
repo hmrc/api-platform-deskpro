@@ -41,4 +41,8 @@ class CreateTicketController @Inject() (createTicketService: CreateTicketService
     }
   }
 
+  def createPerson(): Action[AnyContent] = Action.async { implicit request =>
+      createTicketService.submitUser().map(_ => Ok("Yeah!!!"))
+  }
+
 }

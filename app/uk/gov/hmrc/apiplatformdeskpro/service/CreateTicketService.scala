@@ -21,10 +21,12 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.connector.DeskproConnector
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproTicket, DeskproTicketCreated, DeskproTicketMessage, DeskproTicketPerson}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproTicket, DeskproTicketCreated, DeskproTicketMessage, DeskproPerson}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.{CreateTicketRequest, DeskproTicketCreationFailed}
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.UserId
+import uk.gov.hmrc.http.HttpResponse
 
 @Singleton
 class CreateTicketService @Inject() (
@@ -50,11 +52,15 @@ class CreateTicketService @Inject() (
     val fields = maybeOrganisation ++ maybeTeamMemberEmailAddress ++ maybeApiName ++ maybeApplicationId ++ maybeSupportReason
 
     DeskproTicket(
-      DeskproTicketPerson(request.person.name, request.person.email),
+      DeskproPerson(request.person.name, request.person.email),
       request.subject,
       DeskproTicketMessage.fromRaw(request.message),
       config.deskproBrand,
       fields
     )
+  }
+
+  def submitUser()(implicit hc: HeaderCarrier): Future[HttpResponse] = {
+    deskproConnector.createPerson(UserId.random,"abc 123","hello@goodbye.com")
   }
 }
