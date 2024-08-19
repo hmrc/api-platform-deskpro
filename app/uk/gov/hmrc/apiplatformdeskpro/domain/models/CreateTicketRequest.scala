@@ -18,10 +18,6 @@ package uk.gov.hmrc.apiplatformdeskpro.domain.models
 
 import play.api.libs.json._
 
-case class DeskproPerson(
-    name: String,
-    email: String
-  )
 
 case class CreateTicketRequest(
     person: DeskproPerson,

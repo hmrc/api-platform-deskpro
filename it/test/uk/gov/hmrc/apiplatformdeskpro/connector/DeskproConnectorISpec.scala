@@ -24,11 +24,12 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.{Application, Mode}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.DeskproTicketCreationFailed
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproTicket, DeskproTicketMessage, DeskproTicketPerson, _}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproTicket, DeskproTicketMessage, _}
 import uk.gov.hmrc.apiplatformdeskpro.utils.{AsyncHmrcSpec, ConfigBuilder, WireMockSupport}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.DeskproPerson
 
 class DeskproConnectorISpec
     extends AsyncHmrcSpec
@@ -60,7 +61,7 @@ class DeskproConnectorISpec
     val brand                  = 1
 
     val fields        = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "6" -> teamMemberEmailAddress)
-    val deskproTicket = DeskproTicket(DeskproTicketPerson(name, email), subject, DeskproTicketMessage(message), brand, fields)
+    val deskproTicket = DeskproTicket(DeskproPerson(name, email), subject, DeskproTicketMessage(message), brand, fields)
 
     def stubCreateTicketSuccess() = {
       stubFor(

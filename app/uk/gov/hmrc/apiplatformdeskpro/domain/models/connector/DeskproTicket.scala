@@ -19,6 +19,7 @@ package uk.gov.hmrc.apiplatformdeskpro.domain.models.connector
 import scala.util.Properties
 
 import play.api.libs.json._
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.DeskproPerson
 
 // case class DeskproTicketPerson(
 //     name: String,

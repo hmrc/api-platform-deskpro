@@ -30,7 +30,7 @@ import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
 import uk.gov.hmrc.play.http.metrics.common.API
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.DeskproPerson
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.DeskproPerson
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.UserId
 import play.api.libs.json.JsValue
 import play.api.libs.json.JsString

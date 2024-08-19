@@ -14,18 +14,16 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apiplatformdeskpro.config
+package uk.gov.hmrc.apiplatformdeskpro.domain.models
 
-import com.google.inject.AbstractModule
+import play.api.libs.json.OFormat
+import play.api.libs.json.Json
 
-import uk.gov.hmrc.apiplatformdeskpro.connector.{ConnectorMetrics, ConnectorMetricsImpl}
+case class DeskproPerson(
+    name: String,
+    email: String
+  )
 
-class Module extends AbstractModule {
-
-  override def configure(): Unit = {
-
-    bind(classOf[AppConfig]).asEagerSingleton()
-    bind(classOf[ConnectorMetrics]).to(classOf[ConnectorMetricsImpl])
-   
-  }
-}
+object DeskproPerson {
+   implicit val ticketFormat: OFormat[DeskproPerson]               = Json.format[DeskproPerson]
+}  
