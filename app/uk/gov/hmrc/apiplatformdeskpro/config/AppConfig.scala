@@ -33,6 +33,6 @@ class AppConfig @Inject() (config: Configuration) {
   val deskproSupportReason: String   = config.get[String]("deskpro.support-reason")
   val deskproApplicationId: String   = config.get[String]("deskpro.application-id")
   val deskproApiName: String         = config.get[String]("deskpro.api-name")
-  val lookBack: FiniteDuration       = config.get[FiniteDuration]("developer-import-lookback")
+  val lookBack: Int       = config.get[Int]("developer-import-lookback")
 
 }

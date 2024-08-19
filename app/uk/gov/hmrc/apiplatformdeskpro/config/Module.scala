@@ -17,7 +17,7 @@
 package uk.gov.hmrc.apiplatformdeskpro.config
 
 import com.google.inject.AbstractModule
-
+import java.time.Clock
 import uk.gov.hmrc.apiplatformdeskpro.connector.{ConnectorMetrics, ConnectorMetricsImpl}
 
 class Module extends AbstractModule {
@@ -26,6 +26,8 @@ class Module extends AbstractModule {
 
     bind(classOf[AppConfig]).asEagerSingleton()
     bind(classOf[ConnectorMetrics]).to(classOf[ConnectorMetricsImpl])
-   
+    bind(classOf[Clock]).toInstance(Clock.systemUTC())
+
   }
+
 }

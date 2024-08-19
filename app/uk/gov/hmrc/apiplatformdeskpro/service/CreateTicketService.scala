@@ -27,7 +27,7 @@ import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.UserId
 import uk.gov.hmrc.http.HttpResponse
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.DeskproPerson
+import uk.gov.hmrc.apiplatformdeskpro.domain.models._
 
 @Singleton
 class CreateTicketService @Inject() (
@@ -61,7 +61,7 @@ class CreateTicketService @Inject() (
     )
   }
 
-  def submitUser()(implicit hc: HeaderCarrier): Future[HttpResponse] = {
-    deskproConnector.createPerson(UserId.random,"abc 123","hello@goodbye.com")
-  }
+  // def submitUser()(implicit hc: HeaderCarrier): Future[DeskproPersonCreationResult] = {
+  //   deskproConnector.createPerson(UserId.random,"abc 123","hello@goodbye.com")
+  // }
 }

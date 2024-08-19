@@ -24,13 +24,15 @@ import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 import uk.gov.hmrc.play.http.metrics.common.API
 
-import java.time.Clock
+import java.time._
+import java.time.format.DateTimeFormatter
+
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 
-class DeveloperConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics: ConnectorMetrics, clock: Clock)(implicit val ec: ExecutionContext)
+class DeveloperConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics: ConnectorMetrics, val clock: Clock)(implicit val ec: ExecutionContext)
     extends ApplicationLogger with ClockNow {
 
   lazy val serviceBaseUrl: String = config.deskproUrl
@@ -39,9 +41,11 @@ class DeveloperConnector @Inject() (http: HttpClientV2, config: AppConfig, metri
   def searchDevelopers()(implicit hc: HeaderCarrier) = metrics.record(api) {
     val queryParams = Seq(
       "status" -> "VERIFIED",
-      "createdAfter" -> now().toLocalDate().minus(config.lookBack.toMinutes, ChronoUnit.MINUTES)
+      "limit" -> 100,
+      "createdAfter" -> DateTimeFormatter.BASIC_ISO_DATE.format(now().toLocalDate().minusDays(config.lookBack))
     )
     http.get(url"${requestUrl("/developers")}?$queryParams").execute[List[RegisteredUser]]
   }
+  
   private def requestUrl[B, A](uri: String): String = s"$serviceBaseUrl$uri"
 }
