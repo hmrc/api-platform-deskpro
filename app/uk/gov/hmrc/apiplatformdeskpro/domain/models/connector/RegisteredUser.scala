@@ -17,6 +17,7 @@
 package uk.gov.hmrc.apiplatformdeskpro.domain.models.connector
 
 import play.api.libs.json.{Json, OFormat}
+
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{LaxEmailAddress, UserId}
 
 case class RegisteredUser(email: LaxEmailAddress, userId: UserId, firstName: String, lastName: String)

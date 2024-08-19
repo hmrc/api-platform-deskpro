@@ -17,10 +17,11 @@
 package uk.gov.hmrc.apiplatformdeskpro.stubs
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import play.api.libs.json.Json
+
 import play.api.http.Status._
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.DeskproTicket
+import play.api.libs.json.Json
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.DeskproPerson
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.DeskproTicket
 
 trait DeskproStub {
 
@@ -58,7 +59,7 @@ trait DeskproStub {
       )
     }
   }
-  
+
   object CreatePerson {
 
     def stubSuccess(deskproPerson: DeskproPerson) = {
@@ -144,12 +145,28 @@ trait DeskproStub {
       )
     }
 
-    def stubUnauthorised() = {
+    def stubBadRequest() = {
       stubFor(
         post(urlMatching("/api/v2/people"))
           .willReturn(
             aResponse()
-              .withStatus(UNAUTHORIZED)
+              .withStatus(BAD_REQUEST).withBody("""{
+                                                  |  "status": 400,
+                                                  |  "code": "invalid_input",
+                                                  |  "message": "Request input is invalid.",
+                                                  |  "errors": {
+                                                  |    "fields": {
+                                                  |      "firstName": {
+                                                  |        "errors": [
+                                                  |            {
+                                                  |               "code": "other_error",
+                                                  |               "message": "Some other error from deskpro"
+                                                  |          }
+                                                  |        ]
+                                                  |      }
+                                                  |    }
+                                                  |  }
+                                                  |}""".stripMargin)
           )
       )
     }
@@ -163,33 +180,34 @@ trait DeskproStub {
           )
       )
     }
+
     def stubDupeEmailError() = {
       stubFor(
         post(urlMatching("/api/v2/people"))
           .willReturn(
             aResponse()
               .withStatus(BAD_REQUEST)
-              .withBody(    """{
-                              |  "status": 400,
-                              |  "code": "invalid_input",
-                              |  "message": "Request input is invalid.",
-                              |  "errors": {
-                              |    "fields": {
-                              |      "emails": {
-                              |        "fields": {
-                              |          "emails_0": {
-                              |            "errors": [
-                              |              {
-                              |                "code": "dupe_email",
-                              |                "message": "Email \"dave@test.com\" is already in use by other user."
-                              |              }
-                              |            ]
-                              |          }
-                              |        }
-                              |      }
-                              |    }
-                              |  }
-                              |}""".stripMargin)
+              .withBody("""{
+                          |  "status": 400,
+                          |  "code": "invalid_input",
+                          |  "message": "Request input is invalid.",
+                          |  "errors": {
+                          |    "fields": {
+                          |      "emails": {
+                          |        "fields": {
+                          |          "emails_0": {
+                          |            "errors": [
+                          |              {
+                          |                "code": "dupe_email",
+                          |                "message": "Email \"dave@test.com\" is already in use by other user."
+                          |              }
+                          |            ]
+                          |          }
+                          |        }
+                          |      }
+                          |    }
+                          |  }
+                          |}""".stripMargin)
           )
       )
     }

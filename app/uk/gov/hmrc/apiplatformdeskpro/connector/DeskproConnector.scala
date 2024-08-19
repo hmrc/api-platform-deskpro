@@ -23,17 +23,15 @@ import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.http.Status.{BAD_REQUEST, CREATED, UNAUTHORIZED}
 import play.api.libs.json.Json
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.DeskproTicketCreationFailed
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproTicket, DeskproTicketCreated}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproTicketCreationFailed, _}
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
 import uk.gov.hmrc.play.http.metrics.common.API
-import uk.gov.hmrc.apiplatformdeskpro.domain.models._
+
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.UserId
-import play.api.libs.json.JsValue
-import play.api.libs.json.JsString
 
 class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics: ConnectorMetrics)(implicit val ec: ExecutionContext)
     extends ApplicationLogger {
@@ -54,41 +52,38 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
             Right(response.json.as[DeskproTicketCreated])
           case UNAUTHORIZED =>
             logger.error(s"Deskpro ticket creation failed for: ${deskproTicket.subject}")
-            Left(new DeskproTicketCreationFailed("Missing authorization"))
+            Left(DeskproTicketCreationFailed("Missing authorization"))
           case _            =>
             logger.error(s"Deskpro ticket creation failed for: ${deskproTicket.subject}")
-            Left(new DeskproTicketCreationFailed("Unknown reason"))
+            Left(DeskproTicketCreationFailed("Unknown reason"))
         }
       )
   }
 
-    def createPerson(userId: UserId, name: String, email: String)(implicit hc: HeaderCarrier): Future[DeskproPersonCreationResult] = {
-        http
-          .post(url"${requestUrl("/api/v2/people")}")
-          .withProxy
-          .withBody(Json.toJson(DeskproPerson(name, email)))
-          .setHeader(AUTHORIZATION -> config.deskproApiKey)
-          .execute[HttpResponse]
-           .map(response =>
-            response.status match {
-              case CREATED      =>
-                logger.info(s"Deskpro person creation '$userId' success")
-                DeskproPersonCreationSuccess
-              case BAD_REQUEST           =>
-                val errorJson: JsValue = (Json.parse(response.body) \ "errors" \ "fields" \ "emails" \ "fields" \ "emails_0" \ "errors" )(0)
-                (errorJson \ "code").get match {
-                  case JsString("dupe_email")      =>     logger.info(s"Deskpro person creation '$userId' duplicate email warning")
-                  DeskproPersonCreationDuplicate
-                  case JsString(errorCode)         =>     logger.error(s"Deskpro person creation '$userId' failed Bad request errorCode: $errorCode")
-                                                          DeskproPersonCreationFailure
-                }
-                
-              case _           =>
-                logger.error(s"Deskpro person creation '$userId' failed status: ${response.status}")
-                DeskproPersonCreationFailure
-            }
-          )
-      }
+  def createPerson(userId: UserId, name: String, email: String)(implicit hc: HeaderCarrier): Future[DeskproPersonCreationResult] = {
+    http
+      .post(url"${requestUrl("/api/v2/people")}")
+      .withProxy
+      .withBody(Json.toJson(DeskproPerson(name, email)))
+      .setHeader(AUTHORIZATION -> config.deskproApiKey)
+      .execute[HttpResponse]
+      .map(response =>
+        response.status match {
+          case CREATED                                             =>
+            logger.info(s"Deskpro person creation '$userId' success")
+            DeskproPersonCreationSuccess
+          case BAD_REQUEST if response.body.contains("dupe_email") =>
+            logger.info(s"Deskpro person creation '$userId' duplicate email warning")
+            DeskproPersonCreationDuplicate
+          case BAD_REQUEST                                         =>
+            logger.error(s"Deskpro person creation '$userId' failed Bad request other errorCode")
+            DeskproPersonCreationFailure
+          case _                                                   =>
+            logger.error(s"Deskpro person creation '$userId' failed status: ${response.status}")
+            DeskproPersonCreationFailure
+        }
+      )
+  }
 
   private def requestUrl[B, A](uri: String): String = s"$serviceBaseUrl$uri"
 }

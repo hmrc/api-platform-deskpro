@@ -16,25 +16,22 @@
 
 package uk.gov.hmrc.apiplatformdeskpro.connector
 
-import com.github.tomakehurst.wiremock.client.WireMock._
-import play.api.http.Status._
-
-import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
-import uk.gov.hmrc.apiplatformdeskpro.utils.WireMockSupport
-import org.scalatestplus.play.guice.GuiceOneServerPerSuite
-import uk.gov.hmrc.apiplatformdeskpro.utils.ConfigBuilder
-import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.Application
-import play.api.Mode
 import java.time._
 import java.time.format.DateTimeFormatter
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.RegisteredUser
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.http.UpstreamErrorResponse
-import play.api.inject.bind
 
+import com.github.tomakehurst.wiremock.client.WireMock._
+import org.scalatestplus.play.guice.GuiceOneServerPerSuite
+
+import play.api.http.Status._
+import play.api.inject.bind
+import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.{Application, Mode}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.RegisteredUser
+import uk.gov.hmrc.apiplatformdeskpro.utils.{AsyncHmrcSpec, ConfigBuilder, WireMockSupport}
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
+
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
 class DeveloperConnectorISpec extends AsyncHmrcSpec
     with WireMockSupport
@@ -52,8 +49,8 @@ class DeveloperConnectorISpec extends AsyncHmrcSpec
   trait Setup {
 
     val objInTest: DeveloperConnector = app.injector.instanceOf[DeveloperConnector]
-    
-   implicit val hc: HeaderCarrier = HeaderCarrier()
+
+    implicit val hc: HeaderCarrier = HeaderCarrier()
 
     def stubGetDevelopersSuccess() = {
       stubFor(
@@ -95,7 +92,7 @@ class DeveloperConnectorISpec extends AsyncHmrcSpec
       stubGetDevelopersInternalServerError()
 
       intercept[UpstreamErrorResponse] {
-         await(objInTest.searchDevelopers())
+        await(objInTest.searchDevelopers())
       }
     }
   }

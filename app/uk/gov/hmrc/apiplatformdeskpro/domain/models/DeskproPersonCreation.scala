@@ -17,6 +17,6 @@
 package uk.gov.hmrc.apiplatformdeskpro.domain.models
 
 sealed trait DeskproPersonCreationResult
-object DeskproPersonCreationSuccess extends DeskproPersonCreationResult
-object DeskproPersonCreationFailure extends DeskproPersonCreationResult
+object DeskproPersonCreationSuccess   extends DeskproPersonCreationResult
+object DeskproPersonCreationFailure   extends DeskproPersonCreationResult
 object DeskproPersonCreationDuplicate extends DeskproPersonCreationResult

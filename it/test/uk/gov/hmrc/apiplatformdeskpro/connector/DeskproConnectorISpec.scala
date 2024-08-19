@@ -16,22 +16,17 @@
 
 package uk.gov.hmrc.apiplatformdeskpro.connector
 
-import com.github.tomakehurst.wiremock.client.WireMock._
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 
-import play.api.http.Status._
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.Json
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.UserId
 import play.api.{Application, Mode}
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.DeskproTicketCreationFailed
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproTicket, DeskproTicketMessage, _}
-import uk.gov.hmrc.apiplatformdeskpro.utils.{AsyncHmrcSpec, ConfigBuilder, WireMockSupport}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproTicketCreationFailed, _}
 import uk.gov.hmrc.apiplatformdeskpro.stubs.DeskproStub
+import uk.gov.hmrc.apiplatformdeskpro.utils.{AsyncHmrcSpec, ConfigBuilder, WireMockSupport}
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatformdeskpro.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, UserId}
 
 class DeskproConnectorISpec
     extends AsyncHmrcSpec
@@ -65,7 +60,7 @@ class DeskproConnectorISpec
     val fields        = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "6" -> teamMemberEmailAddress)
     val deskproPerson = DeskproPerson(name, email)
     val deskproTicket = DeskproTicket(deskproPerson, subject, DeskproTicketMessage(message), brand, fields)
- 
+
   }
 
   "deskproConnector" when {
@@ -93,6 +88,7 @@ class DeskproConnectorISpec
         error.left.getOrElse(fail("should not reach here")).message shouldBe "Failed to create deskpro ticket: Unknown reason"
       }
     }
+
     "createPerson" should {
       "return DeskproPersonCreationSuccess when 201 returned from deskpro" in new Setup {
         CreatePerson.stubSuccess(deskproPerson)
@@ -100,7 +96,7 @@ class DeskproConnectorISpec
         val result: DeskproPersonCreationResult = await(objInTest.createPerson(UserId.random, deskproPerson.name, deskproPerson.email))
         result shouldBe DeskproPersonCreationSuccess
       }
-      
+
       "return DeskproPersonCreationDuplicate returned in response body when 400 with dupe_email" in new Setup {
         CreatePerson.stubDupeEmailError()
 
@@ -108,8 +104,8 @@ class DeskproConnectorISpec
         result shouldBe DeskproPersonCreationDuplicate
       }
 
-      "return DeskproPersonCreationFailure returned in response body when 403" in new Setup {
-        CreatePerson.stubUnauthorised()
+      "return DeskproPersonCreationFailure returned in response body when 400" in new Setup {
+        CreatePerson.stubBadRequest()
 
         val result: DeskproPersonCreationResult = await(objInTest.createPerson(UserId.random, deskproPerson.name, deskproPerson.email))
         result shouldBe DeskproPersonCreationFailure
@@ -120,7 +116,7 @@ class DeskproConnectorISpec
 
         val error: DeskproPersonCreationResult = await(objInTest.createPerson(UserId.random, deskproPerson.name, deskproPerson.email))
         error shouldBe DeskproPersonCreationFailure
-        }
+      }
 
     }
   }

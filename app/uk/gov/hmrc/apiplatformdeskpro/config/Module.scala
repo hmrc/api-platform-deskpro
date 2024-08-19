@@ -16,8 +16,10 @@
 
 package uk.gov.hmrc.apiplatformdeskpro.config
 
-import com.google.inject.AbstractModule
 import java.time.Clock
+
+import com.google.inject.AbstractModule
+
 import uk.gov.hmrc.apiplatformdeskpro.connector.{ConnectorMetrics, ConnectorMetricsImpl}
 
 class Module extends AbstractModule {
