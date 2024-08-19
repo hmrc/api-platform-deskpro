@@ -33,7 +33,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 class DeveloperConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics: ConnectorMetrics, val clock: Clock)(implicit val ec: ExecutionContext)
     extends ApplicationLogger with ClockNow {
 
-  lazy val serviceBaseUrl: String = config.deskproUrl
+  lazy val serviceBaseUrl: String = config.thirdPartyDeveloperUrl
   val api                         = API("third-party-developer")
 
   def searchDevelopers()(implicit hc: HeaderCarrier) = metrics.record(api) {
@@ -42,7 +42,12 @@ class DeveloperConnector @Inject() (http: HttpClientV2, config: AppConfig, metri
       "limit"        -> 100,
       "createdAfter" -> DateTimeFormatter.BASIC_ISO_DATE.format(now().toLocalDate().minusDays(config.lookBack))
     )
-    http.get(url"${requestUrl("/developers")}?$queryParams").execute[List[RegisteredUser]]
+    http.get(url"${requestUrl("/developers")}?$queryParams")
+      .execute[List[RegisteredUser]]
+      .map(users => {
+        if (users.isEmpty) logger.info("No Users Returned from DeveloperConnector")
+        users
+      })
   }
 
   private def requestUrl[B, A](uri: String): String = s"$serviceBaseUrl$uri"

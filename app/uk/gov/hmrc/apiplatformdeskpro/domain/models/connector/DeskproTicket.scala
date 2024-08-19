@@ -21,11 +21,6 @@ import scala.util.Properties
 import play.api.libs.json._
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.DeskproPerson
 
-// case class DeskproTicketPerson(
-//     name: String,
-//     email: String
-//   )
-
 case class DeskproTicketMessage(
     message: String,
     format: String = "html"
