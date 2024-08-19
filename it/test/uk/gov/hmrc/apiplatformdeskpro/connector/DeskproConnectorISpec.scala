@@ -119,8 +119,8 @@ class DeskproConnectorISpec
         CreatePerson.stubInternalServerError()
 
         val error: DeskproPersonCreationResult = await(objInTest.createPerson(UserId.random, deskproPerson.name, deskproPerson.email))
-        error shouldBe DeskproPersonCreationFailure    
-        }      
+        error shouldBe DeskproPersonCreationFailure
+        }
 
     }
   }
