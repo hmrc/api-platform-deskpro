@@ -24,5 +24,5 @@ case class DeskproPerson(
   )
 
 object DeskproPerson {
-  implicit val ticketFormat: OFormat[DeskproPerson] = Json.format[DeskproPerson]
+  implicit val format: OFormat[DeskproPerson] = Json.format[DeskproPerson]
 }

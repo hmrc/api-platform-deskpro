@@ -52,7 +52,7 @@ class DeveloperConnectorISpec extends AsyncHmrcSpec
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    def stubGetDevelopersSuccess()   = {
+    def stubGetDevelopersSuccess() = {
       stubFor(
         get(urlPathEqualTo("/developers"))
           .withQueryParam("status", equalTo("VERIFIED"))

@@ -30,7 +30,5 @@ case class CreateTicketRequest(
   )
 
 object CreateTicketRequest {
-  implicit val createPersonFormat: OFormat[DeskproPerson]       = Json.format[DeskproPerson]
   implicit val createTicketFormat: OFormat[CreateTicketRequest] = Json.format[CreateTicketRequest]
-
 }

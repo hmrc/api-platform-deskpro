@@ -40,7 +40,7 @@ class DeveloperConnector @Inject() (http: HttpClientV2, config: AppConfig, metri
     val queryParams = Seq(
       "status"       -> "VERIFIED",
       "limit"        -> 100,
-      "createdAfter" -> DateTimeFormatter.BASIC_ISO_DATE.format(now().toLocalDate().minusDays(config.lookBack))
+      "createdAfter" -> DateTimeFormatter.BASIC_ISO_DATE.format(now().toLocalDate().minusDays(config.daysToLookBack))
     )
     http.get(url"${requestUrl("/developers")}?$queryParams")
       .execute[List[RegisteredUser]]
