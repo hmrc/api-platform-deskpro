@@ -40,7 +40,7 @@ object DeskproLinkedObject {
 case class DeskproResponse(linked: DeskproLinkedObject)
 
 object DeskproResponse {
-  implicit val format: OFormat[DeskproResponse]                             = Json.format[DeskproResponse]
+  implicit val format: OFormat[DeskproResponse] = Json.format[DeskproResponse]
 
   def toDeskproOrganisation(response: DeskproResponse): DeskproOrganisation = {
     val organisation: DeskproOrganisationResponse = response.linked.organization.values.head

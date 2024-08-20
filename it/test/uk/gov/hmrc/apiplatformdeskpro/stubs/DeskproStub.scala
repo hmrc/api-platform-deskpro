@@ -445,7 +445,7 @@ trait DeskproStub {
           .willReturn(
             aResponse()
               .withBody("{}")
-              .withStatus(BAD_REQUEST)
+              .withStatus(NOT_FOUND)
           )
       )
     }
