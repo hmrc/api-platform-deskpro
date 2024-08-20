@@ -18,11 +18,6 @@ package uk.gov.hmrc.apiplatformdeskpro.domain.models
 
 import play.api.libs.json._
 
-case class DeskproPerson(
-    name: String,
-    email: String
-  )
-
 case class CreateTicketRequest(
     person: DeskproPerson,
     subject: String,
@@ -35,7 +30,5 @@ case class CreateTicketRequest(
   )
 
 object CreateTicketRequest {
-  implicit val createPersonFormat: OFormat[DeskproPerson]       = Json.format[DeskproPerson]
   implicit val createTicketFormat: OFormat[CreateTicketRequest] = Json.format[CreateTicketRequest]
-
 }

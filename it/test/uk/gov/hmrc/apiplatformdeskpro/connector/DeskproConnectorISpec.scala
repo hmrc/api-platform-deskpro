@@ -16,19 +16,17 @@
 
 package uk.gov.hmrc.apiplatformdeskpro.connector
 
-import com.github.tomakehurst.wiremock.client.WireMock._
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 
-import play.api.http.Status._
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.Json
 import play.api.{Application, Mode}
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.DeskproTicketCreationFailed
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproTicket, DeskproTicketMessage, DeskproTicketPerson, _}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproTicket, DeskproTicketMessage, _}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproTicketCreationFailed, _}
+import uk.gov.hmrc.apiplatformdeskpro.stubs.DeskproStub
 import uk.gov.hmrc.apiplatformdeskpro.utils.{AsyncHmrcSpec, ConfigBuilder, WireMockSupport}
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, UserId}
 
 class DeskproConnectorISpec
     extends AsyncHmrcSpec
@@ -44,7 +42,7 @@ class DeskproConnectorISpec
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
-  trait Setup {
+  trait Setup extends DeskproStub {
 
     val objInTest: DeskproConnector = app.injector.instanceOf[DeskproConnector]
 
@@ -60,63 +58,66 @@ class DeskproConnectorISpec
     val brand                  = 1
 
     val fields        = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "6" -> teamMemberEmailAddress)
-    val deskproTicket = DeskproTicket(DeskproTicketPerson(name, email), subject, DeskproTicketMessage(message), brand, fields)
+    val deskproPerson = DeskproPerson(name, email)
+    val deskproTicket = DeskproTicket(deskproPerson, subject, DeskproTicketMessage(message), brand, fields)
 
-    def stubCreateTicketSuccess() = {
-      stubFor(
-        post(urlMatching("/api/v2/tickets"))
-          .withRequestBody(equalTo(Json.toJson(deskproTicket).toString))
-          .willReturn(
-            aResponse()
-              .withBody("""{"data":{"id":12345,"ref":"SDST-1234"}}""")
-              .withStatus(CREATED)
-          )
-      )
-    }
-
-    def stubCreateTicketUnauthorised() = {
-      stubFor(
-        post(urlMatching("/api/v2/tickets"))
-          .willReturn(
-            aResponse()
-              .withStatus(UNAUTHORIZED)
-          )
-      )
-    }
-
-    def stubCreateTicketInternalServerError() = {
-      stubFor(
-        post(urlMatching("/api/v2/tickets"))
-          .willReturn(
-            aResponse()
-              .withStatus(INTERNAL_SERVER_ERROR)
-          )
-      )
-    }
   }
 
-  "deskproConnector" should {
-    "return DeskproTicketCreated with reference returned in response body when 201 returned with valid response from deskpro" in new Setup {
-      stubCreateTicketSuccess()
+  "deskproConnector" when {
+    "createTicket" should {
+      "return DeskproTicketCreated with reference returned in response body when 201 returned with valid response from deskpro" in new Setup {
+        CreateTicket.stubSuccess(deskproTicket)
 
-      val result: Either[DeskproTicketCreationFailed, DeskproTicketCreated] = await(objInTest.createTicket(deskproTicket))
-      result shouldBe Right(DeskproTicketCreated("SDST-1234"))
+        val result: Either[DeskproTicketCreationFailed, DeskproTicketCreated] = await(objInTest.createTicket(deskproTicket))
+        result shouldBe Right(DeskproTicketCreated("SDST-1234"))
+      }
+
+      "return DeskproTicketCreationFailed with 'missing authorisation' when 401 returned from deskpro" in new Setup {
+        CreateTicket.stubUnauthorised()
+
+        val error: Either[DeskproTicketCreationFailed, DeskproTicketCreated] = await(objInTest.createTicket(deskproTicket))
+
+        error.left.getOrElse(fail("should not reach here")).message shouldBe "Failed to create deskpro ticket: Missing authorization"
+      }
+
+      "return DeskproTicketCreationFailed with 'Unknown reason' when 500 returned from deskpro" in new Setup {
+        CreateTicket.stubInternalServerError()
+
+        val error: Either[DeskproTicketCreationFailed, DeskproTicketCreated] = await(objInTest.createTicket(deskproTicket))
+
+        error.left.getOrElse(fail("should not reach here")).message shouldBe "Failed to create deskpro ticket: Unknown reason"
+      }
     }
 
-    "return DeskproTicketCreationFailed with 'missing authorisation' when 401 returned from deskpro" in new Setup {
-      stubCreateTicketUnauthorised()
+    "createPerson" should {
+      "return DeskproPersonCreationSuccess when 201 returned from deskpro" in new Setup {
+        CreatePerson.stubSuccess(deskproPerson)
 
-      val error: Either[DeskproTicketCreationFailed, DeskproTicketCreated] = await(objInTest.createTicket(deskproTicket))
+        val result: DeskproPersonCreationResult = await(objInTest.createPerson(UserId.random, deskproPerson.name, deskproPerson.email))
+        result shouldBe DeskproPersonCreationSuccess
+      }
 
-      error.left.getOrElse(fail("should not reach here")).message shouldBe "Failed to create deskpro ticket: Missing authorization"
-    }
+      "return DeskproPersonCreationDuplicate returned in response body when 400 with dupe_email" in new Setup {
+        CreatePerson.stubDupeEmailError()
 
-    "return DeskproTicketCreationFailed with 'Unknown reason' when 500 returned from deskpro" in new Setup {
-      stubCreateTicketInternalServerError()
+        val result: DeskproPersonCreationResult = await(objInTest.createPerson(UserId.random, deskproPerson.name, deskproPerson.email))
+        result shouldBe DeskproPersonCreationDuplicate
+      }
 
-      val error: Either[DeskproTicketCreationFailed, DeskproTicketCreated] = await(objInTest.createTicket(deskproTicket))
+      "return DeskproPersonCreationFailure returned in response body when 400" in new Setup {
+        CreatePerson.stubBadRequest()
 
-      error.left.getOrElse(fail("should not reach here")).message shouldBe "Failed to create deskpro ticket: Unknown reason"
+        val result: DeskproPersonCreationResult = await(objInTest.createPerson(UserId.random, deskproPerson.name, deskproPerson.email))
+        result shouldBe DeskproPersonCreationFailure
+      }
+
+      "return DeskproPersonCreationFailure when 500 returned from deskpro" in new Setup {
+        CreatePerson.stubInternalServerError()
+
+        val error: DeskproPersonCreationResult = await(objInTest.createPerson(UserId.random, deskproPerson.name, deskproPerson.email))
+        error shouldBe DeskproPersonCreationFailure
+      }
+
     }
   }
 }

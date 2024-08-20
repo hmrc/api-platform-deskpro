@@ -14,23 +14,15 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apiplatformdeskpro.config
+package uk.gov.hmrc.apiplatformdeskpro.domain.models
 
-import java.time.Clock
+import play.api.libs.json.{Json, OFormat}
 
-import com.google.inject.AbstractModule
+case class DeskproPerson(
+    name: String,
+    email: String
+  )
 
-import uk.gov.hmrc.apiplatformdeskpro.connector.{ConnectorMetrics, ConnectorMetricsImpl}
-import uk.gov.hmrc.apiplatformdeskpro.scheduled.ImportNewUsersToDeskProJob
-
-class Module extends AbstractModule {
-
-  override def configure(): Unit = {
-
-    bind(classOf[AppConfig]).asEagerSingleton()
-    bind(classOf[ConnectorMetrics]).to(classOf[ConnectorMetricsImpl])
-    bind(classOf[Clock]).toInstance(Clock.systemUTC())
-    bind(classOf[ImportNewUsersToDeskProJob]).asEagerSingleton()
-  }
-
+object DeskproPerson {
+  implicit val format: OFormat[DeskproPerson] = Json.format[DeskproPerson]
 }

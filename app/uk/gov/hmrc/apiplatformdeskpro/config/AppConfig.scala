@@ -18,18 +18,21 @@ package uk.gov.hmrc.apiplatformdeskpro.config
 
 import javax.inject.{Inject, Singleton}
 
-import play.api.Configuration
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 @Singleton
-class AppConfig @Inject() (config: Configuration) {
+class AppConfig @Inject() (config: ServicesConfig) {
 
-  val appName: String                = config.get[String]("appName")
-  val deskproUrl: String             = config.get[String]("deskpro.uri")
-  val deskproApiKey: String          = config.getOptional[String]("deskpro.api-key").map(key => s"key $key").getOrElse("")
-  val deskproBrand: Int              = config.get[Int]("deskpro.brand")
-  val deskproOrganisation: String    = config.get[String]("deskpro.organisation")
-  val deskproTeamMemberEmail: String = config.get[String]("deskpro.team-member-email")
-  val deskproSupportReason: String   = config.get[String]("deskpro.support-reason")
-  val deskproApplicationId: String   = config.get[String]("deskpro.application-id")
-  val deskproApiName: String         = config.get[String]("deskpro.api-name")
+  val appName: String                = config.getString("appName")
+  val deskproUrl: String             = config.getString("deskpro.uri")
+  private val deskproKeyConfig       = config.getConfString("deskpro.api-key", "")
+  val deskproApiKey: String          = s"key $deskproKeyConfig"
+  val deskproBrand: Int              = config.getInt("deskpro.brand")
+  val deskproOrganisation: String    = config.getString("deskpro.organisation")
+  val deskproTeamMemberEmail: String = config.getString("deskpro.team-member-email")
+  val deskproSupportReason: String   = config.getString("deskpro.support-reason")
+  val deskproApplicationId: String   = config.getString("deskpro.application-id")
+  val deskproApiName: String         = config.getString("deskpro.api-name")
+  val daysToLookBack: Int            = config.getInt("importUser.days-to-look-back")
+  val thirdPartyDeveloperUrl: String = config.baseUrl("third-party-developer")
 }
