@@ -20,11 +20,11 @@ import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.{Application, Mode}
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproTicket, DeskproTicketMessage, _}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector._
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproTicketCreationFailed, _}
 import uk.gov.hmrc.apiplatformdeskpro.stubs.DeskproStub
 import uk.gov.hmrc.apiplatformdeskpro.utils.{AsyncHmrcSpec, ConfigBuilder, WireMockSupport}
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, UserId}
 
@@ -51,15 +51,15 @@ class DeskproConnectorISpec
     val subject                = "Subject of the ticket"
     val message                = "This is where the message for the ticket goes"
     val apiName                = "apiName"
-    val applicationId          = ApplicationId.random.toString()
+    val applicationId: String  = ApplicationId.random.toString()
     val organisation           = "organisation"
     val supportReason          = "supportReason"
     val teamMemberEmailAddress = "frank@example.com"
     val brand                  = 1
 
-    val fields        = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "6" -> teamMemberEmailAddress)
-    val deskproPerson = DeskproPerson(name, email)
-    val deskproTicket = DeskproTicket(deskproPerson, subject, DeskproTicketMessage(message), brand, fields)
+    val fields: Map[String, String]  = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "6" -> teamMemberEmailAddress)
+    val deskproPerson: DeskproPerson = DeskproPerson(name, email)
+    val deskproTicket: DeskproTicket = DeskproTicket(deskproPerson, subject, DeskproTicketMessage(message), brand, fields)
 
   }
 
@@ -121,12 +121,30 @@ class DeskproConnectorISpec
     }
 
     "getOrganisation" should {
-      "return DeskproPersonCreationSuccess when 200 returned from deskpro" in new Setup {
-        val orgId = OrganisationId("1")
+      "return  DeskproResponse when 200 returned from deskpro with response body" in new Setup {
+        val orgId: OrganisationId   = OrganisationId("1")
         GetOrganisation.stubSuccess(orgId)
-        val result = await(objInTest.getOrganisationById(orgId))
-        result.linked.person.size shouldBe 6
-        result.linked.organization.size shouldBe 1
-      }}
+        val result: DeskproResponse = await(objInTest.getOrganisationById(orgId))
+
+        val expectedResponse: DeskproResponse = DeskproResponse(
+          DeskproLinkedObject(
+            person = Map(
+              "63" -> DeskproPersonResponse(Some("bob@example.com"), "Bob Emu"),
+              "3"  -> DeskproPersonResponse(None, "Jeff Smith")
+            ),
+            organization = Map("1" -> DeskproOrganisationResponse(1, "Saga Accounting"))
+          )
+        )
+        result shouldBe expectedResponse
+      }
+
+      "throw UpstreamErrorResponse when error response returned from deskpro" in new Setup {
+        val orgId: OrganisationId = OrganisationId("1")
+        GetOrganisation.stubFailure(orgId)
+        intercept[UpstreamErrorResponse] {
+          await(objInTest.getOrganisationById(orgId))
+        }
+      }
+    }
   }
 }
