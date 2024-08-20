@@ -18,26 +18,24 @@ package uk.gov.hmrc.apiplatformdeskpro.connector
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
-
 import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.http.Status.{BAD_REQUEST, CREATED, UNAUTHORIZED}
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OFormat}
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproTicket, DeskproTicketCreated}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproResponse, DeskproTicket, DeskproTicketCreated}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproTicketCreationFailed, _}
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
 import uk.gov.hmrc.play.http.metrics.common.API
-
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.UserId
 
 class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics: ConnectorMetrics)(implicit val ec: ExecutionContext)
     extends ApplicationLogger {
 
   lazy val serviceBaseUrl: String = config.deskproUrl
-  val api                         = API("deskpro")
+  val api: API = API("deskpro")
 
   def createTicket(deskproTicket: DeskproTicket)(implicit hc: HeaderCarrier): Future[Either[DeskproTicketCreationFailed, DeskproTicketCreated]] = metrics.record(api) {
     http.post(url"${requestUrl("/api/v2/tickets")}")
@@ -83,6 +81,14 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
             DeskproPersonCreationFailure
         }
       )
+  }
+
+  def getOrganisationById(organisationId: OrganisationId)(implicit hc: HeaderCarrier): Future[DeskproResponse]={
+    http
+      .get(url"${requestUrl(s"/api/v2/organizations/$organisationId/members")}?include=person,organization")
+      .withProxy
+      .setHeader(AUTHORIZATION -> config.deskproApiKey)
+      .execute[DeskproResponse]
   }
 
   private def requestUrl[B, A](uri: String): String = s"$serviceBaseUrl$uri"

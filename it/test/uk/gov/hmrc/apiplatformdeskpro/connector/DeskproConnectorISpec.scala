@@ -119,5 +119,14 @@ class DeskproConnectorISpec
       }
 
     }
+
+    "getOrganisation" should {
+      "return DeskproPersonCreationSuccess when 200 returned from deskpro" in new Setup {
+        val orgId = OrganisationId("1")
+        GetOrganisation.stubSuccess(orgId)
+        val result = await(objInTest.getOrganisationById(orgId))
+        result.linked.person.size shouldBe 6
+        result.linked.organization.size shouldBe 1
+      }}
   }
 }
