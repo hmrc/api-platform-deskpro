@@ -46,7 +46,7 @@ class OrganisationControllerSpec extends AsyncHmrcSpec with StubControllerCompon
     val response = DeskproOrganisation(
       organisationId = organisationId,
       organisationName = orgName,
-      persons = List(DeskproPerson(personName, personEmail))
+      people = List(DeskproPerson(personName, personEmail))
     )
 
   }

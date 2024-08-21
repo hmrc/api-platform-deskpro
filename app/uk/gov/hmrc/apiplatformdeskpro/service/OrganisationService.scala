@@ -20,8 +20,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import uk.gov.hmrc.apiplatformdeskpro.connector.DeskproConnector
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.DeskproResponse
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproOrganisation, OrganisationId}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproOrganisation, DeskproPerson, OrganisationId}
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -29,8 +28,13 @@ import uk.gov.hmrc.http.HeaderCarrier
 class OrganisationService @Inject() (deskproConnector: DeskproConnector)(implicit val ec: ExecutionContext) extends ApplicationLogger {
 
   def getOrganisationById(organisationId: OrganisationId)(implicit hc: HeaderCarrier): Future[DeskproOrganisation] = {
-    deskproConnector.getOrganisationById(organisationId)
-      .map(DeskproResponse.toDeskproOrganisation)
+
+    for {
+      orgResponse    <- deskproConnector.getOrganisationById(organisationId)
+      org             = orgResponse.data
+      peopleResponse <- deskproConnector.getOrganisationWithPeopleById(organisationId)
+      people          = peopleResponse.linked.person.values.flatMap(per => per.primary_email.map(email => DeskproPerson(per.name, email))).toList
+    } yield DeskproOrganisation(organisationId, org.name, people)
   }
 
 }

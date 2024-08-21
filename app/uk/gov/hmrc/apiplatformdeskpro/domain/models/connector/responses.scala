@@ -17,35 +17,37 @@
 package uk.gov.hmrc.apiplatformdeskpro.domain.models.connector
 
 import play.api.libs.json._
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproOrganisation, DeskproPerson, OrganisationId}
 
 case class DeskproOrganisationResponse(id: Int, name: String)
 
 object DeskproOrganisationResponse {
-  implicit val format: OFormat[DeskproOrganisationResponse] = Json.format[DeskproOrganisationResponse]
+  implicit val format: Reads[DeskproOrganisationResponse] = Json.reads[DeskproOrganisationResponse]
+}
+
+case class DeskproOrganisationWrapperResponse(data: DeskproOrganisationResponse)
+
+object DeskproOrganisationWrapperResponse {
+  implicit val format: Reads[DeskproOrganisationWrapperResponse] = Json.reads[DeskproOrganisationWrapperResponse]
 }
 
 case class DeskproPersonResponse(primary_email: Option[String], name: String)
 
 object DeskproPersonResponse {
-  implicit val format: OFormat[DeskproPersonResponse] = Json.format[DeskproPersonResponse]
+  implicit val format: Reads[DeskproPersonResponse] = Json.reads[DeskproPersonResponse]
 }
 
-case class DeskproLinkedObject(person: Map[String, DeskproPersonResponse], organization: Map[String, DeskproOrganisationResponse])
+case class DeskproLinkedObject(person: Map[String, DeskproPersonResponse])
 
 object DeskproLinkedObject {
-  implicit val format: OFormat[DeskproLinkedObject] = Json.format[DeskproLinkedObject]
+
+  implicit val reads: Reads[DeskproLinkedObject] = (__ \ "person")
+    .readWithDefault(Map.empty[String, DeskproPersonResponse])
+    .map(DeskproLinkedObject(_))
+
 }
 
 case class DeskproResponse(linked: DeskproLinkedObject)
 
 object DeskproResponse {
-  implicit val format: OFormat[DeskproResponse] = Json.format[DeskproResponse]
-
-  def toDeskproOrganisation(response: DeskproResponse): DeskproOrganisation = {
-    val organisation: DeskproOrganisationResponse = response.linked.organization.values.head
-    val persons: List[DeskproPersonResponse]      = response.linked.person.values.toList.filter(_.primary_email.isDefined)
-
-    DeskproOrganisation(OrganisationId(organisation.id.toString), organisation.name, persons.map(per => DeskproPerson(per.name, per.primary_email.get)))
-  }
+  implicit val format: Reads[DeskproResponse] = Json.reads[DeskproResponse]
 }

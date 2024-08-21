@@ -213,12 +213,12 @@ trait DeskproStub {
     }
   }
 
-  object GetOrganisation {
+  object GetOrganisationWithPeopleById {
 
     def stubSuccess(organisationId: OrganisationId) = {
       stubFor(
         get(urlPathEqualTo(s"/api/v2/organizations/$organisationId/members"))
-          .withQueryParam("include", equalTo("person,organization"))
+          .withQueryParam("include", equalTo("person"))
           .willReturn(
             aResponse()
               .withBody("""{
@@ -384,53 +384,34 @@ trait DeskproStub {
                           |        ],
                           |        "preferences": []
                           |      }
-                          |    },
-                          |    "organization": {
-                          |      "1": {
-                          |        "id": 1,
-                          |        "name": "Saga Accounting",
-                          |        "summary": "",
-                          |        "importance": 0,
-                          |        "fields": {
-                          |          "1": {
-                          |            "aliases": [],
-                          |            "value": 1
-                          |          },
-                          |          "2": {
-                          |            "aliases": [],
-                          |            "value": "Mike"
-                          |          },
-                          |          "7": {
-                          |            "aliases": [
-                          |              "7",
-                          |              "Apps",
-                          |              "field7"
-                          |            ],
-                          |            "value": "https:\/\/admin.qa.tax.service.gov.uk\/api-gatekeeper\/applications?param1=1"
-                          |          }
-                          |        },
-                          |        "user_groups": [],
-                          |        "labels": [
-                          |          "DRM",
-                          |          "LG"
-                          |        ],
-                          |        "contact_data": [
-                          |          {
-                          |            "id": 1,
-                          |            "contact_type": "website",
-                          |            "comment": "",
-                          |            "url": "www.sagac.org.uk"
-                          |          }
-                          |        ],
-                          |        "emails": null,
-                          |        "email_domains": [],
-                          |        "date_created": "2023-01-02T10:47:53+0000",
-                          |        "parent": null,
-                          |        "chats_count": 0,
-                          |        "tickets_count": 3,
-                          |        "phone_numbers": []
-                          |      }
                           |    }
+                          |  }
+                          |}""".stripMargin)
+              .withStatus(OK)
+          )
+      )
+    }
+
+    def stubSuccessNoPerson(organisationId: OrganisationId) = {
+      stubFor(
+        get(urlPathEqualTo(s"/api/v2/organizations/$organisationId/members"))
+          .withQueryParam("include", equalTo("person"))
+          .willReturn(
+            aResponse()
+              .withBody("""{
+                          |  "data": [
+                          |  ],
+                          |  "meta": {
+                          |    "pagination": {
+                          |      "total": 6,
+                          |      "count": 6,
+                          |      "per_page": 10,
+                          |      "current_page": 1,
+                          |      "total_pages": 1
+                          |    }
+                          |  },
+                          |  "linked": {
+                          |
                           |  }
                           |}""".stripMargin)
               .withStatus(OK)
@@ -441,7 +422,7 @@ trait DeskproStub {
     def stubFailure(organisationId: OrganisationId) = {
       stubFor(
         get(urlPathEqualTo(s"/api/v2/organizations/$organisationId/members"))
-          .withQueryParam("include", equalTo("person,organization"))
+          .withQueryParam("include", equalTo("person"))
           .willReturn(
             aResponse()
               .withBody("{}")
@@ -450,4 +431,78 @@ trait DeskproStub {
       )
     }
   }
+
+  object GetOrganisationById {
+
+    def stubSuccess(organisationId: OrganisationId) = {
+      stubFor(
+        get(urlPathEqualTo(s"/api/v2/organizations/$organisationId"))
+          .willReturn(
+            aResponse()
+              .withBody("""{
+                          |  "data": {
+                          |    "id": 1,
+                          |    "name": "Example Accounting",
+                          |    "summary": "",
+                          |    "importance": 0,
+                          |    "fields": {
+                          |      "1": {
+                          |        "aliases": [],
+                          |        "value": 1
+                          |      },
+                          |      "2": {
+                          |        "aliases": [],
+                          |        "value": "Mike"
+                          |      },
+                          |      "7": {
+                          |        "aliases": [
+                          |          "7",
+                          |          "Apps",
+                          |          "field7"
+                          |        ],
+                          |        "value": "https:\\/\\/admin.qa.tax.service.gov.uk\\/api-gatekeeper\\/applications?param1=1"
+                          |      }
+                          |    },
+                          |    "user_groups": [],
+                          |    "labels": [
+                          |      "DRM",
+                          |      "LG"
+                          |    ],
+                          |    "contact_data": [
+                          |      {
+                          |        "id": 1,
+                          |        "contact_type": "website",
+                          |        "comment": "",
+                          |        "url": "www.sagac.org.uk"
+                          |      }
+                          |    ],
+                          |    "emails": null,
+                          |    "email_domains": [],
+                          |    "date_created": "2023-01-02T10:47:53+0000",
+                          |    "parent": null,
+                          |    "chats_count": 0,
+                          |    "tickets_count": 3,
+                          |    "phone_numbers": []
+                          |  },
+                          |  "meta": {},
+                          |  "linked": {}
+                          |}
+                          |""".stripMargin)
+              .withStatus(OK)
+          )
+      )
+    }
+
+    def stubFailure(organisationId: OrganisationId) = {
+      stubFor(
+        get(urlPathEqualTo(s"/api/v2/organizations/$organisationId"))
+          .willReturn(
+            aResponse()
+              .withBody("{}")
+              .withStatus(NOT_FOUND)
+          )
+      )
+    }
+  }
+
 }

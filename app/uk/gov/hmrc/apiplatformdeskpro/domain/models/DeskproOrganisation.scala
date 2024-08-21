@@ -25,7 +25,7 @@ case class OrganisationId(value: String) extends AnyVal {
 object OrganisationId {
   implicit val format: Format[OrganisationId] = Json.valueFormat[OrganisationId]
 }
-case class DeskproOrganisation(organisationId: OrganisationId, organisationName: String, persons: List[DeskproPerson])
+case class DeskproOrganisation(organisationId: OrganisationId, organisationName: String, people: List[DeskproPerson])
 
 object DeskproOrganisation {
   implicit val format: OFormat[DeskproOrganisation] = Json.format[DeskproOrganisation]

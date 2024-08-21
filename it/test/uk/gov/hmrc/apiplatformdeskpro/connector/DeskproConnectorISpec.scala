@@ -120,19 +120,31 @@ class DeskproConnectorISpec
 
     }
 
-    "getOrganisation" should {
-      "return  DeskproResponse when 200 returned from deskpro with response body" in new Setup {
+    "getOrganisationWithPeopleById" should {
+      "return DeskproResponse when 200 returned from deskpro with response body" in new Setup {
         val orgId: OrganisationId   = OrganisationId("1")
-        GetOrganisation.stubSuccess(orgId)
-        val result: DeskproResponse = await(objInTest.getOrganisationById(orgId))
+        GetOrganisationWithPeopleById.stubSuccess(orgId)
+        val result: DeskproResponse = await(objInTest.getOrganisationWithPeopleById(orgId))
 
         val expectedResponse: DeskproResponse = DeskproResponse(
           DeskproLinkedObject(
             person = Map(
               "63" -> DeskproPersonResponse(Some("bob@example.com"), "Bob Emu"),
               "3"  -> DeskproPersonResponse(None, "Jeff Smith")
-            ),
-            organization = Map("1" -> DeskproOrganisationResponse(1, "Saga Accounting"))
+            )
+          )
+        )
+        result shouldBe expectedResponse
+      }
+
+      "return DeskproResponse when 200 returned from deskpro with response body without people in" in new Setup {
+        val orgId: OrganisationId   = OrganisationId("1")
+        GetOrganisationWithPeopleById.stubSuccessNoPerson(orgId)
+        val result: DeskproResponse = await(objInTest.getOrganisationWithPeopleById(orgId))
+
+        val expectedResponse: DeskproResponse = DeskproResponse(
+          DeskproLinkedObject(
+            person = Map()
           )
         )
         result shouldBe expectedResponse
@@ -140,11 +152,33 @@ class DeskproConnectorISpec
 
       "throw UpstreamErrorResponse when error response returned from deskpro" in new Setup {
         val orgId: OrganisationId = OrganisationId("1")
-        GetOrganisation.stubFailure(orgId)
+        GetOrganisationWithPeopleById.stubFailure(orgId)
         intercept[UpstreamErrorResponse] {
-          await(objInTest.getOrganisationById(orgId))
+          await(objInTest.getOrganisationWithPeopleById(orgId))
         }
       }
     }
   }
+
+  "getOrganisation" should {
+    "return DeskproOrganisationWrapperResponse when 200 returned from deskpro with response body" in new Setup {
+      val orgId: OrganisationId                      = OrganisationId("1")
+      GetOrganisationById.stubSuccess(orgId)
+      val result: DeskproOrganisationWrapperResponse = await(objInTest.getOrganisationById(orgId))
+
+      val expectedResponse: DeskproOrganisationWrapperResponse = DeskproOrganisationWrapperResponse(
+        DeskproOrganisationResponse(1, "Example Accounting")
+      )
+      result shouldBe expectedResponse
+    }
+
+    "throw UpstreamErrorResponse when error response returned from deskpro" in new Setup {
+      val orgId: OrganisationId = OrganisationId("1")
+      GetOrganisationById.stubFailure(orgId)
+      intercept[UpstreamErrorResponse] {
+        await(objInTest.getOrganisationById(orgId))
+      }
+    }
+  }
+
 }
