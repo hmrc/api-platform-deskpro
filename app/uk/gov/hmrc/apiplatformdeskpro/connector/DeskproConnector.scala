@@ -23,7 +23,7 @@ import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.http.Status.{BAD_REQUEST, CREATED, UNAUTHORIZED}
 import play.api.libs.json.Json
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproTicket, DeskproTicketCreated}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproOrganisationWrapperResponse, DeskproResponse, DeskproTicket, DeskproTicketCreated}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproTicketCreationFailed, _}
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HttpReads.Implicits._
@@ -37,7 +37,7 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
     extends ApplicationLogger {
 
   lazy val serviceBaseUrl: String = config.deskproUrl
-  val api                         = API("deskpro")
+  val api: API                    = API("deskpro")
 
   def createTicket(deskproTicket: DeskproTicket)(implicit hc: HeaderCarrier): Future[Either[DeskproTicketCreationFailed, DeskproTicketCreated]] = metrics.record(api) {
     http.post(url"${requestUrl("/api/v2/tickets")}")
@@ -60,7 +60,7 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
       )
   }
 
-  def createPerson(userId: UserId, name: String, email: String)(implicit hc: HeaderCarrier): Future[DeskproPersonCreationResult] = {
+  def createPerson(userId: UserId, name: String, email: String)(implicit hc: HeaderCarrier): Future[DeskproPersonCreationResult] = metrics.record(api) {
     http
       .post(url"${requestUrl("/api/v2/people")}")
       .withProxy
@@ -83,6 +83,22 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
             DeskproPersonCreationFailure
         }
       )
+  }
+
+  def getOrganisationWithPeopleById(organisationId: OrganisationId)(implicit hc: HeaderCarrier): Future[DeskproResponse] = metrics.record(api) {
+    http
+      .get(url"${requestUrl(s"/api/v2/organizations/$organisationId/members")}?include=person")
+      .withProxy
+      .setHeader(AUTHORIZATION -> config.deskproApiKey)
+      .execute[DeskproResponse]
+  }
+
+  def getOrganisationById(organisationId: OrganisationId)(implicit hc: HeaderCarrier): Future[DeskproOrganisationWrapperResponse] = metrics.record(api) {
+    http
+      .get(url"${requestUrl(s"/api/v2/organizations/$organisationId")}")
+      .withProxy
+      .setHeader(AUTHORIZATION -> config.deskproApiKey)
+      .execute[DeskproOrganisationWrapperResponse]
   }
 
   private def requestUrl[B, A](uri: String): String = s"$serviceBaseUrl$uri"
