@@ -2,3 +2,5 @@
 
 POST    /ticket                          uk.gov.hmrc.apiplatformdeskpro.controller.CreateTicketController.createTicket()
 GET     /organisation/:orgId             uk.gov.hmrc.apiplatformdeskpro.controller.OrganisationController.getOrganisation(orgId: uk.gov.hmrc.apiplatformdeskpro.domain.models.OrganisationId)
+
+POST    /organisation                    uk.gov.hmrc.apiplatformdeskpro.controller.OrganisationController.getOrganisationByPersonEmail()

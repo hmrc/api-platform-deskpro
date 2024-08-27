@@ -22,14 +22,14 @@ trait ConfigBuilder {
 
   protected def stubConfig(stubPort: Int) = Configuration(
     "microservice.services.third-party-developer.port" -> s"$stubPort",
-    "deskpro.uri"                                      -> s"http://localhost:$stubPort",
+//    "deskpro.uri"                                      -> s"http://localhost:$stubPort",
     "metrics.enabled"                                  -> false,
-    "deskpro.brand"                                    -> 1,
-    "deskpro.api-name"                                 -> "2",
-    "deskpro.support-reason"                           -> "3",
-    "deskpro.organisation"                             -> "4",
-    "deskpro.application-id"                           -> "5",
-    "deskpro.team-member-email"                        -> "6",
+//    "deskpro.brand"                                    -> 1,
+//    "deskpro.api-name"                                 -> "2",
+//    "deskpro.support-reason"                           -> "3",
+//    "deskpro.organisation"                             -> "4",
+//    "deskpro.application-id"                           -> "5",
+//    "deskpro.team-member-email"                        -> "6",
     "metrics.jvm"                                      -> false
   )
 

@@ -19,7 +19,7 @@ package uk.gov.hmrc.apiplatformdeskpro.service
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import uk.gov.hmrc.apiplatformdeskpro.connector.DeskproConnector
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproLinkedObject, DeskproOrganisationResponse, DeskproOrganisationWrapperResponse, DeskproPersonResponse, DeskproResponse}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproLinkedPersonObject, DeskproOrganisationResponse, DeskproOrganisationWrapperResponse, DeskproPersonResponse, DeskproLinkedPersonWrapper}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproOrganisation, DeskproPerson, OrganisationId}
 import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
@@ -46,8 +46,8 @@ class OrganisationServiceSpec extends AsyncHmrcSpec {
     "getOrganisationById" should {
       "successfully return DeskproOrganisation when both organisation and people are returned from connector" in new Setup {
 
-        val peopleResponse = DeskproResponse(
-          DeskproLinkedObject(
+        val peopleResponse = DeskproLinkedPersonWrapper(
+          DeskproLinkedPersonObject(
             person = Map(
               "1" -> DeskproPersonResponse(Some(personEmail1), personName1),
               "2" -> DeskproPersonResponse(None, personName2)
@@ -68,8 +68,8 @@ class OrganisationServiceSpec extends AsyncHmrcSpec {
       }
 
       "successfully return DeskproOrganisation when an organisation but no people are returned from connector" in new Setup {
-        val peopleResponse = DeskproResponse(
-          DeskproLinkedObject(person = Map())
+        val peopleResponse = DeskproLinkedPersonWrapper(
+          DeskproLinkedPersonObject(person = Map())
         )
         when(mockDeskproConnector.getOrganisationById(*[OrganisationId])(*)).thenReturn(Future.successful(orgResponse))
 

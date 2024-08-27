@@ -30,24 +30,41 @@ object DeskproOrganisationWrapperResponse {
   implicit val format: Reads[DeskproOrganisationWrapperResponse] = Json.reads[DeskproOrganisationWrapperResponse]
 }
 
+
 case class DeskproPersonResponse(primary_email: Option[String], name: String)
 
 object DeskproPersonResponse {
   implicit val format: Reads[DeskproPersonResponse] = Json.reads[DeskproPersonResponse]
 }
 
-case class DeskproLinkedObject(person: Map[String, DeskproPersonResponse])
+case class DeskproLinkedOrganisationObject(organisations: Map[String, DeskproOrganisationResponse])
 
-object DeskproLinkedObject {
+object DeskproLinkedOrganisationObject {
 
-  implicit val reads: Reads[DeskproLinkedObject] = (__ \ "person")
-    .readWithDefault(Map.empty[String, DeskproPersonResponse])
-    .map(DeskproLinkedObject(_))
+  implicit val reads: Reads[DeskproLinkedPersonObject] = (__ \ "organisation")
+    .readWithDefault(Map.empty[String, DeskproOrganisationResponse])
+    .map(DeskproLinkedOrganisationObject(_))
 
 }
 
-case class DeskproResponse(linked: DeskproLinkedObject)
+case class DeskproLinkedOrganisationWrapper(linked: DeskproLinkedOrganisationObject)
 
-object DeskproResponse {
-  implicit val format: Reads[DeskproResponse] = Json.reads[DeskproResponse]
+object DeskproLinkedOrganisationWrapper {
+  implicit val format: Reads[DeskproLinkedOrganisationWrapper] = Json.reads[DeskproLinkedOrganisationWrapper]
+}
+
+case class DeskproLinkedPersonObject(person: Map[String, DeskproPersonResponse])
+
+object DeskproLinkedPersonObject {
+
+  implicit val reads: Reads[DeskproLinkedPersonObject] = (__ \ "person")
+    .readWithDefault(Map.empty[String, DeskproPersonResponse])
+    .map(DeskproLinkedPersonObject(_))
+
+}
+
+case class DeskproLinkedPersonWrapper(linked: DeskproLinkedPersonObject)
+
+object DeskproLinkedPersonWrapper {
+  implicit val format: Reads[DeskproLinkedPersonWrapper] = Json.reads[DeskproLinkedPersonWrapper]
 }

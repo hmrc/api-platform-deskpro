@@ -18,10 +18,10 @@ package uk.gov.hmrc.apiplatformdeskpro.controller
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
-
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.OrganisationId
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.GetOrganisationByEmailRequest
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.{CreateTicketRequest, OrganisationId}
 import uk.gov.hmrc.apiplatformdeskpro.service.OrganisationService
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.UpstreamErrorResponse
@@ -36,6 +36,15 @@ class OrganisationController @Inject() (organisationService: OrganisationService
       .map { deskproOrganisation =>
         Ok(Json.toJson(deskproOrganisation))
       } recover recovery
+  }
+
+  def getOrganisationByPersonEmail(): Action[AnyContent] = Action.async { implicit request =>
+    withJsonBodyFromAnyContent[GetOrganisationByEmailRequest] { parsedRequest =>
+      organisationService.getOrganisationByEmail(parsedRequest.email)
+        .map { deskproOrganisation =>
+          Ok(Json.toJson(deskproOrganisation))
+        } recover recovery
+    }
   }
 
   def recovery: PartialFunction[Throwable, Result] = {

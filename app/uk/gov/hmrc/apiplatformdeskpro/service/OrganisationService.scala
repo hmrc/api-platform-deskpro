@@ -16,10 +16,12 @@
 
 package uk.gov.hmrc.apiplatformdeskpro.service
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-
 import uk.gov.hmrc.apiplatformdeskpro.connector.DeskproConnector
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproLinkedOrganisationWrapper, DeskproOrganisationResponse}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproOrganisation, DeskproPerson, OrganisationId}
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HeaderCarrier
@@ -35,6 +37,14 @@ class OrganisationService @Inject() (deskproConnector: DeskproConnector)(implici
       peopleResponse <- deskproConnector.getOrganisationWithPeopleById(organisationId)
       people          = peopleResponse.linked.person.values.flatMap(per => per.primary_email.map(email => DeskproPerson(per.name, email))).toList
     } yield DeskproOrganisation(organisationId, org.name, people)
+  }
+
+  def getOrganisationByEmail(email: LaxEmailAddress)(implicit hc: HeaderCarrier): Future[DeskproOrganisation] = {
+     deskproConnector.getOrganisationForPersonEmail(email)
+       .map(x => {val org = x.linked.organisations.head._2
+         DeskproOrganisation(OrganisationId(org.id+""), org.name, List.empty)
+       })
+
   }
 
 }
