@@ -18,23 +18,31 @@ package uk.gov.hmrc.apiplatformdeskpro.connector
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
-import play.api.http.HeaderNames.{AUTHORIZATION, CONTENT_TYPE}
+
+import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.http.Status.{BAD_REQUEST, CREATED, UNAUTHORIZED}
 import play.api.libs.json.Json
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproLinkedOrganisationWrapper, DeskproLinkedPersonWrapper, DeskproOrganisationWrapperResponse, DeskproTicket, DeskproTicketCreated}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models._
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{
+  DeskproLinkedOrganisationWrapper,
+  DeskproLinkedPersonWrapper,
+  DeskproOrganisationWrapperResponse,
+  DeskproTicket,
+  DeskproTicketCreated
+}
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
 import uk.gov.hmrc.play.http.metrics.common.API
+
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{LaxEmailAddress, UserId}
 
 class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics: ConnectorMetrics)(implicit val ec: ExecutionContext)
     extends ApplicationLogger {
 
-  val DESKPRO_QUERY_HEADER   = "X-Deskpro-Api-Get-Query-Body"
+  val DESKPRO_QUERY_HEADER = "X-Deskpro-Api-Get-Query-Body"
 
   lazy val serviceBaseUrl: String = config.deskproUrl
   val api: API                    = API("deskpro")
@@ -103,23 +111,24 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
 
   def getOrganisationForPersonEmail(email: LaxEmailAddress)(implicit hc: HeaderCarrier): Future[DeskproLinkedOrganisationWrapper] =
     metrics.record(api) {
-    //https://apiplatformsupporttest.deskpro.com/api/v2/people
-    //https://apiplatformsupporttest.deskpro.com/api/v2/people
-    //
-    http
-      .post(url"${requestUrl(s"/api/v2/people")}")
-      .withProxy
-      .setHeader(AUTHORIZATION -> config.deskproApiKey)
-      .setHeader(DESKPRO_QUERY_HEADER -> "1")
-      .withBody(Json.parse(
-        s"""
-          |{
-          |  "primary_email":"${email.text}",
-          |  "include": "organization_member,organization"
-          |}
-          |""".stripMargin))
-      .execute[DeskproLinkedOrganisationWrapper]
-  }
+      // https://apiplatformsupporttest.deskpro.com/api/v2/people
+      // https://apiplatformsupporttest.deskpro.com/api/v2/people
+      //
+      http
+        .post(url"${requestUrl(s"/api/v2/people")}")
+        .withProxy
+        .setHeader(AUTHORIZATION -> config.deskproApiKey)
+        .setHeader(DESKPRO_QUERY_HEADER -> "1")
+        .withBody(Json.parse(
+          s"""
+             |{
+             |  "primary_email":"${email.text}",
+             |  "include": "organization_member,organization"
+             |}
+             |""".stripMargin
+        ))
+        .execute[DeskproLinkedOrganisationWrapper]
+    }
 
   private def requestUrl[B, A](uri: String): String = s"$serviceBaseUrl$uri"
 }

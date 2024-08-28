@@ -17,14 +17,16 @@
 package uk.gov.hmrc.apiplatformdeskpro.connector
 
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
+
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.{Application, Mode}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector._
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproTicketCreationFailed, _}
 import uk.gov.hmrc.apiplatformdeskpro.stubs.DeskproStub
 import uk.gov.hmrc.apiplatformdeskpro.utils.{AsyncHmrcSpec, ConfigBuilder, WireMockSupport}
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, UpstreamErrorResponse}
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, LaxEmailAddress, UserId}
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
+
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, UserId}
 
 class DeskproConnectorISpec
     extends AsyncHmrcSpec
@@ -120,7 +122,7 @@ class DeskproConnectorISpec
 
     "getOrganisationWithPeopleById" should {
       "return DeskproResponse when 200 returned from deskpro with response body" in new Setup {
-        val orgId: OrganisationId   = OrganisationId("1")
+        val orgId: OrganisationId              = OrganisationId("1")
         GetOrganisationWithPeopleById.stubSuccess(orgId)
         val result: DeskproLinkedPersonWrapper = await(objInTest.getOrganisationWithPeopleById(orgId))
 
@@ -136,7 +138,7 @@ class DeskproConnectorISpec
       }
 
       "return DeskproResponse when 200 returned from deskpro with response body without people in" in new Setup {
-        val orgId: OrganisationId   = OrganisationId("1")
+        val orgId: OrganisationId              = OrganisationId("1")
         GetOrganisationWithPeopleById.stubSuccessNoPerson(orgId)
         val result: DeskproLinkedPersonWrapper = await(objInTest.getOrganisationWithPeopleById(orgId))
 
@@ -179,19 +181,15 @@ class DeskproConnectorISpec
     }
   }
 
-  "getPersonByEmail" should {
-    "return DeskproPerson when 200 returned from deskpro with response body" in new Setup {
-      val orgId: OrganisationId                      = OrganisationId("1")
+//  "getPersonByEmail" should {
+//    "return DeskproPerson when 200 returned from deskpro with response body" in new Setup {
+//      val orgId: OrganisationId = OrganisationId("1")
 //      GetOrganisationById.stubSuccess(orgId)
-
-      val result: HttpResponse = await(objInTest.getPersonByEmail(LaxEmailAddress("dsvds@.test.com")))
-
-      println(s"${result.toString()} ${result.body}")
-//      val expectedResponse: DeskproOrganisationWrapperResponse = DeskproOrganisationWrapperResponse(
-//        DeskproOrganisationResponse(1, "Example Accounting")
-//      )
-//      result shouldBe expectedResponse
-    }
-  }
+//
+//      val result = await(objInTest.getOrganisationForPersonEmail(LaxEmailAddress("dsvds@.test.com")))
+//
+//
+//    }
+//  }
 
 }

@@ -30,7 +30,6 @@ object DeskproOrganisationWrapperResponse {
   implicit val format: Reads[DeskproOrganisationWrapperResponse] = Json.reads[DeskproOrganisationWrapperResponse]
 }
 
-
 case class DeskproPersonResponse(primary_email: Option[String], name: String)
 
 object DeskproPersonResponse {
