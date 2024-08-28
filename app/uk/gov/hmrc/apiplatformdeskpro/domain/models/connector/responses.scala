@@ -41,7 +41,7 @@ case class DeskproLinkedOrganisationObject(organisations: Map[String, DeskproOrg
 
 object DeskproLinkedOrganisationObject {
 
-  implicit val reads: Reads[DeskproLinkedPersonObject] = (__ \ "organisation")
+  implicit val reads: Reads[DeskproLinkedOrganisationObject] = (__ \ "organization")
     .readWithDefault(Map.empty[String, DeskproOrganisationResponse])
     .map(DeskproLinkedOrganisationObject(_))
 

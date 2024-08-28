@@ -41,7 +41,8 @@ class OrganisationService @Inject() (deskproConnector: DeskproConnector)(implici
 
   def getOrganisationByEmail(email: LaxEmailAddress)(implicit hc: HeaderCarrier): Future[DeskproOrganisation] = {
      deskproConnector.getOrganisationForPersonEmail(email)
-       .map(x => {val org = x.linked.organisations.head._2
+       .map(x => { logger.error(x.toString)
+         val org = x.linked.organisations.values.toList.head
          DeskproOrganisation(OrganisationId(org.id+""), org.name, List.empty)
        })
 
