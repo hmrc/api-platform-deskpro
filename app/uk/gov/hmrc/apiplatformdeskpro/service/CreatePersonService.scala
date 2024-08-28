@@ -18,23 +18,57 @@ package uk.gov.hmrc.apiplatformdeskpro.service
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.connector.{DeskproConnector, DeveloperConnector}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.DeskproPersonCreationResult
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.RegisteredUser
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HeaderCarrier
+
+import scala.util.control.NonFatal
 
 @Singleton
 class CreatePersonService @Inject() (deskproConnector: DeskproConnector, developerConnector: DeveloperConnector, config: AppConfig)(implicit val ec: ExecutionContext)
     extends ApplicationLogger {
 
-  def pushNewUsersToDeskpro(): Future[List[DeskproPersonCreationResult]] = {
+
+  // Not required currently. Retain for future reference
+  //
+  // final def batchFutures[I](batchSize: Int, batchPause: Long, fn: I => Future[Unit])(input: Seq[I])(implicit ec: ExecutionContext): Future[Unit] = {
+  //   input.splitAt(batchSize) match {
+  //     case (Nil, Nil) => Future.successful(())
+  //     case (doNow: Seq[I], doLater: Seq[I]) =>
+  //       Future.sequence(doNow.map(fn)).flatMap( _ =>
+  //         Future(
+  //           blocking({logDebug("Done batch of items"); Thread.sleep(batchPause)})
+  //         )
+  //         .flatMap(_ => batchFutures(batchSize, batchPause, fn)(doLater))
+  //       )
+  //   }
+  // }
+
+  def functionToExecute()(implicit ec: ExecutionContext): Future[List[DeskproPersonCreationResult]] = {
+
+    def pushUserToDeskpro(u: RegisteredUser)(implicit ec: ExecutionContext) ={
+      deskproConnector.createPerson(u.userId, s"${u.firstName} ${u.lastName}", u.email.text)
+    }
+
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    developerConnector
-      .searchDevelopers()
-      .flatMap(users => Future.sequence(users.map(u => deskproConnector.createPerson(u.userId, s"${u.firstName} ${u.lastName}", u.email.text))))
+    def executeBatch[A](list: List[Future[A]])(concurFactor: Int): Future[List[A]] = {
+      list.grouped(concurFactor).foldLeft(Future.successful(List.empty[A])) { (r: Future[List[A]], c: List[Future[A]]) =>
+        val batch = Future.sequence(c)
+        r.flatMap(rs => r.map(values => rs ++ values))
+      }
+    }
+
+    for {
+      users   <- developerConnector.searchDevelopers()
+      results <- executeBatch(users.map(pushUserToDeskpro))(100)
+    } yield results
+//    developerConnector
+//      .searchDevelopers()
+//      .flatMap(users => Future.sequence())
   }
 
 }
