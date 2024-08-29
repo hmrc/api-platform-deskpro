@@ -18,8 +18,15 @@ package uk.gov.hmrc.apiplatformdeskpro.service
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+
 import uk.gov.hmrc.apiplatformdeskpro.connector.DeskproConnector
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproLinkedObject, DeskproOrganisationResponse, DeskproOrganisationWrapperResponse, DeskproPersonResponse, DeskproResponse}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{
+  DeskproLinkedObject,
+  DeskproOrganisationResponse,
+  DeskproOrganisationWrapperResponse,
+  DeskproPersonResponse,
+  DeskproResponse
+}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproOrganisation, DeskproPerson, OrganisationId}
 import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
