@@ -16,59 +16,80 @@
 
 package uk.gov.hmrc.apiplatformdeskpro.service
 
+import java.time.{Clock, Instant}
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, blocking}
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.connector.{DeskproConnector, DeveloperConnector}
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.DeskproPersonCreationResult
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.RegisteredUser
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproPersonAlreadyMigrated, DeskproPersonCreationDuplicate, DeskproPersonCreationResult, DeskproPersonCreationSuccess}
+import uk.gov.hmrc.apiplatformdeskpro.repository.MigratedUserRepository
+import uk.gov.hmrc.apiplatformdeskpro.repository.models.MigratedUser
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HeaderCarrier
-
-import scala.util.control.NonFatal
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 
 @Singleton
-class CreatePersonService @Inject() (deskproConnector: DeskproConnector, developerConnector: DeveloperConnector, config: AppConfig)(implicit val ec: ExecutionContext)
-    extends ApplicationLogger {
-
+class CreatePersonService @Inject() (
+    migratedUserRepository: MigratedUserRepository,
+    deskproConnector: DeskproConnector,
+    developerConnector: DeveloperConnector,
+    config: AppConfig,
+    val clock: Clock
+  )(implicit val ec: ExecutionContext
+  ) extends ApplicationLogger with ClockNow {
 
   // Not required currently. Retain for future reference
   //
-  // final def batchFutures[I](batchSize: Int, batchPause: Long, fn: I => Future[Unit])(input: Seq[I])(implicit ec: ExecutionContext): Future[Unit] = {
-  //   input.splitAt(batchSize) match {
-  //     case (Nil, Nil) => Future.successful(())
-  //     case (doNow: Seq[I], doLater: Seq[I]) =>
-  //       Future.sequence(doNow.map(fn)).flatMap( _ =>
-  //         Future(
-  //           blocking({logDebug("Done batch of items"); Thread.sleep(batchPause)})
-  //         )
-  //         .flatMap(_ => batchFutures(batchSize, batchPause, fn)(doLater))
-  //       )
-  //   }
-  // }
+   final def batchFutures[I](batchSize: Int, batchPause: Int, fn: I =>  Future[(UserId, DeskproPersonCreationResult)])(input: Seq[I])(implicit ec: ExecutionContext):  Future[Unit] = {
+     input.splitAt(batchSize) match {
+       case (Nil, Nil) => Future.successful(())
+       case (doNow: Seq[I], doLater: Seq[I]) =>
+         Future.sequence(doNow.map(fn)).flatMap( _ =>
+           Future(
+             blocking({
+               logger.info(s"batchsize is:$batchSize pausing batch for:$batchPause processing ${doNow.size} , ${doLater.size} still to process")
+               Thread.sleep(batchPause)
+             })
+           )
+           .flatMap(_ => batchFutures(batchSize, batchPause, fn)(doLater))
+         )
+     }
+   }
 
-  def functionToExecute()(implicit ec: ExecutionContext): Future[List[DeskproPersonCreationResult]] = {
-
-    def pushUserToDeskpro(u: RegisteredUser)(implicit ec: ExecutionContext) ={
-      deskproConnector.createPerson(u.userId, s"${u.firstName} ${u.lastName}", u.email.text)
-    }
+  def pushNewUsersToDeskpro()(implicit ec: ExecutionContext): Future[Unit] = {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    def executeBatch[A](list: List[Future[A]])(concurFactor: Int): Future[List[A]] = {
-      list.grouped(concurFactor).foldLeft(Future.successful(List.empty[A])) { (r: Future[List[A]], c: List[Future[A]]) =>
-        val batch = Future.sequence(c)
-        r.flatMap(rs => r.map(values => rs ++ values))
+    def pushUserToDeskpro(u: RegisteredUser)(implicit ec: ExecutionContext): Future[(UserId, DeskproPersonCreationResult)] = {
+
+      def handleDeskproResult(result: DeskproPersonCreationResult) = {
+        result match {
+          case DeskproPersonCreationSuccess   =>
+            logger.info(s"User ${u.userId} sent to DeskPro successfully")
+            migratedUserRepository.saveMigratedUser(MigratedUser(u.email, u.userId, Instant.now(clock)))
+          case DeskproPersonCreationDuplicate =>
+            logger.warn(s"User ${u.userId} already existed in Deskpro")
+            migratedUserRepository.saveMigratedUser(MigratedUser(u.email, u.userId, Instant.now(clock)))
+          case _ => Future.successful(())
+        }
       }
+
+      for {
+        maybeMigratedUser <- migratedUserRepository.findByUserId(u.userId)
+        deskproResult     <-
+          maybeMigratedUser.fold(deskproConnector.createPerson(u.userId, s"${u.firstName} ${u.lastName}", u.email.text))(_ => Future.successful(DeskproPersonAlreadyMigrated))
+        _                 <- handleDeskproResult(deskproResult)
+      } yield (u.userId, deskproResult)
+
     }
 
     for {
       users   <- developerConnector.searchDevelopers()
-      results <- executeBatch(users.map(pushUserToDeskpro))(100)
+      results <- batchFutures(config.deskproBatchSize, config.deskproBatchPause, pushUserToDeskpro)(users)
     } yield results
-//    developerConnector
-//      .searchDevelopers()
-//      .flatMap(users => Future.sequence())
+
   }
 
 }

@@ -35,4 +35,6 @@ class AppConfig @Inject() (config: ServicesConfig) {
   val deskproApiName: String         = config.getString("deskpro.api-name")
   val daysToLookBack: Int            = config.getInt("importUser.days-to-look-back")
   val thirdPartyDeveloperUrl: String = config.baseUrl("third-party-developer")
+  val deskproBatchSize: Int          = config.getInt("importUser.deskpro-batch-size")
+  val deskproBatchPause: Int = config.getInt("importUser.deskpro-batch-pause")
 }
