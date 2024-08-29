@@ -56,8 +56,6 @@ class DeveloperConnectorISpec extends AsyncHmrcSpec
       stubFor(
         get(urlPathEqualTo("/developers"))
           .withQueryParam("status", equalTo("VERIFIED"))
-          .withQueryParam("limit", equalTo("100"))
-          .withQueryParam("createdAfter", equalTo(DateTimeFormatter.BASIC_ISO_DATE.format(now.minusDays(1))))
           .willReturn(
             aResponse()
               .withBody("""[{"email":"bob.hope@business.com","userId":"6f0c4afa-1e10-44a1-8538-f5d436e7b615", "firstName":"Bob", "lastName":"Hope"},{"email":"emu.hull@business.com","userId":"a86857b3-732a-41c7-8d37-d29d5f416404", "firstName":"Emu", "lastName":"Hull"}]""")
@@ -70,8 +68,6 @@ class DeveloperConnectorISpec extends AsyncHmrcSpec
       stubFor(
         get(urlPathEqualTo("/developers"))
           .withQueryParam("status", equalTo("VERIFIED"))
-          .withQueryParam("limit", equalTo("100"))
-          .withQueryParam("createdAfter", equalTo(DateTimeFormatter.BASIC_ISO_DATE.format(now.minusDays(1))))
           .willReturn(
             aResponse()
               .withBody("""[]""")

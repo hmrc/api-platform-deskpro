@@ -38,9 +38,7 @@ class DeveloperConnector @Inject() (http: HttpClientV2, config: AppConfig, metri
 
   def searchDevelopers()(implicit hc: HeaderCarrier) = metrics.record(api) {
     val queryParams = Seq(
-      "status"       -> "VERIFIED",
-      "limit"        -> 100,
-      "createdAfter" -> DateTimeFormatter.BASIC_ISO_DATE.format(now().toLocalDate().minusDays(config.daysToLookBack))
+      "status"       -> "VERIFIED"
     )
     http.get(url"${requestUrl("/developers")}?$queryParams")
       .execute[List[RegisteredUser]]

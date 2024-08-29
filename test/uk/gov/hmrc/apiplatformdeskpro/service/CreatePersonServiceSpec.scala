@@ -115,7 +115,6 @@ class CreatePersonServiceSpec extends AsyncHmrcSpec with FixedClock {
       verify(mockDeskproConnector, times(0)).createPerson(eqTo(user1.userId), eqTo(s"$firstName1 $lastName1"), eqTo(email1))(*)
       verify(mockDeskproConnector, times(1)).createPerson(eqTo(user2.userId), eqTo(s"$firstName2 $lastName2"), eqTo(email2))(*)
       verify(mockMigrateUserRepository).saveMigratedUser(eqTo(MigratedUser(user2.email, user2.userId, now.toInstant(ZoneOffset.UTC))))
-
     }
   }
 }
