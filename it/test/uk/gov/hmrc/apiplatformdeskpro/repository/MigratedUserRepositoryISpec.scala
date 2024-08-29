@@ -14,23 +14,19 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apiplatformdeskpro
+package uk.gov.hmrc.apiplatformdeskpro.repository
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
-
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.testkit.NoMaterializer
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-
-import uk.gov.hmrc.apiplatformdeskpro.repository.MigratedUserRepository
-import uk.gov.hmrc.apiplatformdeskpro.repository.models.MigratedUser
 import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
-
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{LaxEmailAddress, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.MigratedUser
 
 class MigratedUserRepositoryISpec extends AsyncHmrcSpec
     with GuiceOneAppPerSuite

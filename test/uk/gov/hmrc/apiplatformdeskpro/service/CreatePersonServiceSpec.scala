@@ -25,8 +25,8 @@ import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{LaxEmailAddress, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.MigratedUser
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproPersonCreationFailure, DeskproPersonCreationSuccess}
-import uk.gov.hmrc.apiplatformdeskpro.repository.models.MigratedUser
 
 import java.time.Instant
 import scala.concurrent.Future

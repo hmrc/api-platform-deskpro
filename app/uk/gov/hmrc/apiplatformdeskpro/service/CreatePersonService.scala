@@ -24,11 +24,11 @@ import uk.gov.hmrc.apiplatformdeskpro.connector.{DeskproConnector, DeveloperConn
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.RegisteredUser
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproPersonAlreadyMigrated, DeskproPersonCreationDuplicate, DeskproPersonCreationResult, DeskproPersonCreationSuccess}
 import uk.gov.hmrc.apiplatformdeskpro.repository.MigratedUserRepository
-import uk.gov.hmrc.apiplatformdeskpro.repository.models.MigratedUser
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.MigratedUser
 
 @Singleton
 class CreatePersonService @Inject() (
