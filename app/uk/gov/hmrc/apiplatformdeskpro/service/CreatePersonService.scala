@@ -19,16 +19,18 @@ package uk.gov.hmrc.apiplatformdeskpro.service
 import java.time.{Clock, Instant}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future, blocking}
+
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.connector.{DeskproConnector, DeveloperConnector}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.RegisteredUser
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproPersonAlreadyMigrated, DeskproPersonCreationDuplicate, DeskproPersonCreationResult, DeskproPersonCreationSuccess}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.MigratedUser
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproPersonExistsInDb, DeskproPersonExistsInDeskpro, DeskproPersonCreationResult, DeskproPersonCreationSuccess}
 import uk.gov.hmrc.apiplatformdeskpro.repository.MigratedUserRepository
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HeaderCarrier
+
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.MigratedUser
 
 @Singleton
 class CreatePersonService @Inject() (
@@ -42,21 +44,21 @@ class CreatePersonService @Inject() (
 
   // Not required currently. Retain for future reference
   //
-   final def batchFutures[I](batchSize: Int, batchPause: Int, fn: I =>  Future[(UserId, DeskproPersonCreationResult)])(input: Seq[I])(implicit ec: ExecutionContext):  Future[Unit] = {
-     input.splitAt(batchSize) match {
-       case (Nil, Nil) => Future.successful(())
-       case (doNow: Seq[I], doLater: Seq[I]) =>
-         Future.sequence(doNow.map(fn)).flatMap( _ =>
-           Future(
-             blocking({
-               logger.info(s"batchsize is:$batchSize pausing batch for:$batchPause processing ${doNow.size} , ${doLater.size} still to process")
-               Thread.sleep(batchPause)
-             })
-           )
-           .flatMap(_ => batchFutures(batchSize, batchPause, fn)(doLater))
-         )
-     }
-   }
+  final def batchFutures[I](batchSize: Int, batchPause: Int, fn: I => Future[(UserId, DeskproPersonCreationResult)])(input: Seq[I])(implicit ec: ExecutionContext): Future[Unit] = {
+    input.splitAt(batchSize) match {
+      case (Nil, Nil)                       => Future.successful(())
+      case (doNow: Seq[I], doLater: Seq[I]) =>
+        Future.sequence(doNow.map(fn)).flatMap(_ =>
+          Future(
+            blocking({
+              logger.info(s"batchsize is:$batchSize pausing batch for:$batchPause processing ${doNow.size} , ${doLater.size} still to process")
+              Thread.sleep(batchPause)
+            })
+          )
+            .flatMap(_ => batchFutures(batchSize, batchPause, fn)(doLater))
+        )
+    }
+  }
 
   def pushNewUsersToDeskpro()(implicit ec: ExecutionContext): Future[Unit] = {
 
@@ -69,17 +71,17 @@ class CreatePersonService @Inject() (
           case DeskproPersonCreationSuccess   =>
             logger.info(s"User ${u.userId} sent to DeskPro successfully")
             migratedUserRepository.saveMigratedUser(MigratedUser(u.email, u.userId, Instant.now(clock)))
-          case DeskproPersonCreationDuplicate =>
+          case DeskproPersonExistsInDeskpro =>
             logger.warn(s"User ${u.userId} already existed in Deskpro")
             migratedUserRepository.saveMigratedUser(MigratedUser(u.email, u.userId, Instant.now(clock)))
-          case _ => Future.successful(())
+          case _                              => Future.successful(())
         }
       }
 
       for {
         maybeMigratedUser <- migratedUserRepository.findByUserId(u.userId)
         deskproResult     <-
-          maybeMigratedUser.fold(deskproConnector.createPerson(u.userId, s"${u.firstName} ${u.lastName}", u.email.text))(_ => Future.successful(DeskproPersonAlreadyMigrated))
+          maybeMigratedUser.fold(deskproConnector.createPerson(u.userId, s"${u.firstName} ${u.lastName}", u.email.text))(_ => Future.successful(DeskproPersonExistsInDb))
         _                 <- handleDeskproResult(deskproResult)
       } yield (u.userId, deskproResult)
 

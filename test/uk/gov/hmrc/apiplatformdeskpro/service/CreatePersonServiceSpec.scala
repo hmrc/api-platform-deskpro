@@ -16,20 +16,19 @@
 
 package uk.gov.hmrc.apiplatformdeskpro.service
 
+import java.time.{Instant, ZoneOffset}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.connector.{DeskproConnector, DeveloperConnector}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.RegisteredUser
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.MigratedUser
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproPersonExistsInDb, DeskproPersonExistsInDeskpro, DeskproPersonCreationFailure, DeskproPersonCreationSuccess}
 import uk.gov.hmrc.apiplatformdeskpro.repository.MigratedUserRepository
 import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{LaxEmailAddress, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.MigratedUser
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproPersonCreationFailure, DeskproPersonCreationSuccess}
-
-import java.time.Instant
-import scala.concurrent.Future
 
 class CreatePersonServiceSpec extends AsyncHmrcSpec with FixedClock {
 
@@ -89,7 +88,6 @@ class CreatePersonServiceSpec extends AsyncHmrcSpec with FixedClock {
 
     "skip user if user already in migrated users db" in new Setup {
       when(mockDeveloperConnector.searchDevelopers()(*)).thenReturn(Future.successful(getUsersResponse))
-//      when(mockDeskproConnector.createPerson(eqTo(user1.userId), eqTo(s"$firstName1 $lastName1"), eqTo(email1))(*)).thenReturn(Future.successful(DeskproPersonCreationFailure))
       when(mockDeskproConnector.createPerson(eqTo(user2.userId), eqTo(s"$firstName2 $lastName2"), eqTo(email2))(*)).thenReturn(Future.successful(DeskproPersonCreationSuccess))
       when(mockMigrateUserRepository.saveMigratedUser(*)).thenReturn(Future.successful(()))
       when(mockMigrateUserRepository.findByUserId(eqTo(user1.userId))).thenReturn(Future.successful(Some(MigratedUser(user1.email, user1.userId, Instant.now(clock)))))
@@ -99,6 +97,23 @@ class CreatePersonServiceSpec extends AsyncHmrcSpec with FixedClock {
       result shouldBe ()
       verify(mockDeskproConnector, times(0)).createPerson(eqTo(user1.userId), eqTo(s"$firstName1 $lastName1"), eqTo(email1))(*)
       verify(mockDeskproConnector, times(1)).createPerson(eqTo(user2.userId), eqTo(s"$firstName2 $lastName2"), eqTo(email2))(*)
+    }
+
+    "if user1 migrated but user2 allready in deskpro, ensure user 2 is saved in db" in new Setup {
+      when(mockDeveloperConnector.searchDevelopers()(*)).thenReturn(Future.successful(getUsersResponse))
+      when(mockDeskproConnector.createPerson(eqTo(user1.userId), eqTo(s"$firstName1 $lastName1"), eqTo(email1))(*)).thenReturn(Future.successful(DeskproPersonCreationSuccess))
+      when(mockDeskproConnector.createPerson(eqTo(user2.userId), eqTo(s"$firstName2 $lastName2"), eqTo(email2))(*)).thenReturn(Future.successful(DeskproPersonExistsInDeskpro))
+      when(mockMigrateUserRepository.saveMigratedUser(eqTo(MigratedUser(user2.email, user2.userId, now.toInstant(ZoneOffset.UTC))))).thenReturn(Future.successful(()))
+      when(mockMigrateUserRepository.findByUserId(eqTo(user1.userId))).thenReturn(Future.successful(Some(MigratedUser(user1.email, user1.userId, Instant.now(clock)))))
+      when(mockMigrateUserRepository.findByUserId(eqTo(user2.userId))).thenReturn(Future.successful(None))
+
+      val result = await(underTest.pushNewUsersToDeskpro())
+
+      result shouldBe ()
+      verify(mockDeskproConnector, times(0)).createPerson(eqTo(user1.userId), eqTo(s"$firstName1 $lastName1"), eqTo(email1))(*)
+      verify(mockDeskproConnector, times(1)).createPerson(eqTo(user2.userId), eqTo(s"$firstName2 $lastName2"), eqTo(email2))(*)
+      verify(mockMigrateUserRepository).saveMigratedUser(eqTo(MigratedUser(user2.email, user2.userId, now.toInstant(ZoneOffset.UTC))))
+
     }
 
     // user exist in db... ensure not sent to deskpro

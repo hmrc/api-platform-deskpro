@@ -36,5 +36,5 @@ class AppConfig @Inject() (config: ServicesConfig) {
   val daysToLookBack: Int            = config.getInt("importUser.days-to-look-back")
   val thirdPartyDeveloperUrl: String = config.baseUrl("third-party-developer")
   val deskproBatchSize: Int          = config.getInt("importUser.deskpro-batch-size")
-  val deskproBatchPause: Int = config.getInt("importUser.deskpro-batch-pause")
+  val deskproBatchPause: Int         = config.getInt("importUser.deskpro-batch-pause")
 }
