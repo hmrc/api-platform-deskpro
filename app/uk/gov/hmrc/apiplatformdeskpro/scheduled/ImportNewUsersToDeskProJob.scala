@@ -43,6 +43,7 @@ class ImportNewUsersToDeskProJob @Inject() (
 
   val initialDelay = configuration.get[FiniteDuration]("importUser.initialDelay")
   val interval     = configuration.get[FiniteDuration]("importUser.interval")
+  val jobEnabled   = configuration.get[Boolean]("importUser.enabled")
 
   val lockService =
     ScheduledLockService(
@@ -51,15 +52,19 @@ class ImportNewUsersToDeskProJob @Inject() (
       timestampSupport = timestampSupport,
       schedulerInterval = interval
     )
-
-  actorSystem.scheduler.scheduleWithFixedDelay(initialDelay, interval) { () =>
-    // now use the lock
-    lockService.withLock {
-      createPersonService.pushNewUsersToDeskpro()
-    }.map {
-      case Some(res) => logger.debug(s"Finished with $res. Lock has been released.")
-      case None      => logger.debug("Failed to take lock")
+  if (jobEnabled) {
+    logger.info("ImportNewUsersToDeskProJob enabled")
+    actorSystem.scheduler.scheduleWithFixedDelay(initialDelay, interval) { () =>
+      // now use the lock
+      lockService.withLock {
+        createPersonService.pushNewUsersToDeskpro()
+      }.map {
+        case Some(res) => logger.info(s"Finished with $res. Lock has been released.")
+        case None      => logger.info("Failed to take lock")
+      }
     }
+  } else {
+    logger.info("ImportNewUsersToDeskProJob disabled")
   }
 }
 // $COVERAGE-ON$
