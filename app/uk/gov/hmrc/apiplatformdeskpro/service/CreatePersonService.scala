@@ -24,7 +24,7 @@ import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.connector.{DeskproConnector, DeveloperConnector}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.RegisteredUser
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.MigratedUser
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproPersonExistsInDb, DeskproPersonExistsInDeskpro, DeskproPersonCreationResult, DeskproPersonCreationSuccess}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproPersonCreationResult, DeskproPersonCreationSuccess, DeskproPersonExistsInDb, DeskproPersonExistsInDeskpro}
 import uk.gov.hmrc.apiplatformdeskpro.repository.MigratedUserRepository
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HeaderCarrier
@@ -68,13 +68,13 @@ class CreatePersonService @Inject() (
 
       def handleDeskproResult(result: DeskproPersonCreationResult) = {
         result match {
-          case DeskproPersonCreationSuccess   =>
+          case DeskproPersonCreationSuccess =>
             logger.info(s"User ${u.userId} sent to DeskPro successfully")
             migratedUserRepository.saveMigratedUser(MigratedUser(u.email, u.userId, Instant.now(clock)))
           case DeskproPersonExistsInDeskpro =>
             logger.warn(s"User ${u.userId} already existed in Deskpro")
             migratedUserRepository.saveMigratedUser(MigratedUser(u.email, u.userId, Instant.now(clock)))
-          case _                              => Future.successful(())
+          case _                            => Future.successful(())
         }
       }
 

@@ -19,14 +19,16 @@ package uk.gov.hmrc.apiplatformdeskpro.service
 import java.time.{Instant, ZoneOffset}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.connector.{DeskproConnector, DeveloperConnector}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.RegisteredUser
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.MigratedUser
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproPersonExistsInDb, DeskproPersonExistsInDeskpro, DeskproPersonCreationFailure, DeskproPersonCreationSuccess}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproPersonCreationFailure, DeskproPersonCreationSuccess, DeskproPersonExistsInDeskpro}
 import uk.gov.hmrc.apiplatformdeskpro.repository.MigratedUserRepository
 import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
 import uk.gov.hmrc.http.HeaderCarrier
+
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{LaxEmailAddress, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
@@ -115,8 +117,5 @@ class CreatePersonServiceSpec extends AsyncHmrcSpec with FixedClock {
       verify(mockMigrateUserRepository).saveMigratedUser(eqTo(MigratedUser(user2.email, user2.userId, now.toInstant(ZoneOffset.UTC))))
 
     }
-
-    // user exist in db... ensure not sent to deskpro
-    // if user1 migrated but  user2 allready in deskpro... ensure user 2 is saved in db
   }
 }
