@@ -17,7 +17,6 @@
 package uk.gov.hmrc.apiplatformdeskpro.connector
 
 import java.time._
-import java.time.format.DateTimeFormatter
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite

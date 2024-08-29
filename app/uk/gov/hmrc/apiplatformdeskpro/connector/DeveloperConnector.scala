@@ -17,7 +17,6 @@
 package uk.gov.hmrc.apiplatformdeskpro.connector
 
 import java.time._
-import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
@@ -38,7 +37,7 @@ class DeveloperConnector @Inject() (http: HttpClientV2, config: AppConfig, metri
 
   def searchDevelopers()(implicit hc: HeaderCarrier) = metrics.record(api) {
     val queryParams = Seq(
-      "status"       -> "VERIFIED"
+      "status" -> "VERIFIED"
     )
     http.get(url"${requestUrl("/developers")}?$queryParams")
       .execute[List[RegisteredUser]]

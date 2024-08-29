@@ -16,8 +16,10 @@
 
 package uk.gov.hmrc.apiplatformdeskpro.scheduled
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.UserId
-import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
+import java.time.{Clock, Instant}
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future, blocking}
+
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.connector.{DeskproConnector, DeveloperConnector}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.RegisteredUser
@@ -27,9 +29,8 @@ import uk.gov.hmrc.apiplatformdeskpro.repository.MigratedUserRepository
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HeaderCarrier
 
-import java.time.{Clock, Instant}
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future, blocking}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 
 @Singleton
 class CreatePersonService @Inject() (
