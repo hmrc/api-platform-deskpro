@@ -14,10 +14,16 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apiplatformdeskpro.domain.models
+package uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo
 
-sealed trait DeskproPersonCreationResult
-object DeskproPersonCreationSuccess extends DeskproPersonCreationResult
-object DeskproPersonCreationFailure extends DeskproPersonCreationResult
-object DeskproPersonExistsInDeskpro extends DeskproPersonCreationResult
-object DeskproPersonExistsInDb      extends DeskproPersonCreationResult
+import java.time.Instant
+
+import play.api.libs.json.{Json, OFormat}
+
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{LaxEmailAddress, UserId}
+
+case class MigratedUser(emailAddress: LaxEmailAddress, userId: UserId, migratedAt: Instant)
+
+object MigratedUser {
+  implicit val format: OFormat[MigratedUser] = Json.format[MigratedUser]
+}

@@ -101,7 +101,7 @@ class DeskproConnectorISpec
         CreatePerson.stubDupeEmailError()
 
         val result: DeskproPersonCreationResult = await(objInTest.createPerson(UserId.random, deskproPerson.name, deskproPerson.email))
-        result shouldBe DeskproPersonCreationDuplicate
+        result shouldBe DeskproPersonExistsInDeskpro
       }
 
       "return DeskproPersonCreationFailure returned in response body when 400" in new Setup {

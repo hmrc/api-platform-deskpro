@@ -32,5 +32,4 @@ trait ConfigBuilder {
     "deskpro.team-member-email"                        -> "6",
     "metrics.jvm"                                      -> false
   )
-
 }

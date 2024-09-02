@@ -74,7 +74,7 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
             DeskproPersonCreationSuccess
           case BAD_REQUEST if response.body.contains("dupe_email") =>
             logger.info(s"Deskpro person creation '$userId' duplicate email warning")
-            DeskproPersonCreationDuplicate
+            DeskproPersonExistsInDeskpro
           case BAD_REQUEST                                         =>
             logger.error(s"Deskpro person creation '$userId' failed Bad request other errorCode")
             DeskproPersonCreationFailure
