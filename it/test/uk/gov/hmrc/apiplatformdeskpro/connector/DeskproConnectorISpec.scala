@@ -26,7 +26,7 @@ import uk.gov.hmrc.apiplatformdeskpro.stubs.DeskproStub
 import uk.gov.hmrc.apiplatformdeskpro.utils.{AsyncHmrcSpec, ConfigBuilder, WireMockSupport}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, UserId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, LaxEmailAddress, UserId}
 
 class DeskproConnectorISpec
     extends AsyncHmrcSpec
@@ -122,12 +122,12 @@ class DeskproConnectorISpec
 
     "getOrganisationWithPeopleById" should {
       "return DeskproResponse when 200 returned from deskpro with response body" in new Setup {
-        val orgId: OrganisationId   = OrganisationId("1")
+        val orgId: OrganisationId              = OrganisationId("1")
         GetOrganisationWithPeopleById.stubSuccess(orgId)
-        val result: DeskproResponse = await(objInTest.getOrganisationWithPeopleById(orgId))
+        val result: DeskproLinkedPersonWrapper = await(objInTest.getOrganisationWithPeopleById(orgId))
 
-        val expectedResponse: DeskproResponse = DeskproResponse(
-          DeskproLinkedObject(
+        val expectedResponse: DeskproLinkedPersonWrapper = DeskproLinkedPersonWrapper(
+          DeskproLinkedPersonObject(
             person = Map(
               "63" -> DeskproPersonResponse(Some("bob@example.com"), "Bob Emu"),
               "3"  -> DeskproPersonResponse(None, "Jeff Smith")
@@ -138,12 +138,12 @@ class DeskproConnectorISpec
       }
 
       "return DeskproResponse when 200 returned from deskpro with response body without people in" in new Setup {
-        val orgId: OrganisationId   = OrganisationId("1")
+        val orgId: OrganisationId              = OrganisationId("1")
         GetOrganisationWithPeopleById.stubSuccessNoPerson(orgId)
-        val result: DeskproResponse = await(objInTest.getOrganisationWithPeopleById(orgId))
+        val result: DeskproLinkedPersonWrapper = await(objInTest.getOrganisationWithPeopleById(orgId))
 
-        val expectedResponse: DeskproResponse = DeskproResponse(
-          DeskproLinkedObject(
+        val expectedResponse: DeskproLinkedPersonWrapper = DeskproLinkedPersonWrapper(
+          DeskproLinkedPersonObject(
             person = Map()
           )
         )
@@ -178,6 +178,16 @@ class DeskproConnectorISpec
       intercept[UpstreamErrorResponse] {
         await(objInTest.getOrganisationById(orgId))
       }
+    }
+  }
+
+  "getOrganisationForPersonEmail" should {
+    "return DeskproLinkedOrganisationWrapper when 200 returned from deskpro with response body" in new Setup {
+      GetOrganisationsByEmail.stubSuccess(LaxEmailAddress("bob@example.com"))
+
+      val result = await(objInTest.getOrganisationsForPersonEmail(LaxEmailAddress("bob@example.com")))
+
+      println(s"${result.toString()}")
     }
   }
 
