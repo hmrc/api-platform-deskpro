@@ -43,7 +43,6 @@ object DeskproLinkedOrganisationObject {
   implicit val reads: Reads[DeskproLinkedOrganisationObject] = (__ \ "organization")
     .readWithDefault(Map.empty[String, DeskproOrganisationResponse])
     .map(DeskproLinkedOrganisationObject(_))
-
 }
 
 case class DeskproLinkedOrganisationWrapper(linked: DeskproLinkedOrganisationObject)
@@ -59,7 +58,6 @@ object DeskproLinkedPersonObject {
   implicit val reads: Reads[DeskproLinkedPersonObject] = (__ \ "person")
     .readWithDefault(Map.empty[String, DeskproPersonResponse])
     .map(DeskproLinkedPersonObject(_))
-
 }
 
 case class DeskproLinkedPersonWrapper(linked: DeskproLinkedPersonObject)
