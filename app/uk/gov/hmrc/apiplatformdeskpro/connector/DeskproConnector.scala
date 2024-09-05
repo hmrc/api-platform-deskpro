@@ -44,6 +44,9 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
 
   val DESKPRO_QUERY_HEADER = "X-Deskpro-Api-Get-Query-Body"
 
+  // this is the query header value required for the body of the POST request to be treated as a query
+  val DESKPRO_QUERY_MODE_ON = "1"
+
   lazy val serviceBaseUrl: String = config.deskproUrl
   val api: API                    = API("deskpro")
 
@@ -115,7 +118,7 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
         .post(url"${requestUrl(s"/api/v2/people")}")
         .withProxy
         .setHeader(AUTHORIZATION -> config.deskproApiKey)
-        .setHeader(DESKPRO_QUERY_HEADER -> "1") // todo explain
+        .setHeader(DESKPRO_QUERY_HEADER -> DESKPRO_QUERY_MODE_ON)
         .withBody(Json.parse(
           s"""
              |{
