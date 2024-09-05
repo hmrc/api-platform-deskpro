@@ -512,6 +512,14 @@ trait DeskproStub {
     def stubSuccess(email: LaxEmailAddress) = {
       stubFor(
         post(urlPathEqualTo(s"/api/v2/people"))
+          .withRequestBody(equalToJson(
+            s"""
+               |{
+               |  "primary_email":"${email.text}",
+               |  "include": "organization_member,organization"
+               |}
+               |""".stripMargin
+          ))
           .willReturn(
             aResponse()
               .withBody("""
@@ -691,16 +699,23 @@ trait DeskproStub {
                           |    }
                           |  }
                           |}
-                          |
                           |""".stripMargin)
               .withStatus(OK)
           )
       )
     }
 
-    def stubFailure(organisationId: OrganisationId) = {
+    def stubFailure(email: LaxEmailAddress) = {
       stubFor(
-        get(urlPathEqualTo(s"/api/v2/organizations/$organisationId"))
+        post(urlPathEqualTo(s"/api/v2/people"))
+          .withRequestBody(equalToJson(
+            s"""
+               |{
+               |  "primary_email":"${email.text}",
+               |  "include": "organization_member,organization"
+               |}
+               |""".stripMargin
+          ))
           .willReturn(
             aResponse()
               .withBody("{}")
