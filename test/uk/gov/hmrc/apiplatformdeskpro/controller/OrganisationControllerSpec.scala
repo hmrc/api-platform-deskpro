@@ -20,6 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 import play.api.http.Status.OK
+import play.api.libs.json.Json
 import play.api.mvc.{ControllerComponents, Result}
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers, StubControllerComponentsFactory, StubPlayBodyParsersFactory}
@@ -27,6 +28,8 @@ import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproPerson, Organisation
 import uk.gov.hmrc.apiplatformdeskpro.service.OrganisationService
 import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
+
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
 class OrganisationControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFactory with StubPlayBodyParsersFactory {
 
@@ -38,14 +41,18 @@ class OrganisationControllerSpec extends AsyncHmrcSpec with StubControllerCompon
 
     val objToTest = new OrganisationController(mockService, cc)
 
-    val orgName                        = "Test Orgname"
-    val personName                     = "Bob Emu"
-    val personEmail                    = "email@address.com"
-    val organisationId: OrganisationId = OrganisationId("2")
+    val orgId1: OrganisationId = OrganisationId("1")
+    val orgName1               = "Test Orgname 1"
+
+    val orgId2: OrganisationId = OrganisationId("2")
+    val orgName2               = "Test Orgname 2"
+
+    val personName  = "Bob Emu"
+    val personEmail = "email@address.com"
 
     val response = DeskproOrganisation(
-      organisationId = organisationId,
-      organisationName = orgName,
+      organisationId = orgId1,
+      organisationName = orgName1,
       people = List(DeskproPerson(personName, personEmail))
     )
 
@@ -56,22 +63,23 @@ class OrganisationControllerSpec extends AsyncHmrcSpec with StubControllerCompon
 
       when(mockService.getOrganisationById(*[OrganisationId])(*)).thenReturn(Future.successful(response))
 
-      val request = FakeRequest(GET, s"/organisation/$organisationId")
+      val request = FakeRequest(GET, s"/organisation/$orgId1")
 
-      val result: Future[Result] = objToTest.getOrganisation(organisationId)(request)
+      val result: Future[Result] = objToTest.getOrganisation(orgId1)(request)
 
       status(result) shouldBe OK
       contentAsJson(result).as[DeskproOrganisation] shouldBe response
 
-      verify(mockService).getOrganisationById(eqTo(organisationId))(*)
+      verify(mockService).getOrganisationById(eqTo(orgId1))(*)
     }
+
     "return 404 with organisation when no Data" in new Setup {
 
       when(mockService.getOrganisationById(*[OrganisationId])(*)).thenReturn(Future.failed(UpstreamErrorResponse("Not found", 404)))
 
-      val request = FakeRequest(GET, s"/organisation/$organisationId")
+      val request = FakeRequest(GET, s"/organisation/$orgId1")
 
-      val result: Future[Result] = objToTest.getOrganisation(organisationId)(request)
+      val result: Future[Result] = objToTest.getOrganisation(orgId1)(request)
 
       status(result) shouldBe NOT_FOUND
       contentAsString(result) shouldBe "{\"code\":\"ORGANISATION_NOT_FOUND\",\"message\":\"Not found\"}"
@@ -81,13 +89,77 @@ class OrganisationControllerSpec extends AsyncHmrcSpec with StubControllerCompon
 
       when(mockService.getOrganisationById(*[OrganisationId])(*)).thenReturn(Future.failed(UpstreamErrorResponse("Unauthorized", 401)))
 
-      val request = FakeRequest(GET, s"/organisation/$organisationId")
+      val request = FakeRequest(GET, s"/organisation/$orgId1")
 
-      val result: Future[Result] = objToTest.getOrganisation(organisationId)(request)
+      val result: Future[Result] = objToTest.getOrganisation(orgId1)(request)
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
-      contentAsString(result) shouldBe "{\"code\":\"UNKNOWN_ERROR\",\"message\":\"Unknown error occurred\"}"
+      contentAsString(result) shouldBe """{"code":"UNKNOWN_ERROR","message":"Unknown error occurred"}"""
+    }
 
+    "getOrganisationForPersonEmail" should {
+      "return 200 with organisation when data returned from service" in new Setup {
+        val org1 = DeskproOrganisation(orgId1, orgName1, List())
+        val org2 = DeskproOrganisation(orgId2, orgName2, List())
+
+        when(mockService.getOrganisationsByEmail(*[LaxEmailAddress])(*))
+          .thenReturn(Future.successful(List(org1, org2)))
+
+        val request = FakeRequest(POST, "/organisation/query")
+          .withJsonBody(Json.parse(s"""{"email": "$personEmail"}"""))
+
+        val result = objToTest.getOrganisationsByPersonEmail()(request)
+
+        val expectedResponse = Json.parse(
+          s"""
+          [
+            {
+              "organisationId": "$orgId1",
+              "organisationName": "$orgName1",
+              "people": []
+            },
+            {
+              "organisationId": "$orgId2",
+              "organisationName": "$orgName2",
+              "people": []
+            }
+          ]
+          """
+        )
+
+        status(result) shouldBe OK
+        contentAsJson(result) shouldBe expectedResponse
+
+        verify(mockService).getOrganisationsByEmail(eqTo(LaxEmailAddress(personEmail)))(*)
+      }
+
+      "return empty array when no data returned from service" in new Setup {
+        when(mockService.getOrganisationsByEmail(*[LaxEmailAddress])(*))
+          .thenReturn(Future.successful(List.empty))
+
+        val request = FakeRequest(POST, "/organisation/query")
+          .withJsonBody(Json.parse(s"""{"email": "$personEmail"}"""))
+
+        val result = objToTest.getOrganisationsByPersonEmail()(request)
+
+        val expectedResponse = Json.parse("[]")
+
+        status(result) shouldBe OK
+        contentAsJson(result) shouldBe expectedResponse
+      }
+
+      "return 500 with when error returned from service" in new Setup {
+        when(mockService.getOrganisationsByEmail(*[LaxEmailAddress])(*))
+          .thenReturn(Future.failed(UpstreamErrorResponse("Error", 500)))
+
+        val request = FakeRequest(POST, "/organisation/query")
+          .withJsonBody(Json.parse(s"""{"email": "$personEmail"}"""))
+
+        val result = objToTest.getOrganisationsByPersonEmail()(request)
+
+        status(result) shouldBe INTERNAL_SERVER_ERROR
+        contentAsString(result) shouldBe """{"code":"UNKNOWN_ERROR","message":"Unknown error occurred"}"""
+      }
     }
   }
 }

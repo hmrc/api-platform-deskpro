@@ -20,16 +20,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 import uk.gov.hmrc.apiplatformdeskpro.connector.DeskproConnector
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{
-  DeskproLinkedObject,
-  DeskproOrganisationResponse,
-  DeskproOrganisationWrapperResponse,
-  DeskproPersonResponse,
-  DeskproResponse
-}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector._
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproOrganisation, DeskproPerson, OrganisationId}
 import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
+
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
 class OrganisationServiceSpec extends AsyncHmrcSpec {
 
@@ -53,8 +49,8 @@ class OrganisationServiceSpec extends AsyncHmrcSpec {
     "getOrganisationById" should {
       "successfully return DeskproOrganisation when both organisation and people are returned from connector" in new Setup {
 
-        val peopleResponse = DeskproResponse(
-          DeskproLinkedObject(
+        val peopleResponse = DeskproLinkedPersonWrapper(
+          DeskproLinkedPersonObject(
             person = Map(
               "1" -> DeskproPersonResponse(Some(personEmail1), personName1),
               "2" -> DeskproPersonResponse(None, personName2)
@@ -75,8 +71,8 @@ class OrganisationServiceSpec extends AsyncHmrcSpec {
       }
 
       "successfully return DeskproOrganisation when an organisation but no people are returned from connector" in new Setup {
-        val peopleResponse = DeskproResponse(
-          DeskproLinkedObject(person = Map())
+        val peopleResponse = DeskproLinkedPersonWrapper(
+          DeskproLinkedPersonObject(person = Map())
         )
         when(mockDeskproConnector.getOrganisationById(*[OrganisationId])(*)).thenReturn(Future.successful(orgResponse))
 
@@ -107,6 +103,50 @@ class OrganisationServiceSpec extends AsyncHmrcSpec {
           await(underTest.getOrganisationById(organisationId1))
         }
 
+      }
+    }
+  }
+
+  "getOrganisationsByEmail" should {
+    "successfully return DeskproOrganisation when organisations are returned from connector" in new Setup {
+
+      val organisationWrapper = DeskproLinkedOrganisationWrapper(
+        DeskproLinkedOrganisationObject(Map(
+          organisationId1.value -> DeskproOrganisationResponse(organisationId1.value.toInt, orgName1),
+          organisationId2.value -> DeskproOrganisationResponse(organisationId2.value.toInt, orgName2)
+        ))
+      )
+
+      when(mockDeskproConnector.getOrganisationsForPersonEmail(*[LaxEmailAddress])(*))
+        .thenReturn(Future.successful(organisationWrapper))
+
+      val result = await(underTest.getOrganisationsByEmail(LaxEmailAddress(personEmail1)))
+
+      val expectedResult = List(
+        DeskproOrganisation(organisationId1, orgName1, List()),
+        DeskproOrganisation(organisationId2, orgName2, List())
+      )
+
+      result shouldBe expectedResult
+    }
+
+    "return empty list when no organisations are returned from connector" in new Setup {
+      val organisationWrapper = DeskproLinkedOrganisationWrapper(DeskproLinkedOrganisationObject(Map.empty))
+
+      when(mockDeskproConnector.getOrganisationsForPersonEmail(*[LaxEmailAddress])(*))
+        .thenReturn(Future.successful(organisationWrapper))
+
+      val result = await(underTest.getOrganisationsByEmail(LaxEmailAddress(personEmail1)))
+
+      result shouldBe List.empty
+    }
+
+    "propagate an Upstream error in getOrganisationsForPersonEmail" in new Setup {
+      when(mockDeskproConnector.getOrganisationsForPersonEmail(*[LaxEmailAddress])(*))
+        .thenReturn(Future.failed(UpstreamErrorResponse("auth fail", 401)))
+
+      intercept[UpstreamErrorResponse] {
+        await(underTest.getOrganisationsByEmail(LaxEmailAddress(personEmail1)))
       }
     }
   }

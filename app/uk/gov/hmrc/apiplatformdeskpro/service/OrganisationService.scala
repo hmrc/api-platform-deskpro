@@ -24,6 +24,8 @@ import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproOrganisation, Deskpr
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+
 @Singleton
 class OrganisationService @Inject() (deskproConnector: DeskproConnector)(implicit val ec: ExecutionContext) extends ApplicationLogger {
 
@@ -37,4 +39,12 @@ class OrganisationService @Inject() (deskproConnector: DeskproConnector)(implici
     } yield DeskproOrganisation(organisationId, org.name, people)
   }
 
+  def getOrganisationsByEmail(email: LaxEmailAddress)(implicit hc: HeaderCarrier): Future[List[DeskproOrganisation]] = {
+    deskproConnector.getOrganisationsForPersonEmail(email)
+      .map { organisationWrapper =>
+        organisationWrapper.linked.organisations.values.map { org =>
+          DeskproOrganisation(OrganisationId(org.id.toString), org.name, List.empty)
+        }.toList
+      }
+  }
 }
