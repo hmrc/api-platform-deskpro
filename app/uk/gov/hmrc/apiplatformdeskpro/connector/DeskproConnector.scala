@@ -24,13 +24,7 @@ import play.api.http.Status.{BAD_REQUEST, CREATED, UNAUTHORIZED}
 import play.api.libs.json.Json
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.domain.models._
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{
-  DeskproLinkedOrganisationWrapper,
-  DeskproLinkedPersonWrapper,
-  DeskproOrganisationWrapperResponse,
-  DeskproTicket,
-  DeskproTicketCreated
-}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector._
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.client.HttpClientV2
@@ -119,14 +113,7 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
         .withProxy
         .setHeader(AUTHORIZATION -> config.deskproApiKey)
         .setHeader(DESKPRO_QUERY_HEADER -> DESKPRO_QUERY_MODE_ON)
-        .withBody(Json.parse(
-          s"""
-             |{
-             |  "primary_email":"${email.text}",
-             |  "include": "organization_member,organization"
-             |}
-             |""".stripMargin
-        ))
+        .withBody(Json.toJson(GetOrganisationByPersonEmailRequest(email.text)))
         .execute[DeskproLinkedOrganisationWrapper]
     }
   }
