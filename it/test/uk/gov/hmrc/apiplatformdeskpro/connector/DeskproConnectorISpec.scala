@@ -121,40 +121,50 @@ class DeskproConnectorISpec
     }
 
     "getOrganisationWithPeopleById" should {
-      "return DeskproResponse when 200 returned from deskpro with response body" in new Setup {
-        val orgId: OrganisationId              = OrganisationId("1")
-        GetOrganisationWithPeopleById.stubSuccess(orgId)
-        val result: DeskproLinkedPersonWrapper = await(objInTest.getOrganisationWithPeopleById(orgId))
+      val defaultMeta: DeskproMetaResponse = DeskproMetaResponse(DeskproPaginationResponse(1, 1))
 
-        val expectedResponse: DeskproLinkedPersonWrapper = DeskproLinkedPersonWrapper(
-          DeskproLinkedPersonObject(
-            person = Map(
-              "63" -> DeskproPersonResponse(Some("bob@example.com"), "Bob Emu"),
-              "3"  -> DeskproPersonResponse(None, "Jeff Smith")
-            )
-          )
+      "return DeskproLinkedPersonWrapper when 200 returned from deskpro with response body" in new Setup {
+        val orgId: OrganisationId         = OrganisationId("1")
+        GetPeopleByOrganisationId.stubSuccess(orgId)
+        val result: DeskproPeopleResponse = await(objInTest.getPeopleByOrganisationId(orgId))
+
+        val expectedResponse = DeskproPeopleResponse(
+          List(DeskproPersonResponse(None, "Jeff Smith"), DeskproPersonResponse(Some("bob@example.com"), "Bob Emu")),
+          defaultMeta
         )
         result shouldBe expectedResponse
       }
 
-      "return DeskproResponse when 200 returned from deskpro with response body without people in" in new Setup {
-        val orgId: OrganisationId              = OrganisationId("1")
-        GetOrganisationWithPeopleById.stubSuccessNoPerson(orgId)
-        val result: DeskproLinkedPersonWrapper = await(objInTest.getOrganisationWithPeopleById(orgId))
+      "return DeskproLinkedPersonWrapper when 200 returned from deskpro with response body when asking for 2nd page" in new Setup {
+        val orgId: OrganisationId = OrganisationId("1")
+        private val pageWanted    = 2
+        GetPeopleByOrganisationId.stubSuccess(orgId, pageWanted)
+        val result                = await(objInTest.getPeopleByOrganisationId(orgId, pageWanted))
 
-        val expectedResponse: DeskproLinkedPersonWrapper = DeskproLinkedPersonWrapper(
-          DeskproLinkedPersonObject(
-            person = Map()
-          )
+        val expectedResponse = DeskproPeopleResponse(
+          List(DeskproPersonResponse(None, "Jeff Smith"), DeskproPersonResponse(Some("bob@example.com"), "Bob Emu")),
+          defaultMeta
+        )
+        result shouldBe expectedResponse
+      }
+
+      "return DeskproLinkedPersonWrapper when 200 returned from deskpro with response body without people in" in new Setup {
+        val orgId: OrganisationId         = OrganisationId("1")
+        GetPeopleByOrganisationId.stubSuccessNoPerson(orgId)
+        val result: DeskproPeopleResponse = await(objInTest.getPeopleByOrganisationId(orgId))
+
+        val expectedResponse: DeskproPeopleResponse = DeskproPeopleResponse(
+          List.empty,
+          defaultMeta
         )
         result shouldBe expectedResponse
       }
 
       "throw UpstreamErrorResponse when error response returned from deskpro" in new Setup {
         val orgId: OrganisationId = OrganisationId("1")
-        GetOrganisationWithPeopleById.stubFailure(orgId)
+        GetPeopleByOrganisationId.stubFailure(orgId)
         intercept[UpstreamErrorResponse] {
-          await(objInTest.getOrganisationWithPeopleById(orgId))
+          await(objInTest.getPeopleByOrganisationId(orgId))
         }
       }
     }
