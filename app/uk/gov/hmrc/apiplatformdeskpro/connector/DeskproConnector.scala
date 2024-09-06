@@ -90,12 +90,13 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
       )
   }
 
-  def getOrganisationWithPeopleById(organisationId: OrganisationId)(implicit hc: HeaderCarrier): Future[DeskproLinkedPersonWrapper] = metrics.record(api) {
+  def getPeopleByOrganisationId(organisationId: OrganisationId, pageWanted: Int = 1)(implicit hc: HeaderCarrier): Future[DeskproPeopleResponse] = metrics.record(api) {
+    val queryParams = Seq("organization" -> organisationId, "count" -> 200, "page" -> pageWanted)
     http
-      .get(url"${requestUrl(s"/api/v2/organizations/$organisationId/members")}?include=person")
+      .get(url"${requestUrl(s"/api/v2/people")}?$queryParams")
       .withProxy
       .setHeader(AUTHORIZATION -> config.deskproApiKey)
-      .execute[DeskproLinkedPersonWrapper]
+      .execute[DeskproPeopleResponse]
   }
 
   def getOrganisationById(organisationId: OrganisationId)(implicit hc: HeaderCarrier): Future[DeskproOrganisationWrapperResponse] = metrics.record(api) {

@@ -16,24 +16,25 @@
 
 package uk.gov.hmrc.apiplatformdeskpro.domain.models.connector
 
+import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json._
 
 case class DeskproOrganisationResponse(id: Int, name: String)
 
 object DeskproOrganisationResponse {
-  implicit val format: Reads[DeskproOrganisationResponse] = Json.reads[DeskproOrganisationResponse]
+  implicit val reads: Reads[DeskproOrganisationResponse] = Json.reads[DeskproOrganisationResponse]
 }
 
 case class DeskproOrganisationWrapperResponse(data: DeskproOrganisationResponse)
 
 object DeskproOrganisationWrapperResponse {
-  implicit val format: Reads[DeskproOrganisationWrapperResponse] = Json.reads[DeskproOrganisationWrapperResponse]
+  implicit val reads: Reads[DeskproOrganisationWrapperResponse] = Json.reads[DeskproOrganisationWrapperResponse]
 }
 
 case class DeskproPersonResponse(primary_email: Option[String], name: String)
 
 object DeskproPersonResponse {
-  implicit val format: Reads[DeskproPersonResponse] = Json.reads[DeskproPersonResponse]
+  implicit val reads: Reads[DeskproPersonResponse] = Json.reads[DeskproPersonResponse]
 }
 
 case class DeskproLinkedOrganisationObject(organisations: Map[String, DeskproOrganisationResponse])
@@ -44,24 +45,30 @@ object DeskproLinkedOrganisationObject {
     .readWithDefault(Map.empty[String, DeskproOrganisationResponse])
     .map(DeskproLinkedOrganisationObject(_))
 }
-
 case class DeskproLinkedOrganisationWrapper(linked: DeskproLinkedOrganisationObject)
 
 object DeskproLinkedOrganisationWrapper {
   implicit val format: Reads[DeskproLinkedOrganisationWrapper] = Json.reads[DeskproLinkedOrganisationWrapper]
 }
 
-case class DeskproLinkedPersonObject(person: Map[String, DeskproPersonResponse])
+case class DeskproPaginationResponse(currentPage: Int, totalPages: Int)
 
-object DeskproLinkedPersonObject {
+object DeskproPaginationResponse {
 
-  implicit val reads: Reads[DeskproLinkedPersonObject] = (__ \ "person")
-    .readWithDefault(Map.empty[String, DeskproPersonResponse])
-    .map(DeskproLinkedPersonObject(_))
+  implicit val reads: Reads[DeskproPaginationResponse] = (
+    (__ \ "current_page").read[Int] and
+      (__ \ "total_pages").read[Int]
+  )((current, total) => DeskproPaginationResponse(current, total))
 }
 
-case class DeskproLinkedPersonWrapper(linked: DeskproLinkedPersonObject)
+case class DeskproMetaResponse(pagination: DeskproPaginationResponse)
 
-object DeskproLinkedPersonWrapper {
-  implicit val format: Reads[DeskproLinkedPersonWrapper] = Json.reads[DeskproLinkedPersonWrapper]
+object DeskproMetaResponse {
+  implicit val reads: Reads[DeskproMetaResponse] = Json.reads[DeskproMetaResponse]
+}
+
+case class DeskproPeopleResponse(data: List[DeskproPersonResponse], meta: DeskproMetaResponse)
+
+object DeskproPeopleResponse {
+  implicit val reads: Reads[DeskproPeopleResponse] = Json.reads[DeskproPeopleResponse]
 }

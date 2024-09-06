@@ -215,179 +215,177 @@ trait DeskproStub {
     }
   }
 
-  object GetOrganisationWithPeopleById {
+  object GetPeopleByOrganisationId {
 
-    def stubSuccess(organisationId: OrganisationId) = {
+    def stubSuccess(organisationId: OrganisationId, pageWanted: Int = 1) = {
       stubFor(
-        get(urlPathEqualTo(s"/api/v2/organizations/$organisationId/members"))
-          .withQueryParam("include", equalTo("person"))
+        get(urlPathEqualTo(s"/api/v2/people"))
+          .withQueryParam("organization", equalTo(organisationId.value))
+          .withQueryParam("count", equalTo("200"))
+          .withQueryParam("page", equalTo(pageWanted.toString))
           .willReturn(
             aResponse()
               .withBody("""{
                           |  "data": [
-                          |
+                          |    {
+                          |      "id": 3,
+                          |      "primary_email": null,
+                          |      "first_name": "Jeff",
+                          |      "last_name": "Smith",
+                          |      "title_prefix": "",
+                          |      "name": "Jeff Smith",
+                          |      "display_name": "Jeff Smith",
+                          |      "is_agent": false,
+                          |      "avatar": {
+                          |        "default_url_pattern": "https:\/\/apiplatformsupporttest.deskpro.com\/file.php\/avatar\/{{IMG_SIZE}}\/default.jpg?size-fit=1",
+                          |        "url_pattern": null,
+                          |        "base_gravatar_url": null
+                          |      },
+                          |      "online": false,
+                          |      "online_for_chat": false,
+                          |      "last_seen": null,
+                          |      "agent_data": null,
+                          |      "is_user": true,
+                          |      "was_agent": false,
+                          |      "can_agent": false,
+                          |      "can_admin": false,
+                          |      "can_billing": false,
+                          |      "can_reports": false,
+                          |      "picture_blob": null,
+                          |      "disable_picture": false,
+                          |      "gravatar_url": "&d=mm",
+                          |      "is_contact": false,
+                          |      "disable_autoresponses": false,
+                          |      "disable_autoresponses_log": "",
+                          |      "is_confirmed": false,
+                          |      "is_deleted": false,
+                          |      "is_disabled": false,
+                          |      "creation_system": "web.person",
+                          |      "override_display_name": "",
+                          |      "display_contact": "Jeff Smith",
+                          |      "summary": "",
+                          |      "language": 1,
+                          |      "organization": 1,
+                          |      "organization_members": [
+                          |        2
+                          |      ],
+                          |      "organization_position": "Product Owner",
+                          |      "organization_manager": false,
+                          |      "timezone": "UTC",
+                          |      "date_created": "2023-01-02T10:48:34+0000",
+                          |      "date_last_login": null,
+                          |      "browser": null,
+                          |      "all_user_groups": [
+                          |        1,
+                          |        2
+                          |      ],
+                          |      "user_groups": [],
+                          |      "agent_groups": [],
+                          |      "labels": [],
+                          |      "emails": [],
+                          |      "phone_numbers": [
+                          |        {
+                          |          "number": "+441234564654",
+                          |          "label": "PO",
+                          |          "extension": "",
+                          |          "person": 3,
+                          |          "type": "person"
+                          |        }
+                          |      ],
+                          |      "tickets_count": 0,
+                          |      "chats_count": 0,
+                          |      "fields": {},
+                          |      "contextual_options": [],
+                          |      "contact_data": [],
+                          |      "teams": [],
+                          |      "primary_team": null,
+                          |      "brands": [
+                          |        1
+                          |      ],
+                          |      "preferences": []
+                          |    },
+                          |    {
+                          |      "id": 63,
+                          |      "primary_email": "bob@example.com",
+                          |      "first_name": "Bob",
+                          |      "last_name": "Emu",
+                          |      "title_prefix": "",
+                          |      "name": "Bob Emu",
+                          |      "display_name": "Bob Emu",
+                          |      "is_agent": false,
+                          |      "avatar": {
+                          |        "default_url_pattern": "https:\/\/apiplatformsupporttest.deskpro.com\/file.php\/avatar\/{{IMG_SIZE}}\/default.jpg?size-fit=1",
+                          |        "url_pattern": null,
+                          |        "base_gravatar_url": null
+                          |      },
+                          |      "online": false,
+                          |      "online_for_chat": false,
+                          |      "last_seen": null,
+                          |      "agent_data": null,
+                          |      "is_user": false,
+                          |      "was_agent": false,
+                          |      "can_agent": false,
+                          |      "can_admin": false,
+                          |      "can_billing": false,
+                          |      "can_reports": false,
+                          |      "picture_blob": null,
+                          |      "disable_picture": false,
+                          |      "gravatar_url": "https:\/\/secure.gravatar.com\/avatar\/4b9bb80620f03eb3719e0a061c14283d?&d=mm",
+                          |      "is_contact": true,
+                          |      "disable_autoresponses": false,
+                          |      "disable_autoresponses_log": "",
+                          |      "is_confirmed": false,
+                          |      "is_deleted": false,
+                          |      "is_disabled": false,
+                          |      "creation_system": "web.person",
+                          |      "override_display_name": "",
+                          |      "display_contact": "Andy Spaven <bob@example.com>",
+                          |      "summary": "",
+                          |      "language": 1,
+                          |      "organization": null,
+                          |      "organization_members": [
+                          |        8,
+                          |        9
+                          |      ],
+                          |      "organization_position": "",
+                          |      "organization_manager": true,
+                          |      "timezone": "UTC",
+                          |      "date_created": "2024-05-03T10:28:49+0000",
+                          |      "date_last_login": null,
+                          |      "browser": null,
+                          |      "all_user_groups": [
+                          |        1
+                          |      ],
+                          |      "user_groups": [],
+                          |      "agent_groups": [],
+                          |      "labels": [],
+                          |      "emails": [
+                          |        "bob@example.com"
+                          |      ],
+                          |      "phone_numbers": [],
+                          |      "tickets_count": 0,
+                          |      "chats_count": 0,
+                          |      "fields": {},
+                          |      "contextual_options": [],
+                          |      "contact_data": [],
+                          |      "teams": [],
+                          |      "primary_team": null,
+                          |      "brands": [
+                          |        3
+                          |      ],
+                          |      "preferences": []
+                          |    }
                           |  ],
                           |  "meta": {
                           |    "pagination": {
-                          |      "total": 6,
-                          |      "count": 6,
-                          |      "per_page": 10,
+                          |      "total": 7,
+                          |      "count": 7,
+                          |      "per_page": 200,
                           |      "current_page": 1,
                           |      "total_pages": 1
                           |    }
                           |  },
-                          |  "linked": {
-                          |    "person": {
-                          |      "3": {
-                          |        "id": 3,
-                          |        "primary_email": null,
-                          |        "first_name": "Jeff",
-                          |        "last_name": "Smith",
-                          |        "title_prefix": "",
-                          |        "name": "Jeff Smith",
-                          |        "display_name": "Jeff Smith",
-                          |        "is_agent": false,
-                          |        "avatar": {
-                          |          "default_url_pattern": "https:\/\/apiplatformsupporttest.deskpro.com\/file.php\/avatar\/{{IMG_SIZE}}\/default.jpg?size-fit=1",
-                          |          "url_pattern": null,
-                          |          "base_gravatar_url": null
-                          |        },
-                          |        "online": false,
-                          |        "online_for_chat": false,
-                          |        "last_seen": null,
-                          |        "agent_data": null,
-                          |        "is_user": true,
-                          |        "was_agent": false,
-                          |        "can_agent": false,
-                          |        "can_admin": false,
-                          |        "can_billing": false,
-                          |        "can_reports": false,
-                          |        "picture_blob": null,
-                          |        "disable_picture": false,
-                          |        "gravatar_url": "&d=mm",
-                          |        "is_contact": false,
-                          |        "disable_autoresponses": false,
-                          |        "disable_autoresponses_log": "",
-                          |        "is_confirmed": false,
-                          |        "is_deleted": false,
-                          |        "is_disabled": false,
-                          |        "creation_system": "web.person",
-                          |        "override_display_name": "",
-                          |        "display_contact": "Jeff Smith",
-                          |        "summary": "",
-                          |        "language": 1,
-                          |        "organization": 1,
-                          |        "organization_members": [
-                          |          2
-                          |        ],
-                          |        "organization_position": "Product Owner",
-                          |        "organization_manager": false,
-                          |        "timezone": "UTC",
-                          |        "date_created": "2023-01-02T10:48:34+0000",
-                          |        "date_last_login": null,
-                          |        "browser": null,
-                          |        "all_user_groups": [
-                          |          1,
-                          |          2
-                          |        ],
-                          |        "user_groups": [],
-                          |        "agent_groups": [],
-                          |        "labels": [],
-                          |        "emails": [],
-                          |        "phone_numbers": [
-                          |          {
-                          |            "number": "+441234564654",
-                          |            "label": "PO",
-                          |            "extension": "",
-                          |            "person": 3,
-                          |            "type": "person"
-                          |          }
-                          |        ],
-                          |        "tickets_count": 0,
-                          |        "chats_count": 0,
-                          |        "fields": {},
-                          |        "contextual_options": [],
-                          |        "contact_data": [],
-                          |        "teams": [],
-                          |        "primary_team": null,
-                          |        "brands": [
-                          |          1
-                          |        ],
-                          |        "preferences": []
-                          |      },
-                          |      "63": {
-                          |        "id": 63,
-                          |        "primary_email": "bob@example.com",
-                          |        "first_name": "Bob",
-                          |        "last_name": "Emu",
-                          |        "title_prefix": "",
-                          |        "name": "Bob Emu",
-                          |        "display_name": "Bob Emu",
-                          |        "is_agent": false,
-                          |        "avatar": {
-                          |          "default_url_pattern": "https:\/\/apiplatformsupporttest.deskpro.com\/file.php\/avatar\/{{IMG_SIZE}}\/default.jpg?size-fit=1",
-                          |          "url_pattern": null,
-                          |          "base_gravatar_url": null
-                          |        },
-                          |        "online": false,
-                          |        "online_for_chat": false,
-                          |        "last_seen": null,
-                          |        "agent_data": null,
-                          |        "is_user": false,
-                          |        "was_agent": false,
-                          |        "can_agent": false,
-                          |        "can_admin": false,
-                          |        "can_billing": false,
-                          |        "can_reports": false,
-                          |        "picture_blob": null,
-                          |        "disable_picture": false,
-                          |        "gravatar_url": "https:\/\/secure.gravatar.com\/avatar\/4b9bb80620f03eb3719e0a061c14283d?&d=mm",
-                          |        "is_contact": true,
-                          |        "disable_autoresponses": false,
-                          |        "disable_autoresponses_log": "",
-                          |        "is_confirmed": false,
-                          |        "is_deleted": false,
-                          |        "is_disabled": false,
-                          |        "creation_system": "web.person",
-                          |        "override_display_name": "",
-                          |        "display_contact": "Andy Spaven <bob@example.com>",
-                          |        "summary": "",
-                          |        "language": 1,
-                          |        "organization": null,
-                          |        "organization_members": [
-                          |          8,
-                          |          9
-                          |        ],
-                          |        "organization_position": "",
-                          |        "organization_manager": true,
-                          |        "timezone": "UTC",
-                          |        "date_created": "2024-05-03T10:28:49+0000",
-                          |        "date_last_login": null,
-                          |        "browser": null,
-                          |        "all_user_groups": [
-                          |          1
-                          |        ],
-                          |        "user_groups": [],
-                          |        "agent_groups": [],
-                          |        "labels": [],
-                          |        "emails": [
-                          |          "bob@example.com"
-                          |        ],
-                          |        "phone_numbers": [],
-                          |        "tickets_count": 0,
-                          |        "chats_count": 0,
-                          |        "fields": {},
-                          |        "contextual_options": [],
-                          |        "contact_data": [],
-                          |        "teams": [],
-                          |        "primary_team": null,
-                          |        "brands": [
-                          |          3
-                          |        ],
-                          |        "preferences": []
-                          |      }
-                          |    }
-                          |  }
+                          |  "linked": {}
                           |}""".stripMargin)
               .withStatus(OK)
           )
@@ -396,8 +394,10 @@ trait DeskproStub {
 
     def stubSuccessNoPerson(organisationId: OrganisationId) = {
       stubFor(
-        get(urlPathEqualTo(s"/api/v2/organizations/$organisationId/members"))
-          .withQueryParam("include", equalTo("person"))
+        get(urlPathEqualTo(s"/api/v2/people"))
+          .withQueryParam("organization", equalTo(organisationId.value))
+          .withQueryParam("count", equalTo("200"))
+          .withQueryParam("page", equalTo("1"))
           .willReturn(
             aResponse()
               .withBody("""{

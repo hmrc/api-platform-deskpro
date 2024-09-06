@@ -20,6 +20,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import uk.gov.hmrc.apiplatformdeskpro.connector.DeskproConnector
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.DeskproPersonResponse
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproOrganisation, DeskproPerson, OrganisationId}
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HeaderCarrier
@@ -34,9 +35,20 @@ class OrganisationService @Inject() (deskproConnector: DeskproConnector)(implici
     for {
       orgResponse    <- deskproConnector.getOrganisationById(organisationId)
       org             = orgResponse.data
-      peopleResponse <- deskproConnector.getOrganisationWithPeopleById(organisationId)
-      people          = peopleResponse.linked.person.values.flatMap(per => per.primary_email.map(email => DeskproPerson(per.name, email))).toList
+      peopleResponse <- getAllPeople(organisationId)
+      people          = peopleResponse.flatMap(per => per.primary_email.map(email => DeskproPerson(per.name, email)))
     } yield DeskproOrganisation(organisationId, org.name, people)
+  }
+
+  private def getAllPeople(organisationId: OrganisationId)(implicit hc: HeaderCarrier): Future[List[DeskproPersonResponse]] = {
+    deskproConnector.getPeopleByOrganisationId(organisationId).flatMap(peopleResponse =>
+      if (peopleResponse.meta.pagination.totalPages > 1) {
+        Future.sequence(
+          (2 to peopleResponse.meta.pagination.totalPages)
+            .map(pageWanted => deskproConnector.getPeopleByOrganisationId(organisationId, pageWanted)).toList
+        ).map(listOfResponses => listOfResponses.flatMap(_.data)).map(_.concat(peopleResponse.data).distinct)
+      } else Future.successful(peopleResponse.data.distinct)
+    )
   }
 
   def getOrganisationsByEmail(email: LaxEmailAddress)(implicit hc: HeaderCarrier): Future[List[DeskproOrganisation]] = {
