@@ -43,7 +43,7 @@ class CreatePersonService @Inject() (
   ) extends ApplicationLogger with ClockNow {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
-  val daysToLookBackInNormalRun  = 30
+  val daysToLookBackInNormalRun  = 31
 
   def pushNewUsersToDeskpro()(implicit ec: ExecutionContext): Future[Unit] = {
     for {
