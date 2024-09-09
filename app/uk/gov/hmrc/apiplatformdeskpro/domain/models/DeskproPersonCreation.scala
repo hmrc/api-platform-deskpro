@@ -20,4 +20,3 @@ sealed trait DeskproPersonCreationResult
 object DeskproPersonCreationSuccess extends DeskproPersonCreationResult
 object DeskproPersonCreationFailure extends DeskproPersonCreationResult
 object DeskproPersonExistsInDeskpro extends DeskproPersonCreationResult
-object DeskproPersonExistsInDb      extends DeskproPersonCreationResult

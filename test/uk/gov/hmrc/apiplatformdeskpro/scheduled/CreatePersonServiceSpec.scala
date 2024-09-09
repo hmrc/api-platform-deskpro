@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apiplatformdeskpro.scheduled
 
-import java.time.{Instant, ZoneOffset}
+import java.time.ZoneOffset
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -59,14 +59,13 @@ class CreatePersonServiceSpec extends AsyncHmrcSpec with FixedClock {
     val underTest = new CreatePersonService(mockMigrateUserRepository, mockDeskproConnector, mockDeveloperConnector, mockAppConfig, clock)
 
     val getUsersResponse = List(user1, user2)
-
   }
 
   "CreatePersonService" should {
     "successfully create users when users are returned from developerConnector" in new Setup {
-      when(mockDeveloperConnector.searchDevelopers()(*)).thenReturn(Future.successful(getUsersResponse))
+      when(mockDeveloperConnector.searchDevelopers(*[Some[Int]])(*)).thenReturn(Future.successful(getUsersResponse))
       when(mockDeskproConnector.createPerson(*[UserId], *, *)(*)).thenReturn(Future.successful(DeskproPersonCreationSuccess))
-      when(mockMigrateUserRepository.findByUserId(*[UserId])).thenReturn(Future.successful(None))
+      when(mockMigrateUserRepository.userExists(*[UserId])).thenReturn(Future.successful(false))
       when(mockMigrateUserRepository.saveMigratedUser(*)).thenReturn(Future.successful(()))
 
       val result = await(underTest.pushNewUsersToDeskpro())
@@ -75,12 +74,40 @@ class CreatePersonServiceSpec extends AsyncHmrcSpec with FixedClock {
       verify(mockDeskproConnector).createPerson(eqTo(user2.userId), eqTo(s"$firstName2 $lastName2"), eqTo(email2))(*)
     }
 
+    "request only daysToLookBackInNormalRun users if not in the initial import" in new Setup {
+      when(mockAppConfig.initialImport).thenReturn(false)
+      when(mockDeveloperConnector.searchDevelopers(*[Some[Int]])(*)).thenReturn(Future.successful(getUsersResponse))
+      when(mockDeskproConnector.createPerson(*[UserId], *, *)(*)).thenReturn(Future.successful(DeskproPersonCreationSuccess))
+      when(mockMigrateUserRepository.userExists(*[UserId])).thenReturn(Future.successful(false))
+      when(mockMigrateUserRepository.saveMigratedUser(*)).thenReturn(Future.successful(()))
+
+      val result = await(underTest.pushNewUsersToDeskpro())
+      result shouldBe ()
+      verify(mockDeveloperConnector).searchDevelopers(eqTo(Some(underTest.daysToLookBackInNormalRun)))(*)
+      verify(mockDeskproConnector).createPerson(eqTo(user1.userId), eqTo(s"$firstName1 $lastName1"), eqTo(email1))(*)
+      verify(mockDeskproConnector).createPerson(eqTo(user2.userId), eqTo(s"$firstName2 $lastName2"), eqTo(email2))(*)
+    }
+
+    "request all users if in the initial import" in new Setup {
+      when(mockAppConfig.initialImport).thenReturn(true)
+      when(mockDeveloperConnector.searchDevelopers(*[Some[Int]])(*)).thenReturn(Future.successful(getUsersResponse))
+      when(mockDeskproConnector.createPerson(*[UserId], *, *)(*)).thenReturn(Future.successful(DeskproPersonCreationSuccess))
+      when(mockMigrateUserRepository.userExists(*[UserId])).thenReturn(Future.successful(false))
+      when(mockMigrateUserRepository.saveMigratedUser(*)).thenReturn(Future.successful(()))
+
+      val result = await(underTest.pushNewUsersToDeskpro())
+      result shouldBe ()
+      verify(mockDeveloperConnector).searchDevelopers(eqTo(None))(*)
+      verify(mockDeskproConnector).createPerson(eqTo(user1.userId), eqTo(s"$firstName1 $lastName1"), eqTo(email1))(*)
+      verify(mockDeskproConnector).createPerson(eqTo(user2.userId), eqTo(s"$firstName2 $lastName2"), eqTo(email2))(*)
+    }
+
     "successfully processes all users when 1st create fails" in new Setup {
-      when(mockDeveloperConnector.searchDevelopers()(*)).thenReturn(Future.successful(getUsersResponse))
+      when(mockDeveloperConnector.searchDevelopers(*[Some[Int]])(*)).thenReturn(Future.successful(getUsersResponse))
       when(mockDeskproConnector.createPerson(eqTo(user1.userId), eqTo(s"$firstName1 $lastName1"), eqTo(email1))(*)).thenReturn(Future.successful(DeskproPersonCreationFailure))
       when(mockDeskproConnector.createPerson(eqTo(user2.userId), eqTo(s"$firstName2 $lastName2"), eqTo(email2))(*)).thenReturn(Future.successful(DeskproPersonCreationSuccess))
       when(mockMigrateUserRepository.saveMigratedUser(*)).thenReturn(Future.successful(()))
-      when(mockMigrateUserRepository.findByUserId(*[UserId])).thenReturn(Future.successful(None))
+      when(mockMigrateUserRepository.userExists(*[UserId])).thenReturn(Future.successful(false))
 
       val result = await(underTest.pushNewUsersToDeskpro())
       result shouldBe ()
@@ -89,11 +116,11 @@ class CreatePersonServiceSpec extends AsyncHmrcSpec with FixedClock {
     }
 
     "skip user if user already in migrated users db" in new Setup {
-      when(mockDeveloperConnector.searchDevelopers()(*)).thenReturn(Future.successful(getUsersResponse))
+      when(mockDeveloperConnector.searchDevelopers(*[Some[Int]])(*)).thenReturn(Future.successful(getUsersResponse))
       when(mockDeskproConnector.createPerson(eqTo(user2.userId), eqTo(s"$firstName2 $lastName2"), eqTo(email2))(*)).thenReturn(Future.successful(DeskproPersonCreationSuccess))
       when(mockMigrateUserRepository.saveMigratedUser(*)).thenReturn(Future.successful(()))
-      when(mockMigrateUserRepository.findByUserId(eqTo(user1.userId))).thenReturn(Future.successful(Some(MigratedUser(user1.email, user1.userId, Instant.now(clock)))))
-      when(mockMigrateUserRepository.findByUserId(eqTo(user2.userId))).thenReturn(Future.successful(None))
+      when(mockMigrateUserRepository.userExists(eqTo(user1.userId))).thenReturn(Future.successful(true))
+      when(mockMigrateUserRepository.userExists(eqTo(user2.userId))).thenReturn(Future.successful(false))
 
       val result = await(underTest.pushNewUsersToDeskpro())
       result shouldBe ()
@@ -102,12 +129,12 @@ class CreatePersonServiceSpec extends AsyncHmrcSpec with FixedClock {
     }
 
     "if user1 migrated but user2 allready in deskpro, ensure user 2 is saved in db" in new Setup {
-      when(mockDeveloperConnector.searchDevelopers()(*)).thenReturn(Future.successful(getUsersResponse))
+      when(mockDeveloperConnector.searchDevelopers(*[Some[Int]])(*)).thenReturn(Future.successful(getUsersResponse))
       when(mockDeskproConnector.createPerson(eqTo(user1.userId), eqTo(s"$firstName1 $lastName1"), eqTo(email1))(*)).thenReturn(Future.successful(DeskproPersonCreationSuccess))
       when(mockDeskproConnector.createPerson(eqTo(user2.userId), eqTo(s"$firstName2 $lastName2"), eqTo(email2))(*)).thenReturn(Future.successful(DeskproPersonExistsInDeskpro))
       when(mockMigrateUserRepository.saveMigratedUser(eqTo(MigratedUser(user2.email, user2.userId, now.toInstant(ZoneOffset.UTC))))).thenReturn(Future.successful(()))
-      when(mockMigrateUserRepository.findByUserId(eqTo(user1.userId))).thenReturn(Future.successful(Some(MigratedUser(user1.email, user1.userId, Instant.now(clock)))))
-      when(mockMigrateUserRepository.findByUserId(eqTo(user2.userId))).thenReturn(Future.successful(None))
+      when(mockMigrateUserRepository.userExists(eqTo(user1.userId))).thenReturn(Future.successful(true))
+      when(mockMigrateUserRepository.userExists(eqTo(user2.userId))).thenReturn(Future.successful(false))
 
       val result = await(underTest.pushNewUsersToDeskpro())
 

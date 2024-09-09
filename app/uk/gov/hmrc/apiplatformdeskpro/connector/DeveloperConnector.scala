@@ -17,8 +17,9 @@
 package uk.gov.hmrc.apiplatformdeskpro.connector
 
 import java.time._
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.RegisteredUser
@@ -35,10 +36,17 @@ class DeveloperConnector @Inject() (http: HttpClientV2, config: AppConfig, metri
   lazy val serviceBaseUrl: String = config.thirdPartyDeveloperUrl
   val api                         = API("third-party-developer")
 
-  def searchDevelopers()(implicit hc: HeaderCarrier) = metrics.record(api) {
-    val queryParams = Seq(
-      "status" -> "VERIFIED"
-    )
+  def searchDevelopers(daysToLookBack: Option[Int] = None)(implicit hc: HeaderCarrier): Future[List[RegisteredUser]] = metrics.record(api) {
+    val queryParams = daysToLookBack match {
+      case Some(days) => Seq(
+          "status"       -> "VERIFIED",
+          "createdAfter" -> DateTimeFormatter.BASIC_ISO_DATE.format(now().toLocalDate.minusDays(days))
+        )
+      case None       => Seq(
+          "status" -> "VERIFIED"
+        )
+    }
+
     http.get(url"${requestUrl("/developers")}?$queryParams")
       .execute[List[RegisteredUser]]
       .map(users => {

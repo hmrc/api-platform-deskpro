@@ -58,18 +58,15 @@ class MigratedUserRepositoryISpec extends AsyncHmrcSpec
     }
 
     "findByUserId" should {
-
       "findUser when exists in db" in {
         val migratedUser = MigratedUser(LaxEmailAddress("newUser@compny.com"), UserId.random, Instant.now(clock))
         await(migratedUserRepository.saveMigratedUser(migratedUser))
 
-        val result: Option[MigratedUser] = await(migratedUserRepository.findByUserId(migratedUser.userId))
-        result shouldBe Some(migratedUser)
+        await(migratedUserRepository.userExists(migratedUser.userId)) shouldBe true
       }
 
-      "not find anything when user not in db" in {
-        val result: Option[MigratedUser] = await(migratedUserRepository.findByUserId(UserId.random))
-        result shouldBe None
+      "not find user not in db" in {
+        await(migratedUserRepository.userExists(UserId.random)) shouldBe false
       }
     }
   }

@@ -24,7 +24,7 @@ import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.connector.{DeskproConnector, DeveloperConnector}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.RegisteredUser
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.MigratedUser
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproPersonCreationResult, DeskproPersonCreationSuccess, DeskproPersonExistsInDb, DeskproPersonExistsInDeskpro}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproPersonCreationResult, DeskproPersonCreationSuccess, DeskproPersonExistsInDeskpro}
 import uk.gov.hmrc.apiplatformdeskpro.repository.MigratedUserRepository
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HeaderCarrier
@@ -42,8 +42,26 @@ class CreatePersonService @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger with ClockNow {
 
-  // Not required currently. Retain for future reference
-  //
+  implicit val hc: HeaderCarrier = HeaderCarrier()
+  val daysToLookBackInNormalRun  = 30
+
+  def pushNewUsersToDeskpro()(implicit ec: ExecutionContext): Future[Unit] = {
+    for {
+      users          <- developerConnector.searchDevelopers(if (config.initialImport) None else (Some(daysToLookBackInNormalRun)))
+      usersToMigrate <- filterMigratedUsers(users)
+      results        <- batchFutures(config.deskproBatchSize, config.deskproBatchPause, pushUserToDeskpro)(usersToMigrate)
+    } yield results
+  }
+
+  private def filterMigratedUsers(users: List[RegisteredUser]): Future[List[RegisteredUser]] = {
+    Future.sequence(users.map { user =>
+      migratedUserRepository.userExists(user.userId).map {
+        case true  => None
+        case false => Some(user)
+      }
+    }).map(_.flatten)
+  }
+
   final def batchFutures[I](batchSize: Int, batchPause: Int, fn: I => Future[(UserId, DeskproPersonCreationResult)])(input: Seq[I])(implicit ec: ExecutionContext): Future[Unit] = {
     input.splitAt(batchSize) match {
       case (Nil, Nil)                       => Future.successful(())
@@ -60,38 +78,22 @@ class CreatePersonService @Inject() (
     }
   }
 
-  def pushNewUsersToDeskpro()(implicit ec: ExecutionContext): Future[Unit] = {
-
-    implicit val hc: HeaderCarrier = HeaderCarrier()
-
-    def pushUserToDeskpro(u: RegisteredUser)(implicit ec: ExecutionContext): Future[(UserId, DeskproPersonCreationResult)] = {
-
-      def handleDeskproResult(result: DeskproPersonCreationResult) = {
-        result match {
-          case DeskproPersonCreationSuccess =>
-            logger.info(s"User ${u.userId} sent to DeskPro successfully")
-            migratedUserRepository.saveMigratedUser(MigratedUser(u.email, u.userId, Instant.now(clock)))
-          case DeskproPersonExistsInDeskpro =>
-            logger.warn(s"User ${u.userId} already existed in Deskpro")
-            migratedUserRepository.saveMigratedUser(MigratedUser(u.email, u.userId, Instant.now(clock)))
-          case _                            => Future.successful(())
-        }
-      }
-
-      for {
-        maybeMigratedUser <- migratedUserRepository.findByUserId(u.userId)
-        deskproResult     <-
-          maybeMigratedUser.fold(deskproConnector.createPerson(u.userId, s"${u.firstName} ${u.lastName}", u.email.text))(_ => Future.successful(DeskproPersonExistsInDb))
-        _                 <- handleDeskproResult(deskproResult)
-      } yield (u.userId, deskproResult)
-
-    }
-
+  private def pushUserToDeskpro(user: RegisteredUser)(implicit ec: ExecutionContext): Future[(UserId, DeskproPersonCreationResult)] = {
     for {
-      users   <- developerConnector.searchDevelopers()
-      results <- batchFutures(config.deskproBatchSize, config.deskproBatchPause, pushUserToDeskpro)(users)
-    } yield results
-
+      deskproResult <- deskproConnector.createPerson(user.userId, s"${user.firstName} ${user.lastName}", user.email.text)
+      _             <- handleDeskproResult(user, deskproResult)
+    } yield (user.userId, deskproResult)
   }
 
+  private def handleDeskproResult(u: RegisteredUser, result: DeskproPersonCreationResult): Future[Unit] = {
+    result match {
+      case DeskproPersonCreationSuccess =>
+        logger.info(s"User ${u.userId} sent to DeskPro successfully")
+        migratedUserRepository.saveMigratedUser(MigratedUser(u.email, u.userId, Instant.now(clock)))
+      case DeskproPersonExistsInDeskpro =>
+        logger.warn(s"User ${u.userId} already existed in Deskpro")
+        migratedUserRepository.saveMigratedUser(MigratedUser(u.email, u.userId, Instant.now(clock)))
+      case _                            => Future.successful(())
+    }
+  }
 }
