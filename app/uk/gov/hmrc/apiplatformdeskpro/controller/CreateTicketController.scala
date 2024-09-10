@@ -25,19 +25,23 @@ import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.DeskproTicketCreat
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.{CreateTicketRequest, CreateTicketResponse, DeskproTicketCreationFailed}
 import uk.gov.hmrc.apiplatformdeskpro.service.CreateTicketService
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
+import uk.gov.hmrc.internalauth.client.{BackendAuthComponents, _}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 @Singleton
-class CreateTicketController @Inject() (createTicketService: CreateTicketService, cc: ControllerComponents)(implicit val ec: ExecutionContext) extends BackendController(cc)
+class CreateTicketController @Inject() (createTicketService: CreateTicketService, cc: ControllerComponents, auth: BackendAuthComponents)(implicit val ec: ExecutionContext)
+    extends BackendController(cc)
     with ApplicationLogger with JsonUtils {
 
-  def createTicket: Action[AnyContent] = Action.async { implicit request =>
-    withJsonBodyFromAnyContent[CreateTicketRequest] { parsedRequest =>
-      createTicketService.submitTicket(parsedRequest)
-        .map {
-          case Right(x: DeskproTicketCreated)       => Created(Json.toJson(CreateTicketResponse(x.ref)))
-          case Left(x: DeskproTicketCreationFailed) => InternalServerError(x.message)
+  def createTicket: Action[AnyContent] =
+    auth.authorizedAction(predicate = Predicate.Permission(Resource.from("api-platform-deskpro", "tickets/all"), IAAction("WRITE"))).async {
+      implicit request: AuthenticatedRequest[AnyContent, Unit] =>
+        withJsonBodyFromAnyContent[CreateTicketRequest] { parsedRequest =>
+          createTicketService.submitTicket(parsedRequest)
+            .map {
+              case Right(x: DeskproTicketCreated)       => Created(Json.toJson(CreateTicketResponse(x.ref)))
+              case Left(x: DeskproTicketCreationFailed) => InternalServerError(x.message)
+            }
         }
     }
-  }
 }

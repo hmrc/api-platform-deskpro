@@ -26,29 +26,34 @@ import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.GetOrganisationBy
 import uk.gov.hmrc.apiplatformdeskpro.service.OrganisationService
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.UpstreamErrorResponse
+import uk.gov.hmrc.internalauth.client.{BackendAuthComponents, _}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 @Singleton
-class OrganisationController @Inject() (organisationService: OrganisationService, cc: ControllerComponents)(implicit val ec: ExecutionContext)
+class OrganisationController @Inject() (organisationService: OrganisationService, cc: ControllerComponents, auth: BackendAuthComponents)(implicit val ec: ExecutionContext)
     extends BackendController(cc) with ApplicationLogger with JsonUtils {
 
-  def getOrganisation(organisationId: OrganisationId): Action[AnyContent] = Action.async { implicit request =>
-    organisationService.getOrganisationById(organisationId)
-      .map { deskproOrganisation =>
-        Ok(Json.toJson(deskproOrganisation))
-      } recover recovery
-  }
-
-  def getOrganisationsByPersonEmail(): Action[AnyContent] = Action.async { implicit request =>
-    withJsonBodyFromAnyContent[GetOrganisationByEmailRequest] { parsedRequest =>
-      organisationService.getOrganisationsByEmail(parsedRequest.email)
-        .map { deskproOrganisations =>
-          Ok(Json.toJson(deskproOrganisations))
-        } recover recovery
+  def getOrganisation(organisationId: OrganisationId): Action[AnyContent] =
+    auth.authorizedAction(predicate = Predicate.Permission(Resource.from("api-platform-deskpro", "organisations/all"), IAAction("READ"))).async {
+      implicit request: AuthenticatedRequest[AnyContent, Unit] =>
+        organisationService.getOrganisationById(organisationId)
+          .map { deskproOrganisation =>
+            Ok(Json.toJson(deskproOrganisation))
+          } recover recovery
     }
-  }
 
-  def recovery: PartialFunction[Throwable, Result] = {
+  def getOrganisationsByPersonEmail(): Action[AnyContent] =
+    auth.authorizedAction(predicate = Predicate.Permission(Resource.from("api-platform-deskpro", "organisations/all"), IAAction("READ"))).async {
+      implicit request: AuthenticatedRequest[AnyContent, Unit] =>
+        withJsonBodyFromAnyContent[GetOrganisationByEmailRequest] { parsedRequest =>
+          organisationService.getOrganisationsByEmail(parsedRequest.email)
+            .map { deskproOrganisations =>
+              Ok(Json.toJson(deskproOrganisations))
+            } recover recovery
+        }
+    }
+
+  private def recovery: PartialFunction[Throwable, Result] = {
     case UpstreamErrorResponse(message, 404, _, _) => handleNotFound(message)
     case e: Throwable                              =>
       logger.error(s"Error occurred: ${e.getMessage}", e)
