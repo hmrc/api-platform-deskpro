@@ -47,8 +47,10 @@ class CreatePersonService @Inject() (
 
   def pushNewUsersToDeskpro()(implicit ec: ExecutionContext): Future[Unit] = {
     for {
-      users          <- developerConnector.searchDevelopers(if (config.initialImport) None else (Some(daysToLookBackInNormalRun)))
+      users          <- developerConnector.searchDevelopers(if (config.initialImport) None else Some(daysToLookBackInNormalRun))
+                          .map(u => { logger.info(s"${u.size} user(s) retrieved from TPD"); u })
       usersToMigrate <- filterMigratedUsers(users)
+                          .map(utm => { logger.info(s"${utm.size} user(s) to migrate"); utm })
       results        <- batchFutures(config.deskproBatchSize, config.deskproBatchPause, pushUserToDeskpro)(usersToMigrate)
     } yield results
   }
