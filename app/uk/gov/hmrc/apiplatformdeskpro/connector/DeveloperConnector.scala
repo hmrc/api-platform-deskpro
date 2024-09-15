@@ -40,6 +40,7 @@ class DeveloperConnector @Inject() (http: HttpClientV2, config: AppConfig, metri
     val queryParams = daysToLookBack match {
       case Some(days) => Seq(
           "status"       -> "VERIFIED",
+          "limit"        -> 10000,
           "createdAfter" -> DateTimeFormatter.BASIC_ISO_DATE.format(now().toLocalDate.minusDays(days))
         )
       case None       => Seq(

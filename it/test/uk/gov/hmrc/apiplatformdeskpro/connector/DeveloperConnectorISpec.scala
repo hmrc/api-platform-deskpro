@@ -68,6 +68,7 @@ class DeveloperConnectorISpec extends AsyncHmrcSpec
       stubFor(
         get(urlPathEqualTo("/developers"))
           .withQueryParam("status", equalTo("VERIFIED"))
+          .withQueryParam("limit", equalTo("10000"))
           .withQueryParam("createdAfter", equalTo(DateTimeFormatter.BASIC_ISO_DATE.format(now.minusDays(days))))
           .willReturn(
             aResponse()
