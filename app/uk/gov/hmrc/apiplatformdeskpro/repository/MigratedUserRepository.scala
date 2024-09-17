@@ -71,8 +71,8 @@ class MigratedUserRepository @Inject() (mongo: MongoComponent, val clock: Clock)
     }
   }
 
-  def findByUserId(userId: UserId): Future[Option[MigratedUser]] = {
-    collection.find(Filters.eq("userId", Codecs.toBson(userId))).headOption()
+  def userExists(userId: UserId): Future[Boolean] = {
+    collection.find(Filters.eq("userId", Codecs.toBson(userId))).headOption().map(_.isDefined)
   }
 
 }

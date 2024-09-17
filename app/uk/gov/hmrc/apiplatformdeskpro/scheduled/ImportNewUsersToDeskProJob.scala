@@ -56,6 +56,7 @@ class ImportNewUsersToDeskProJob @Inject() (
     actorSystem.scheduler.scheduleWithFixedDelay(initialDelay, interval) { () =>
       // now use the lock
       lockService.withLock {
+        logger.info(s"Acquired lock. Starting ImportNewUsersToDeskProJob run")
         createPersonService.pushNewUsersToDeskpro()
       }.map {
         case Some(res) => logger.info(s"Finished with $res. Lock has been released.")

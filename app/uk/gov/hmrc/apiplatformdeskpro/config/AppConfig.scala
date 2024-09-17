@@ -36,5 +36,5 @@ class AppConfig @Inject() (config: ServicesConfig) {
   val thirdPartyDeveloperUrl: String = config.baseUrl("third-party-developer")
   val deskproBatchSize: Int          = config.getInt("importUser.deskpro-batch-size")
   val deskproBatchPause: Int         = config.getInt("importUser.deskpro-batch-pause")
-
+  val initialImport: Boolean         = config.getBoolean("importUser.initial-import")
 }
