@@ -50,10 +50,10 @@ class DeveloperConnector @Inject() (http: HttpClientV2, config: AppConfig, metri
 
     http.get(url"${requestUrl("/developers")}?$queryParams")
       .execute[List[RegisteredUser]]
-      .map(users => {
-        if (users.isEmpty) logger.info("No Users Returned from DeveloperConnector")
+      .map { users =>
+        logger.info(s"${users.size} user(s) returned from DeveloperConnector")
         users
-      })
+      }
   }
 
   private def requestUrl[B, A](uri: String): String = s"$serviceBaseUrl$uri"

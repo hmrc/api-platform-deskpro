@@ -46,11 +46,10 @@ class CreatePersonService @Inject() (
   val daysToLookBackInNormalRun  = 31
 
   def pushNewUsersToDeskpro()(implicit ec: ExecutionContext): Future[Unit] = {
+    val maybeDaysToLookBack = if (config.initialImport) None else Some(daysToLookBackInNormalRun)
     for {
-      users          <- developerConnector.searchDevelopers(if (config.initialImport) None else Some(daysToLookBackInNormalRun))
-                          .map(u => { logger.info(s"${u.size} user(s) retrieved from TPD"); u })
+      users          <- developerConnector.searchDevelopers(maybeDaysToLookBack)
       usersToMigrate <- filterMigratedUsers(users)
-                          .map(utm => { logger.info(s"${utm.size} user(s) to migrate"); utm })
       results        <- batchFutures(config.deskproBatchSize, config.deskproBatchPause, pushUserToDeskpro)(usersToMigrate)
     } yield results
   }
@@ -62,6 +61,7 @@ class CreatePersonService @Inject() (
         case false => Some(user)
       }
     }).map(_.flatten)
+      .map(filteredUsers => { logger.info(s"${filteredUsers.size} user(s) to migrate"); filteredUsers })
   }
 
   final def batchFutures[I](batchSize: Int, batchPause: Int, fn: I => Future[(UserId, DeskproPersonCreationResult)])(input: Seq[I])(implicit ec: ExecutionContext): Future[Unit] = {
