@@ -22,6 +22,7 @@ trait ConfigBuilder {
 
   protected def stubConfig(stubPort: Int) = Configuration(
     "microservice.services.third-party-developer.port" -> s"$stubPort",
+    "microservice.services.internal-auth.port"         -> s"$stubPort",
     "deskpro.uri"                                      -> s"http://localhost:$stubPort",
     "metrics.enabled"                                  -> false,
     "deskpro.brand"                                    -> 1,

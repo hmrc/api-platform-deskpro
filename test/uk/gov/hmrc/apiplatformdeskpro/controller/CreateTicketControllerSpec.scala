@@ -19,7 +19,7 @@ package uk.gov.hmrc.apiplatformdeskpro.controller
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-import play.api.http.Status.CREATED
+import play.api.http.Status.{CREATED, UNAUTHORIZED}
 import play.api.libs.json.Json
 import play.api.mvc.{AnyContentAsText, ControllerComponents, Result}
 import play.api.test.Helpers._
@@ -28,7 +28,10 @@ import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.DeskproTicketCreat
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.{CreateTicketRequest, CreateTicketResponse, DeskproPerson, DeskproTicketCreationFailed}
 import uk.gov.hmrc.apiplatformdeskpro.service.CreateTicketService
 import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
+import uk.gov.hmrc.internalauth.client.Predicate.Permission
+import uk.gov.hmrc.internalauth.client._
+import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 
@@ -38,9 +41,12 @@ class CreateTicketControllerSpec extends AsyncHmrcSpec with StubControllerCompon
     implicit val hc: HeaderCarrier        = HeaderCarrier()
     implicit val cc: ControllerComponents = Helpers.stubControllerComponents()
 
-    val mockService = mock[CreateTicketService]
+    val mockService       = mock[CreateTicketService]
+    val mockStubBehaviour = mock[StubBehaviour]
 
-    val objToTest = new CreateTicketController(mockService, cc)
+    val objToTest = new CreateTicketController(mockService, cc, BackendAuthComponentsStub(mockStubBehaviour))
+
+    val expectedPredicate = Permission(Resource(ResourceType("api-platform-deskpro"), ResourceLocation("tickets/all")), IAAction("WRITE"))
 
     val name                   = "Bob Holness"
     val email                  = "bob@exmaple.com"
@@ -70,12 +76,14 @@ class CreateTicketControllerSpec extends AsyncHmrcSpec with StubControllerCompon
 
   "CreateDeskproTicketController" should {
     "return 201 with a valid payload" in new Setup {
+
       val ref     = "123456"
       stubServiceSuccess(ref)
       val body    = Json.toJson(createTicketRequest)
       val request = FakeRequest(POST, "/ticket")
-        .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json")
+        .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
         .withJsonBody(body)
+      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
 
       val result: Future[Result] = objToTest.createTicket()(request)
 
@@ -85,8 +93,9 @@ class CreateTicketControllerSpec extends AsyncHmrcSpec with StubControllerCompon
 
     "return 400 for an invalid payload" in new Setup {
       val request = FakeRequest(POST, "/ticket")
-        .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json")
+        .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
         .withJsonBody(Json.parse("""{ "invalidfield": "value" }"""))
+      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
 
       val result: Future[Result] = objToTest.createTicket()(request)
 
@@ -95,8 +104,9 @@ class CreateTicketControllerSpec extends AsyncHmrcSpec with StubControllerCompon
 
     "return 400 for non Json" in new Setup {
       val request = FakeRequest(POST, "/ticket")
-        .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json")
+        .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
         .withBody(AnyContentAsText("""Not JSON"""))
+      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
 
       val result: Future[Result] = objToTest.createTicket()(request)
 
@@ -107,12 +117,24 @@ class CreateTicketControllerSpec extends AsyncHmrcSpec with StubControllerCompon
       when(mockService.submitTicket(*)(*)).thenReturn(Future.successful(Left(DeskproTicketCreationFailed("failed"))))
       val body    = Json.toJson(createTicketRequest)
       val request = FakeRequest(POST, "/ticket")
-        .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json")
+        .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
         .withJsonBody(body)
+      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
 
       val result: Future[Result] = objToTest.createTicket()(request)
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+
+    "return UpstreamErrorResponse for invalid token" in new Setup {
+      val request = FakeRequest(POST, "/ticket")
+        .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
+        .withBody(AnyContentAsText("""Not JSON"""))
+      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.failed(UpstreamErrorResponse("Unauthorized", UNAUTHORIZED)))
+
+      intercept[UpstreamErrorResponse] {
+        await(objToTest.createTicket()(request))
+      }
     }
   }
 }
