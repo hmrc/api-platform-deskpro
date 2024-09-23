@@ -725,4 +725,128 @@ trait DeskproStub {
     }
   }
 
+  object GetPersonForEmail {
+
+    def stubSuccess(email: LaxEmailAddress) = {
+      stubFor(
+        post(urlPathEqualTo(s"/api/v2/people"))
+          .withRequestBody(equalToJson(
+            s"""
+               |{
+               |  "primary_email":"${email.text}"
+               |}
+               |""".stripMargin
+          ))
+          .willReturn(
+            aResponse()
+              .withBody("""
+                          |{
+                          |  "data": [
+                          |    {
+                          |      "id": 63,
+                          |      "primary_email": "bob@example.com",
+                          |      "first_name": "Andy",
+                          |      "last_name": "Spaven",
+                          |      "title_prefix": "",
+                          |      "name": "Andy Spaven",
+                          |      "display_name": "Andy Spaven",
+                          |      "is_agent": false,
+                          |      "avatar": {
+                          |        "default_url_pattern": "https:\/\/apiplatformsupporttest.deskpro.com\/file.php\/avatar\/{{IMG_SIZE}}\/default.jpg?size-fit=1",
+                          |        "url_pattern": null,
+                          |        "base_gravatar_url": null
+                          |      },
+                          |      "online": false,
+                          |      "online_for_chat": false,
+                          |      "last_seen": null,
+                          |      "agent_data": null,
+                          |      "is_user": false,
+                          |      "was_agent": false,
+                          |      "can_agent": false,
+                          |      "can_admin": false,
+                          |      "can_billing": false,
+                          |      "can_reports": false,
+                          |      "picture_blob": null,
+                          |      "disable_picture": false,
+                          |      "gravatar_url": "https:\/\/secure.gravatar.com\/avatar\/4b9bb80620f03eb3719e0a061c14283d?&d=mm",
+                          |      "is_contact": true,
+                          |      "disable_autoresponses": false,
+                          |      "disable_autoresponses_log": "",
+                          |      "is_confirmed": false,
+                          |      "is_deleted": false,
+                          |      "is_disabled": false,
+                          |      "creation_system": "web.person",
+                          |      "override_display_name": "",
+                          |      "display_contact": "Andy Spaven <bob@example.com>",
+                          |      "summary": "",
+                          |      "language": 1,
+                          |      "organization": null,
+                          |      "organization_members": [
+                          |        8,
+                          |        9
+                          |      ],
+                          |      "organization_position": "",
+                          |      "organization_manager": true,
+                          |      "timezone": "UTC",
+                          |      "date_created": "2024-05-03T10:28:49+0000",
+                          |      "date_last_login": null,
+                          |      "browser": null,
+                          |      "all_user_groups": [
+                          |        1
+                          |      ],
+                          |      "user_groups": [],
+                          |      "agent_groups": [],
+                          |      "labels": [],
+                          |      "emails": [
+                          |        "bob@example.com"
+                          |      ],
+                          |      "phone_numbers": [],
+                          |      "tickets_count": 0,
+                          |      "chats_count": 0,
+                          |      "fields": {},
+                          |      "contextual_options": [],
+                          |      "contact_data": [],
+                          |      "teams": [],
+                          |      "primary_team": null,
+                          |      "brands": [
+                          |        3
+                          |      ],
+                          |      "preferences": []
+                          |    }
+                          |  ],
+                          |  "meta": {
+                          |    "pagination": {
+                          |      "total": 1,
+                          |      "count": 1,
+                          |      "per_page": 10,
+                          |      "current_page": 1,
+                          |      "total_pages": 1
+                          |    }
+                          |  },
+                          |  "linked": {}
+                          |}
+                          |""".stripMargin)
+              .withStatus(OK)
+          )
+      )
+    }
+
+    def stubFailure(email: LaxEmailAddress) = {
+      stubFor(
+        post(urlPathEqualTo(s"/api/v2/people"))
+          .withRequestBody(equalToJson(
+            s"""
+               |{
+               |  "primary_email":"${email.text}"
+               |}
+               |""".stripMargin
+          ))
+          .willReturn(
+            aResponse()
+              .withBody("{}")
+              .withStatus(NOT_FOUND)
+          )
+      )
+    }
+  }
 }

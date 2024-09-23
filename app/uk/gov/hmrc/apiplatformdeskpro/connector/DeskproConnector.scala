@@ -21,7 +21,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.http.Status.{BAD_REQUEST, CREATED, UNAUTHORIZED}
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue, Json}
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.domain.models._
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector._
@@ -108,13 +108,21 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
   }
 
   def getOrganisationsForPersonEmail(email: LaxEmailAddress)(implicit hc: HeaderCarrier): Future[DeskproLinkedOrganisationWrapper] = {
+    queryPersonForEmail(Json.toJson(GetOrganisationByPersonEmailRequest(email.text)))
+  }
+
+  def getPersonForEmail(email: LaxEmailAddress)(implicit hc: HeaderCarrier): Future[DeskproLinkedOrganisationWrapper] = {
+    queryPersonForEmail(Json.toJson(GetPersonByEmailRequest(email.text)))
+  }
+
+  private def queryPersonForEmail(requestBody: JsValue)(implicit hc: HeaderCarrier): Future[DeskproLinkedOrganisationWrapper] = {
     metrics.record(api) {
       http
         .post(url"${requestUrl(s"/api/v2/people")}")
         .withProxy
         .setHeader(AUTHORIZATION -> config.deskproApiKey)
         .setHeader(DESKPRO_QUERY_HEADER -> DESKPRO_QUERY_MODE_ON)
-        .withBody(Json.toJson(GetOrganisationByPersonEmailRequest(email.text)))
+        .withBody(requestBody)
         .execute[DeskproLinkedOrganisationWrapper]
     }
   }

@@ -17,9 +17,11 @@
 package uk.gov.hmrc.apiplatformdeskpro.scheduled
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{ExecutionContext, Future}
+
 import org.apache.pekko.actor.ActorSystem
+
 import play.api.Configuration
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.mongo.TimestampSupport

@@ -129,7 +129,7 @@ class DeskproConnectorISpec
         val result: DeskproPeopleResponse = await(objInTest.getPeopleByOrganisationId(orgId))
 
         val expectedResponse = DeskproPeopleResponse(
-          List(DeskproPersonResponse(None, "Jeff Smith"), DeskproPersonResponse(Some("bob@example.com"), "Bob Emu")),
+          List(DeskproPersonResponse(3, None, "Jeff Smith"), DeskproPersonResponse(63, Some("bob@example.com"), "Bob Emu")),
           defaultMeta
         )
         result shouldBe expectedResponse
@@ -142,7 +142,7 @@ class DeskproConnectorISpec
         val result                = await(objInTest.getPeopleByOrganisationId(orgId, pageWanted))
 
         val expectedResponse = DeskproPeopleResponse(
-          List(DeskproPersonResponse(None, "Jeff Smith"), DeskproPersonResponse(Some("bob@example.com"), "Bob Emu")),
+          List(DeskproPersonResponse(3, None, "Jeff Smith"), DeskproPersonResponse(63, Some("bob@example.com"), "Bob Emu")),
           defaultMeta
         )
         result shouldBe expectedResponse
@@ -199,6 +199,7 @@ class DeskproConnectorISpec
       val result = await(objInTest.getOrganisationsForPersonEmail(emailAddress))
 
       val expectedResponse = DeskproLinkedOrganisationWrapper(
+        List(DeskproPersonResponse(63, Some(emailAddress.text), "Andy Spaven")),
         DeskproLinkedOrganisationObject(Map(
           "1" -> DeskproOrganisationResponse(1, "Saga Accounting dkfjgh"),
           "3" -> DeskproOrganisationResponse(3, "Deans Demo Org")
@@ -214,6 +215,31 @@ class DeskproConnectorISpec
 
       intercept[UpstreamErrorResponse] {
         await(objInTest.getOrganisationsForPersonEmail(emailAddress))
+      }
+    }
+  }
+
+  "getPersonForEmail" should {
+    "return DeskproLinkedOrganisationWrapper when 200 returned from deskpro with response body" in new Setup {
+      val emailAddress = LaxEmailAddress("bob@example.com")
+      GetPersonForEmail.stubSuccess(emailAddress)
+
+      val result = await(objInTest.getPersonForEmail(emailAddress))
+
+      val expectedResponse = DeskproLinkedOrganisationWrapper(
+        List(DeskproPersonResponse(63, Some(emailAddress.text), "Andy Spaven")),
+        DeskproLinkedOrganisationObject(Map.empty)
+      )
+
+      result shouldBe expectedResponse
+    }
+
+    "throw UpstreamErrorResponse when error response returned from deskpro" in new Setup {
+      val emailAddress = LaxEmailAddress("bob@example.com")
+      GetPersonForEmail.stubFailure(emailAddress)
+
+      intercept[UpstreamErrorResponse] {
+        await(objInTest.getPersonForEmail(emailAddress))
       }
     }
   }

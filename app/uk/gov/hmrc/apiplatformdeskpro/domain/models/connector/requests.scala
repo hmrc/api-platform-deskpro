@@ -19,12 +19,23 @@ package uk.gov.hmrc.apiplatformdeskpro.domain.models.connector
 import play.api.libs.json.JsonNaming.SnakeCase
 import play.api.libs.json.{Json, JsonConfiguration, OFormat}
 
+sealed trait QueryPersonRequest
+
 case class GetOrganisationByPersonEmailRequest(
     primaryEmail: String,
     include: String = "organization_member,organization"
   )
 
-object GetOrganisationByPersonEmailRequest {
+object GetOrganisationByPersonEmailRequest extends QueryPersonRequest {
   implicit val config                                               = JsonConfiguration(SnakeCase)
   implicit val format: OFormat[GetOrganisationByPersonEmailRequest] = Json.format[GetOrganisationByPersonEmailRequest]
+}
+
+case class GetPersonByEmailRequest(
+    primaryEmail: String
+  )
+
+object GetPersonByEmailRequest extends QueryPersonRequest {
+  implicit val config                                   = JsonConfiguration(SnakeCase)
+  implicit val format: OFormat[GetPersonByEmailRequest] = Json.format[GetPersonByEmailRequest]
 }
