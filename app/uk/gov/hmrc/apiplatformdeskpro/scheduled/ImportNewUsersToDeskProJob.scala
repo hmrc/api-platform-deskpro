@@ -17,11 +17,9 @@
 package uk.gov.hmrc.apiplatformdeskpro.scheduled
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
-
 import org.apache.pekko.actor.ActorSystem
-
 import play.api.Configuration
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.mongo.TimestampSupport
@@ -61,6 +59,10 @@ class ImportNewUsersToDeskProJob @Inject() (
       }.map {
         case Some(res) => logger.info(s"Finished with $res. Lock has been released.")
         case None      => logger.info("Failed to take lock")
+      }.recoverWith {
+        case e =>
+          logger.error("Failed to execute job", e)
+          Future.successful()
       }
     }
   } else {
