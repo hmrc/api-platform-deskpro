@@ -57,7 +57,7 @@ class ImportNewUsersToDeskProJob @Inject() (
         logger.info(s"Acquired lock. Starting ImportNewUsersToDeskProJob run")
         createPersonService.pushNewUsersToDeskpro()
       }.map {
-        case Some(res) => logger.info(s"Finished with $res. Lock has been released.")
+        case Some(res) => logger.info(s"Finished with $res. Lock has been disowned and will expire 1 sec before next scheduled run.")
         case None      => logger.info("Failed to take lock")
       }.recoverWith {
         case e =>
