@@ -24,6 +24,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.RegisteredUser
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
+import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 import uk.gov.hmrc.play.http.metrics.common.API

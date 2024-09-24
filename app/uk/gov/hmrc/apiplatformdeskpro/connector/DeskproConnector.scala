@@ -20,7 +20,7 @@ import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.http.HeaderNames.AUTHORIZATION
-import play.api.http.Status.{BAD_REQUEST, CREATED, UNAUTHORIZED}
+import play.api.http.Status.{BAD_REQUEST, CREATED, NO_CONTENT, UNAUTHORIZED}
 import play.api.libs.json.{JsValue, Json}
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.domain.models._
@@ -86,6 +86,28 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
           case _                                                   =>
             logger.error(s"Deskpro person creation '$userId' failed status: ${response.status}")
             DeskproPersonCreationFailure
+        }
+      )
+  }
+
+  def updatePerson(personId: Int, name: String)(implicit hc: HeaderCarrier): Future[DeskproPersonUpdateResult] = metrics.record(api) {
+    http
+      .put(url"${requestUrl(s"/api/v2/people/${personId}")}")
+      .withProxy
+      .withBody(Json.toJson(DeskproPersonUpdate(name)))
+      .setHeader(AUTHORIZATION -> config.deskproApiKey)
+      .execute[HttpResponse]
+      .map(response =>
+        response.status match {
+          case NO_CONTENT  =>
+            logger.info(s"Deskpro person update '$personId' success")
+            DeskproPersonUpdateSuccess
+          case BAD_REQUEST =>
+            logger.error(s"Deskpro person update '$personId' failed Bad request")
+            DeskproPersonUpdateFailure
+          case _           =>
+            logger.error(s"Deskpro person update '$personId' failed status: ${response.status}")
+            DeskproPersonUpdateFailure
         }
       )
   }

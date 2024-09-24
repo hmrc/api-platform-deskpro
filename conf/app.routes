@@ -1,5 +1,8 @@
 # microservice specific routes
 
 POST    /ticket                          uk.gov.hmrc.apiplatformdeskpro.controller.CreateTicketController.createTicket()
+
 GET     /organisation/:orgId             uk.gov.hmrc.apiplatformdeskpro.controller.OrganisationController.getOrganisation(orgId: uk.gov.hmrc.apiplatformdeskpro.domain.models.OrganisationId)
 POST    /organisation/query              uk.gov.hmrc.apiplatformdeskpro.controller.OrganisationController.getOrganisationsByPersonEmail()
+
+PUT     /person                          uk.gov.hmrc.apiplatformdeskpro.controller.PersonController.updatePersonByEmail()
