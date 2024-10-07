@@ -31,7 +31,7 @@ object DeskproOrganisationWrapperResponse {
   implicit val reads: Reads[DeskproOrganisationWrapperResponse] = Json.reads[DeskproOrganisationWrapperResponse]
 }
 
-case class DeskproPersonResponse(primary_email: Option[String], name: String)
+case class DeskproPersonResponse(id: Int, primary_email: Option[String], name: String)
 
 object DeskproPersonResponse {
   implicit val reads: Reads[DeskproPersonResponse] = Json.reads[DeskproPersonResponse]
@@ -45,7 +45,8 @@ object DeskproLinkedOrganisationObject {
     .readWithDefault(Map.empty[String, DeskproOrganisationResponse])
     .map(DeskproLinkedOrganisationObject(_))
 }
-case class DeskproLinkedOrganisationWrapper(linked: DeskproLinkedOrganisationObject)
+
+case class DeskproLinkedOrganisationWrapper(data: List[DeskproPersonResponse], linked: DeskproLinkedOrganisationObject)
 
 object DeskproLinkedOrganisationWrapper {
   implicit val format: Reads[DeskproLinkedOrganisationWrapper] = Json.reads[DeskproLinkedOrganisationWrapper]

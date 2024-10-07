@@ -54,8 +54,8 @@ class OrganisationServiceSpec extends AsyncHmrcSpec {
 
         val peopleResponse = DeskproPeopleResponse(
           List(
-            DeskproPersonResponse(Some(personEmail1), personName1),
-            DeskproPersonResponse(None, personName2)
+            DeskproPersonResponse(1, Some(personEmail1), personName1),
+            DeskproPersonResponse(2, None, personName2)
           ),
           defaultMeta
         )
@@ -76,14 +76,14 @@ class OrganisationServiceSpec extends AsyncHmrcSpec {
 
         val firstPageResponse  = DeskproPeopleResponse(
           List(
-            DeskproPersonResponse(Some(personEmail1), personName1),
-            DeskproPersonResponse(None, personName2)
+            DeskproPersonResponse(1, Some(personEmail1), personName1),
+            DeskproPersonResponse(2, None, personName2)
           ),
           DeskproMetaResponse(DeskproPaginationResponse(1, 3))
         )
         val secondPageResponse = DeskproPeopleResponse(
           List(
-            DeskproPersonResponse(Some(personEmail3), personName3)
+            DeskproPersonResponse(3, Some(personEmail3), personName3)
           ),
           DeskproMetaResponse(DeskproPaginationResponse(2, 3))
         )
@@ -140,6 +140,7 @@ class OrganisationServiceSpec extends AsyncHmrcSpec {
     "successfully return DeskproOrganisation when organisations are returned from connector" in new Setup {
 
       val organisationWrapper = DeskproLinkedOrganisationWrapper(
+        List(DeskproPersonResponse(1, Some(personEmail1), personName1)),
         DeskproLinkedOrganisationObject(Map(
           organisationId1.value -> DeskproOrganisationResponse(organisationId1.value.toInt, orgName1),
           organisationId2.value -> DeskproOrganisationResponse(organisationId2.value.toInt, orgName2)
@@ -160,7 +161,8 @@ class OrganisationServiceSpec extends AsyncHmrcSpec {
     }
 
     "return empty list when no organisations are returned from connector" in new Setup {
-      val organisationWrapper = DeskproLinkedOrganisationWrapper(DeskproLinkedOrganisationObject(Map.empty))
+      val organisationWrapper =
+        DeskproLinkedOrganisationWrapper(List.empty, DeskproLinkedOrganisationObject(Map.empty))
 
       when(mockDeskproConnector.getOrganisationsForPersonEmail(*[LaxEmailAddress])(*))
         .thenReturn(Future.successful(organisationWrapper))

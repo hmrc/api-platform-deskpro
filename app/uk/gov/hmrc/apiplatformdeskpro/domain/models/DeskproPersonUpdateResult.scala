@@ -14,17 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apiplatformdeskpro.domain.models.connector
+package uk.gov.hmrc.apiplatformdeskpro.domain.models
 
-import play.api.libs.json.JsonNaming.SnakeCase
-import play.api.libs.json.{Json, JsonConfiguration, OFormat}
+sealed trait DeskproPersonUpdateResult
+object DeskproPersonUpdateSuccess extends DeskproPersonUpdateResult
+object DeskproPersonUpdateFailure extends DeskproPersonUpdateResult
 
-case class GetOrganisationByPersonEmailRequest(
-    primaryEmail: String,
-    include: String = "organization_member,organization"
-  )
-
-object GetOrganisationByPersonEmailRequest {
-  implicit val config                                               = JsonConfiguration(SnakeCase)
-  implicit val format: OFormat[GetOrganisationByPersonEmailRequest] = Json.format[GetOrganisationByPersonEmailRequest]
-}
+case class DeskproPersonNotFound(
+    message: String
+  ) extends Exception(message)

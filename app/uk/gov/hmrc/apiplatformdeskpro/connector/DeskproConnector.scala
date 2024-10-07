@@ -20,8 +20,8 @@ import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.http.HeaderNames.AUTHORIZATION
-import play.api.http.Status.{BAD_REQUEST, CREATED, UNAUTHORIZED}
-import play.api.libs.json.Json
+import play.api.http.Status.{BAD_REQUEST, CREATED, NO_CONTENT, UNAUTHORIZED}
+import play.api.libs.json.{JsValue, Json}
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.domain.models._
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector._
@@ -90,6 +90,28 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
       )
   }
 
+  def updatePerson(personId: Int, name: String)(implicit hc: HeaderCarrier): Future[DeskproPersonUpdateResult] = metrics.record(api) {
+    http
+      .put(url"${requestUrl(s"/api/v2/people/${personId}")}")
+      .withProxy
+      .withBody(Json.toJson(DeskproPersonUpdate(name)))
+      .setHeader(AUTHORIZATION -> config.deskproApiKey)
+      .execute[HttpResponse]
+      .map(response =>
+        response.status match {
+          case NO_CONTENT  =>
+            logger.info(s"Deskpro person update '$personId' success")
+            DeskproPersonUpdateSuccess
+          case BAD_REQUEST =>
+            logger.error(s"Deskpro person update '$personId' failed Bad request")
+            DeskproPersonUpdateFailure
+          case _           =>
+            logger.error(s"Deskpro person update '$personId' failed status: ${response.status}")
+            DeskproPersonUpdateFailure
+        }
+      )
+  }
+
   def getPeopleByOrganisationId(organisationId: OrganisationId, pageWanted: Int = 1)(implicit hc: HeaderCarrier): Future[DeskproPeopleResponse] = metrics.record(api) {
     val queryParams = Seq("organization" -> organisationId, "count" -> 200, "page" -> pageWanted)
     http
@@ -108,13 +130,21 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
   }
 
   def getOrganisationsForPersonEmail(email: LaxEmailAddress)(implicit hc: HeaderCarrier): Future[DeskproLinkedOrganisationWrapper] = {
+    queryPersonForEmail(Json.toJson(GetOrganisationByPersonEmailRequest(email.text)))
+  }
+
+  def getPersonForEmail(email: LaxEmailAddress)(implicit hc: HeaderCarrier): Future[DeskproLinkedOrganisationWrapper] = {
+    queryPersonForEmail(Json.toJson(GetPersonByEmailRequest(email.text)))
+  }
+
+  private def queryPersonForEmail(requestBody: JsValue)(implicit hc: HeaderCarrier): Future[DeskproLinkedOrganisationWrapper] = {
     metrics.record(api) {
       http
         .post(url"${requestUrl(s"/api/v2/people")}")
         .withProxy
         .setHeader(AUTHORIZATION -> config.deskproApiKey)
         .setHeader(DESKPRO_QUERY_HEADER -> DESKPRO_QUERY_MODE_ON)
-        .withBody(Json.toJson(GetOrganisationByPersonEmailRequest(email.text)))
+        .withBody(requestBody)
         .execute[DeskproLinkedOrganisationWrapper]
     }
   }
