@@ -16,7 +16,7 @@ curl -X POST --location "http://localhost:8470/test-only/token" \
 
 \"token\": \"9614\",
 
-\"principal\": \"api-gatekeeper-frontend\",
+\"principal\": \"api-platform-deskpro-local-test\",
 
 \"permissions\": [
 

@@ -5,9 +5,9 @@ import sbt._
 
 object AppDependencies {
 
-  private val bootstrapVersion = "9.2.0"
+  private val bootstrapVersion = "9.5.0"
   private val hmrcMongoVersion = "2.2.0"
-  private val commonDomainVersion = "0.15.0"
+  private val commonDomainVersion = "0.17.0"
 
   val compile = Seq(
     "uk.gov.hmrc"             %% "bootstrap-backend-play-30"    % bootstrapVersion,
@@ -18,10 +18,10 @@ object AppDependencies {
   )
 
   val test = Seq(
-    "uk.gov.hmrc"             %% "bootstrap-test-play-30"          % bootstrapVersion            % Test,
-    "uk.gov.hmrc.mongo"       %% "hmrc-mongo-test-play-30"         % hmrcMongoVersion            % Test,
-    "uk.gov.hmrc"             %% "api-platform-test-common-domain" % commonDomainVersion         % Test
-  )
+    "uk.gov.hmrc"             %% "bootstrap-test-play-30"              % bootstrapVersion,
+    "uk.gov.hmrc.mongo"       %% "hmrc-mongo-test-play-30"             % hmrcMongoVersion,
+    "uk.gov.hmrc"             %% "api-platform-common-domain-fixtures" % commonDomainVersion
+  ).map(_ % Test)
 
   val it = Seq.empty
 }
