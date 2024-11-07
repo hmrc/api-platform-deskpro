@@ -16,8 +16,12 @@
 
 package uk.gov.hmrc.apiplatformdeskpro.connector
 
+import java.time.Clock
+import java.time.format.DateTimeFormatter
+
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 
+import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.{Application, Mode}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector._
@@ -27,17 +31,20 @@ import uk.gov.hmrc.apiplatformdeskpro.utils.{AsyncHmrcSpec, ConfigBuilder, WireM
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, LaxEmailAddress, UserId}
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
 class DeskproConnectorISpec
     extends AsyncHmrcSpec
     with WireMockSupport
     with GuiceOneServerPerSuite
-    with ConfigBuilder {
+    with ConfigBuilder
+    with FixedClock {
 
   override def fakeApplication(): Application =
     GuiceApplicationBuilder()
       .configure(stubConfig(wireMockPort))
       .in(Mode.Test)
+      .overrides(bind[Clock].toInstance(FixedClock.clock))
       .build()
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
@@ -57,10 +64,11 @@ class DeskproConnectorISpec
     val teamMemberEmailAddress = "frank@example.com"
     val brand                  = 1
 
-    val fields: Map[String, String]              = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "6" -> teamMemberEmailAddress)
-    val deskproPerson: DeskproPerson             = DeskproPerson(name, email)
-    val deskproPersonUpdate: DeskproPersonUpdate = DeskproPersonUpdate(name)
-    val deskproTicket: DeskproTicket             = DeskproTicket(deskproPerson, subject, DeskproTicketMessage(message), brand, fields)
+    val fields: Map[String, String]                  = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "6" -> teamMemberEmailAddress)
+    val deskproPerson: DeskproPerson                 = DeskproPerson(name, email)
+    val deskproPersonUpdate: DeskproPersonUpdate     = DeskproPersonUpdate(name)
+    val deskproInactivePerson: DeskproInactivePerson = DeskproInactivePerson(Map("3" -> "0", "4" -> DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(now)))
+    val deskproTicket: DeskproTicket                 = DeskproTicket(deskproPerson, subject, DeskproTicketMessage(message), brand, fields)
 
   }
 
@@ -142,6 +150,32 @@ class DeskproConnectorISpec
         UpdatePerson.stubInternalServerError(personId)
 
         val error: DeskproPersonUpdateResult = await(objInTest.updatePerson(personId, deskproPerson.name))
+        error shouldBe DeskproPersonUpdateFailure
+      }
+    }
+
+    "markPersonInactive" should {
+      "return DeskproPersonUpdateSuccess when 204 returned from deskpro" in new Setup {
+        val personId: Int = 1
+        MarkPersonInactive.stubSuccess(personId, deskproInactivePerson)
+
+        val result: DeskproPersonUpdateResult = await(objInTest.markPersonInactive(personId))
+        result shouldBe DeskproPersonUpdateSuccess
+      }
+
+      "return DeskproPersonUpdateFailure returned in response body when 400" in new Setup {
+        val personId: Int = 1
+        MarkPersonInactive.stubBadRequest(personId)
+
+        val result: DeskproPersonUpdateResult = await(objInTest.markPersonInactive(personId))
+        result shouldBe DeskproPersonUpdateFailure
+      }
+
+      "return DeskproPersonUpdateFailure when 500 returned from deskpro" in new Setup {
+        val personId: Int = 1
+        MarkPersonInactive.stubInternalServerError(personId)
+
+        val error: DeskproPersonUpdateResult = await(objInTest.markPersonInactive(personId))
         error shouldBe DeskproPersonUpdateFailure
       }
     }

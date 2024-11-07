@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.apiplatformdeskpro.connector
 
+import java.time.Clock
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -32,9 +34,10 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
 import uk.gov.hmrc.play.http.metrics.common.API
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{LaxEmailAddress, UserId}
+import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 
-class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics: ConnectorMetrics)(implicit val ec: ExecutionContext)
-    extends ApplicationLogger {
+class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics: ConnectorMetrics, val clock: Clock)(implicit val ec: ExecutionContext)
+    extends ApplicationLogger with ClockNow {
 
   val DESKPRO_QUERY_HEADER = "X-Deskpro-Api-Get-Query-Body"
 
@@ -120,6 +123,36 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
       .setHeader(AUTHORIZATION -> config.deskproApiKey)
       .execute[DeskproPeopleResponse]
   }
+
+  def markPersonInactive(personId: Int)(implicit hc: HeaderCarrier): Future[DeskproPersonUpdateResult] = metrics.record(api) {
+    http
+      .put(url"${requestUrl(s"/api/v2/people/$personId")}")
+      .withProxy
+      .withBody(Json.toJson(createDeskproInactivePerson))
+      .setHeader(AUTHORIZATION -> config.deskproApiKey)
+      .execute[HttpResponse]
+      .map(response =>
+        response.status match {
+          case NO_CONTENT  =>
+            logger.info(s"Deskpro mark person inactive '$personId' success")
+            DeskproPersonUpdateSuccess
+          case BAD_REQUEST =>
+            logger.error(s"Deskpro mark person inactive '$personId' failed Bad request")
+            DeskproPersonUpdateFailure
+          case _           =>
+            logger.error(s"Deskpro mark person inactive '$personId' failed status: ${response.status}")
+            DeskproPersonUpdateFailure
+        }
+      )
+  }
+
+  private def createDeskproInactivePerson: DeskproInactivePerson =
+    DeskproInactivePerson(
+      Map(
+        config.deskproActive          -> "0",
+        config.deskproInactivatedDate -> DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(now())
+      )
+    )
 
   def getOrganisationById(organisationId: OrganisationId)(implicit hc: HeaderCarrier): Future[DeskproOrganisationWrapperResponse] = metrics.record(api) {
     http

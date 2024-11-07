@@ -33,6 +33,8 @@ class AppConfig @Inject() (config: ServicesConfig) {
   val deskproSupportReason: String   = config.getString("deskpro.support-reason")
   val deskproApplicationId: String   = config.getString("deskpro.application-id")
   val deskproApiName: String         = config.getString("deskpro.api-name")
+  val deskproActive: String          = config.getString("deskpro.active")
+  val deskproInactivatedDate: String = config.getString("deskpro.inactivated-date")
   val thirdPartyDeveloperUrl: String = config.baseUrl("third-party-developer")
   val deskproBatchSize: Int          = config.getInt("importUser.deskpro-batch-size")
   val deskproBatchPause: Int         = config.getInt("importUser.deskpro-batch-pause")

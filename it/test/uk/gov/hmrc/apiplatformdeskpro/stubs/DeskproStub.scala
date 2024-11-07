@@ -20,7 +20,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 
 import play.api.http.Status._
 import play.api.libs.json.Json
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.DeskproTicket
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproInactivePerson, DeskproTicket}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproPerson, DeskproPersonUpdate, OrganisationId}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
@@ -231,6 +231,56 @@ trait DeskproStub {
     def stubBadRequest(personId: Int) = {
       stubFor(
         put(urlMatching(s"/api/v2/people/${personId}"))
+          .willReturn(
+            aResponse()
+              .withStatus(BAD_REQUEST).withBody("""{
+                                                  |  "status": 400,
+                                                  |  "code": "invalid_input",
+                                                  |  "message": "Request input is invalid.",
+                                                  |  "errors": {
+                                                  |    "fields": {
+                                                  |      "firstName": {
+                                                  |        "errors": [
+                                                  |            {
+                                                  |               "code": "other_error",
+                                                  |               "message": "Some other error from deskpro"
+                                                  |          }
+                                                  |        ]
+                                                  |      }
+                                                  |    }
+                                                  |  }
+                                                  |}""".stripMargin)
+          )
+      )
+    }
+
+    def stubInternalServerError(personId: Int) = {
+      stubFor(
+        put(urlMatching(s"/api/v2/people/${personId}"))
+          .willReturn(
+            aResponse()
+              .withStatus(INTERNAL_SERVER_ERROR)
+          )
+      )
+    }
+  }
+
+  object MarkPersonInactive {
+
+    def stubSuccess(personId: Int, deskproInactivePerson: DeskproInactivePerson) = {
+      stubFor(
+        put(urlMatching(s"/api/v2/people/$personId"))
+          .withRequestBody(equalTo(Json.toJson(deskproInactivePerson).toString))
+          .willReturn(
+            aResponse()
+              .withStatus(NO_CONTENT)
+          )
+      )
+    }
+
+    def stubBadRequest(personId: Int) = {
+      stubFor(
+        put(urlMatching(s"/api/v2/people/$personId"))
           .willReturn(
             aResponse()
               .withStatus(BAD_REQUEST).withBody("""{
