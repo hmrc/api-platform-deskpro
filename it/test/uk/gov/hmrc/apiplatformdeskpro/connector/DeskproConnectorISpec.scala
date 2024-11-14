@@ -67,7 +67,7 @@ class DeskproConnectorISpec
     val fields: Map[String, String]                  = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "6" -> teamMemberEmailAddress)
     val deskproPerson: DeskproPerson                 = DeskproPerson(name, email)
     val deskproPersonUpdate: DeskproPersonUpdate     = DeskproPersonUpdate(name)
-    val deskproInactivePerson: DeskproInactivePerson = DeskproInactivePerson(Map("3" -> "0", "4" -> DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(now)))
+    val deskproInactivePerson: DeskproInactivePerson = DeskproInactivePerson(Map("5" -> "1", "4" -> DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(now)))
     val deskproTicket: DeskproTicket                 = DeskproTicket(deskproPerson, subject, DeskproTicketMessage(message), brand, fields)
 
   }

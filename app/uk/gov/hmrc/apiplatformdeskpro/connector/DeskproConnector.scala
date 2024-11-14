@@ -149,7 +149,7 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
   private def createDeskproInactivePerson: DeskproInactivePerson =
     DeskproInactivePerson(
       Map(
-        config.deskproActive          -> "0",
+        config.deskproInactive        -> "1",
         config.deskproInactivatedDate -> DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(now())
       )
     )
