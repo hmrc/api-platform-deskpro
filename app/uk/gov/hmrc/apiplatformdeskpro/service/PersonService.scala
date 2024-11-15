@@ -36,4 +36,12 @@ class PersonService @Inject() (deskproConnector: DeskproConnector)(implicit val 
       result         <- deskproConnector.updatePerson(personId, name)
     } yield result
   }
+
+  def markPersonInactive(email: LaxEmailAddress)(implicit hc: HeaderCarrier): Future[DeskproPersonUpdateResult] = {
+    for {
+      personResponse <- deskproConnector.getPersonForEmail(email)
+      personId        = personResponse.data.headOption.getOrElse(throw new DeskproPersonNotFound("Person not found")).id
+      result         <- deskproConnector.markPersonInactive(personId)
+    } yield result
+  }
 }

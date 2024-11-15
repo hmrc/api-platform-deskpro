@@ -124,5 +124,77 @@ class PersonControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
         verify(mockService, never).updatePersonByEmail(eqTo(personEmail), eqTo(personName))(*)
       }
     }
+
+    "markPersonInactive" should {
+      "return 200 when person found and marked inactive successfully" in new Setup {
+        when(mockService.markPersonInactive(*[LaxEmailAddress])(*)).thenReturn(Future.successful(DeskproPersonUpdateSuccess))
+        when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
+
+        val request = FakeRequest(POST, "/person/mark-inactive")
+          .withJsonBody(Json.parse(s"""{"email": "${personEmail.text}"}"""))
+          .withHeaders("Authorization" -> "123456")
+
+        val result: Future[Result] = objToTest.markPersonInactive()(request)
+
+        status(result) shouldBe OK
+
+        verify(mockService).markPersonInactive(eqTo(personEmail))(*)
+      }
+    }
+
+    "return 500 when person found but update failed" in new Setup {
+      when(mockService.markPersonInactive(*[LaxEmailAddress])(*)).thenReturn(Future.successful(DeskproPersonUpdateFailure))
+      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
+
+      val request = FakeRequest(POST, "/person/mark-inactive")
+        .withJsonBody(Json.parse(s"""{"email": "${personEmail.text}"}"""))
+        .withHeaders("Authorization" -> "123456")
+
+      val result: Future[Result] = objToTest.markPersonInactive()(request)
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+
+    "return 500 when downstream call returns 401" in new Setup {
+      when(mockService.markPersonInactive(*[LaxEmailAddress])(*)).thenReturn(Future.failed(UpstreamErrorResponse("Unauthorized", 401)))
+      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
+
+      val request = FakeRequest(POST, "/person/mark-inactive")
+        .withJsonBody(Json.parse(s"""{"email": "${personEmail.text}"}"""))
+        .withHeaders("Authorization" -> "123456")
+
+      val result: Future[Result] = objToTest.markPersonInactive()(request)
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) shouldBe """{"code":"UNKNOWN_ERROR","message":"Unknown error occurred"}"""
+    }
+
+    "return 404 when no person found for specified email" in new Setup {
+      when(mockService.markPersonInactive(*[LaxEmailAddress])(*)).thenReturn(Future.failed(DeskproPersonNotFound("Person not found")))
+      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
+
+      val request = FakeRequest(POST, "/person/mark-inactive")
+        .withJsonBody(Json.parse(s"""{"email": "${personEmail.text}"}"""))
+        .withHeaders("Authorization" -> "123456")
+
+      val result: Future[Result] = objToTest.markPersonInactive()(request)
+
+      status(result) shouldBe NOT_FOUND
+      contentAsString(result) shouldBe """{"code":"PERSON_NOT_FOUND","message":"Person not found"}"""
+    }
+
+    "return UpstreamErrorResponse with an invalid token" in new Setup {
+      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.failed(UpstreamErrorResponse("Unauthorized", UNAUTHORIZED)))
+
+      val request = FakeRequest(POST, "/person/mark-inactive")
+        .withJsonBody(Json.parse(s"""{"email": "${personEmail.text}"}"""))
+        .withHeaders("Authorization" -> "123456")
+
+      intercept[UpstreamErrorResponse] {
+        await(objToTest.markPersonInactive()(request))
+      }
+
+      verify(mockService, never).markPersonInactive(eqTo(personEmail))(*)
+    }
   }
 }

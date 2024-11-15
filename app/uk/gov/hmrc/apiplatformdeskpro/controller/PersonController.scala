@@ -21,7 +21,7 @@ import scala.concurrent.ExecutionContext
 
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.UpdatePersonByEmailRequest
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.{MarkPersonInactiveRequest, UpdatePersonByEmailRequest}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproPersonNotFound, DeskproPersonUpdateFailure, DeskproPersonUpdateSuccess}
 import uk.gov.hmrc.apiplatformdeskpro.service.PersonService
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
@@ -37,6 +37,18 @@ class PersonController @Inject() (personService: PersonService, cc: ControllerCo
       implicit request: AuthenticatedRequest[AnyContent, Unit] =>
         withJsonBodyFromAnyContent[UpdatePersonByEmailRequest] { parsedRequest =>
           personService.updatePersonByEmail(parsedRequest.email, parsedRequest.name)
+            .map {
+              case DeskproPersonUpdateSuccess => Ok
+              case DeskproPersonUpdateFailure => InternalServerError
+            } recover recovery
+        }
+    }
+
+  def markPersonInactive(): Action[AnyContent] =
+    auth.authorizedAction(predicate = Predicate.Permission(Resource.from("api-platform-deskpro", "people/all"), IAAction("WRITE"))).async {
+      implicit request: AuthenticatedRequest[AnyContent, Unit] =>
+        withJsonBodyFromAnyContent[MarkPersonInactiveRequest] { parsedRequest =>
+          personService.markPersonInactive(parsedRequest.email)
             .map {
               case DeskproPersonUpdateSuccess => Ok
               case DeskproPersonUpdateFailure => InternalServerError

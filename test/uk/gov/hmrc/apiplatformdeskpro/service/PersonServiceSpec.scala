@@ -106,5 +106,70 @@ class PersonServiceSpec extends AsyncHmrcSpec {
         }
       }
     }
+
+    "markPersonInactive" should {
+      "successfully return MarkPersonInactiveSuccess when person is found and updated successfully" in new Setup {
+        val wrapper = DeskproLinkedOrganisationWrapper(
+          List(DeskproPersonResponse(personId1, Some(personEmail1.text), personName1)),
+          DeskproLinkedOrganisationObject(Map.empty)
+        )
+
+        when(mockDeskproConnector.getPersonForEmail(eqTo(personEmail1))(*))
+          .thenReturn(Future.successful(wrapper))
+        when(mockDeskproConnector.markPersonInactive(eqTo(personId1))(*))
+          .thenReturn(Future.successful(DeskproPersonUpdateSuccess))
+
+        val result = await(underTest.markPersonInactive(personEmail1))
+
+        result shouldBe DeskproPersonUpdateSuccess
+
+        verify(mockDeskproConnector).getPersonForEmail(eqTo(personEmail1))(*)
+        verify(mockDeskproConnector).markPersonInactive(eqTo(personId1))(*)
+      }
+
+      "return DeskproPersonUpdateFailure when person is found but failed to update" in new Setup {
+        val wrapper = DeskproLinkedOrganisationWrapper(
+          List(DeskproPersonResponse(personId1, Some(personEmail1.text), personName1)),
+          DeskproLinkedOrganisationObject(Map.empty)
+        )
+
+        when(mockDeskproConnector.getPersonForEmail(eqTo(personEmail1))(*))
+          .thenReturn(Future.successful(wrapper))
+        when(mockDeskproConnector.markPersonInactive(eqTo(personId1))(*))
+          .thenReturn(Future.successful(DeskproPersonUpdateFailure))
+
+        val result = await(underTest.markPersonInactive(personEmail1))
+
+        result shouldBe DeskproPersonUpdateFailure
+
+        verify(mockDeskproConnector).getPersonForEmail(eqTo(personEmail1))(*)
+        verify(mockDeskproConnector).markPersonInactive(eqTo(personId1))(*)
+      }
+
+      "throw an DeskproPersonNotFound exception when person is not found" in new Setup {
+        val wrapper = DeskproLinkedOrganisationWrapper(
+          List.empty,
+          DeskproLinkedOrganisationObject(Map.empty)
+        )
+
+        when(mockDeskproConnector.getPersonForEmail(eqTo(personEmail1))(*))
+          .thenReturn(Future.successful(wrapper))
+
+        intercept[DeskproPersonNotFound] {
+          await(underTest.markPersonInactive(personEmail1))
+        }
+
+        verify(mockDeskproConnector, never).updatePerson(*, *)(*)
+      }
+
+      "propagate an Upstream error in getPersonForEmail" in new Setup {
+        when(mockDeskproConnector.getPersonForEmail(eqTo(personEmail1))(*))
+          .thenReturn(Future.failed(UpstreamErrorResponse("auth fail", 401)))
+
+        intercept[UpstreamErrorResponse] {
+          await(underTest.markPersonInactive(personEmail1))
+        }
+      }
+    }
   }
 }
