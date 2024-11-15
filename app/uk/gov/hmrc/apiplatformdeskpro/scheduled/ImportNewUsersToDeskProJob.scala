@@ -64,7 +64,7 @@ class ImportNewUsersToDeskProJob @Inject() (
       }.recoverWith {
         case e =>
           logger.error("Failed to execute job", e)
-          Future.successful()
+          Future.successful(())
       }
     }
   } else {

@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.apiplatformdeskpro.domain.models.connector
 
+import play.api.libs.json.JsonConfiguration.Aux
 import play.api.libs.json.JsonNaming.SnakeCase
 import play.api.libs.json.{Json, JsonConfiguration, OFormat}
 
@@ -27,7 +28,7 @@ case class GetOrganisationByPersonEmailRequest(
   )
 
 object GetOrganisationByPersonEmailRequest extends QueryPersonRequest {
-  implicit val config                                               = JsonConfiguration(SnakeCase)
+  implicit val config: Aux[Json.MacroOptions]                       = JsonConfiguration(SnakeCase)
   implicit val format: OFormat[GetOrganisationByPersonEmailRequest] = Json.format[GetOrganisationByPersonEmailRequest]
 }
 
@@ -36,6 +37,6 @@ case class GetPersonByEmailRequest(
   )
 
 object GetPersonByEmailRequest extends QueryPersonRequest {
-  implicit val config                                   = JsonConfiguration(SnakeCase)
+  implicit val config: Aux[Json.MacroOptions]           = JsonConfiguration(SnakeCase)
   implicit val format: OFormat[GetPersonByEmailRequest] = Json.format[GetPersonByEmailRequest]
 }
