@@ -24,8 +24,8 @@ import play.api.libs.json.Json
 import play.api.mvc.{AnyContentAsText, ControllerComponents, Result}
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers, StubControllerComponentsFactory, StubPlayBodyParsersFactory}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.DeskproTicketCreationFailed
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.DeskproTicketCreated
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.{CreateTicketRequest, CreateTicketResponse, DeskproPerson, DeskproTicketCreationFailed}
 import uk.gov.hmrc.apiplatformdeskpro.service.CreateTicketService
 import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
@@ -58,15 +58,17 @@ class CreateTicketControllerSpec extends AsyncHmrcSpec with StubControllerCompon
     val supportReason          = "supportReason"
     val teamMemberEmailAddress = "frank@example.com"
 
-    val createTicketRequest = CreateTicketRequest(
-      DeskproPerson(name, email),
-      subject,
-      message,
-      Some(apiName),
-      Some(applicationId),
-      Some(organisation),
-      Some(supportReason),
-      Some(teamMemberEmailAddress)
+    val createTicketRequestJson = Json.parse(
+      s"""
+          {
+            "person": {
+              "name": "$name",
+              "email": "$email"
+            },
+            "subject": "$subject",
+            "message": "$message"
+          }
+      """
     )
 
     def stubServiceSuccess(ref: String) = {
@@ -77,18 +79,18 @@ class CreateTicketControllerSpec extends AsyncHmrcSpec with StubControllerCompon
   "CreateDeskproTicketController" should {
     "return 201 with a valid payload" in new Setup {
 
-      val ref     = "123456"
+      val ref = "123456"
       stubServiceSuccess(ref)
-      val body    = Json.toJson(createTicketRequest)
+      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
+
       val request = FakeRequest(POST, "/ticket")
         .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
-        .withJsonBody(body)
-      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
+        .withJsonBody(createTicketRequestJson)
 
       val result: Future[Result] = objToTest.createTicket()(request)
 
       status(result) shouldBe CREATED
-      contentAsJson(result).as[CreateTicketResponse] shouldBe CreateTicketResponse(ref)
+      contentAsJson(result) shouldBe Json.parse(s"""{"ref": "$ref"}""")
     }
 
     "return 400 for an invalid payload" in new Setup {
@@ -115,10 +117,9 @@ class CreateTicketControllerSpec extends AsyncHmrcSpec with StubControllerCompon
 
     "return 500 when the call to deskpro fails" in new Setup {
       when(mockService.submitTicket(*)(*)).thenReturn(Future.successful(Left(DeskproTicketCreationFailed("failed"))))
-      val body    = Json.toJson(createTicketRequest)
       val request = FakeRequest(POST, "/ticket")
         .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
-        .withJsonBody(body)
+        .withJsonBody(createTicketRequestJson)
       when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
 
       val result: Future[Result] = objToTest.createTicket()(request)
