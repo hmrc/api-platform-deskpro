@@ -53,18 +53,18 @@ class DeskproConnectorISpec
 
     val objInTest: DeskproConnector = app.injector.instanceOf[DeskproConnector]
 
-    val name                   = "Bob Holness"
-    val email                  = "bob@exmaple.com"
-    val subject                = "Subject of the ticket"
-    val message                = "This is where the message for the ticket goes"
-    val apiName                = "apiName"
-    val applicationId: String  = ApplicationId.random.toString()
-    val organisation           = "organisation"
-    val supportReason          = "supportReason"
-    val teamMemberEmailAddress = "frank@example.com"
-    val brand                  = 1
+    val name            = "Bob Holness"
+    val email           = "bob@exmaple.com"
+    val subject         = "Subject of the ticket"
+    val message         = "This is where the message for the ticket goes"
+    val apiName         = "apiName"
+    val applicationId   = ApplicationId.random.toString()
+    val organisation    = "organisation"
+    val supportReason   = "supportReason"
+    val teamMemberEmail = "frank@example.com"
+    val brand           = 1
 
-    val fields: Map[String, String]                  = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "6" -> teamMemberEmailAddress)
+    val fields: Map[String, String]                  = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "6" -> teamMemberEmail)
     val deskproPerson: DeskproPerson                 = DeskproPerson(name, email)
     val deskproPersonUpdate: DeskproPersonUpdate     = DeskproPersonUpdate(name)
     val deskproInactivePerson: DeskproInactivePerson = DeskproInactivePerson(Map("5" -> "1", "4" -> DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(now)))

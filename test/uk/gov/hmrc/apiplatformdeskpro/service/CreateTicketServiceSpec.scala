@@ -36,36 +36,37 @@ class CreateTicketServiceSpec extends AsyncHmrcSpec {
     val mockDeskproConnector = mock[DeskproConnector]
     val mockAppConfig        = mock[AppConfig]
 
-    val name                   = "Bob Holness"
-    val email                  = "bob@exmaple.com"
-    val subject                = "Subject of the ticket"
-    val message                = "This is where the message for the ticket goes"
-    val apiName                = "apiName"
-    val applicationId          = ApplicationId.random.toString()
-    val organisation           = "organisation"
-    val supportReason          = "supportReason"
-    val teamMemberEmailAddress = "frank@example.com"
-    val ref                    = "ref"
-    val brand                  = 1
-    val underTest              = new CreateTicketService(mockDeskproConnector, mockAppConfig)
+    val fullName        = "Bob Holness"
+    val email           = "bob@exmaple.com"
+    val subject         = "Subject of the ticket"
+    val message         = "This is where the message for the ticket goes"
+    val apiName         = "apiName"
+    val applicationId   = ApplicationId.random.toString()
+    val organisation    = "organisation"
+    val supportReason   = "supportReason"
+    val teamMemberEmail = "frank@example.com"
+    val ref             = "ref"
+    val brand           = 1
+    val underTest       = new CreateTicketService(mockDeskproConnector, mockAppConfig)
   }
 
   "CreateTicketService" should {
     "successfully create a new deskpro ticket with all custom fields" in new Setup {
 
       val createTicketRequest = CreateTicketRequest(
-        DeskproPerson(name, email),
+        fullName,
+        email,
         subject,
         message,
         Some(apiName),
         Some(applicationId),
         Some(organisation),
         Some(supportReason),
-        Some(teamMemberEmailAddress)
+        Some(teamMemberEmail)
       )
 
-      val fields                = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "6" -> teamMemberEmailAddress)
-      val expectedDeskproTicket = DeskproTicket(DeskproPerson(name, email), subject, DeskproTicketMessage(message), brand, fields)
+      val fields                = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "6" -> teamMemberEmail)
+      val expectedDeskproTicket = DeskproTicket(DeskproPerson(fullName, email), subject, DeskproTicketMessage(message), brand, fields)
 
       when(mockDeskproConnector.createTicket(*)(*)).thenReturn(Future.successful(Right(DeskproTicketCreated(ref))))
 
@@ -85,7 +86,8 @@ class CreateTicketServiceSpec extends AsyncHmrcSpec {
     "successfully create a new deskpro ticket with no custom fields" in new Setup {
 
       val createTicketRequest = CreateTicketRequest(
-        DeskproPerson(name, email),
+        fullName,
+        email,
         subject,
         message,
         None,
@@ -96,7 +98,7 @@ class CreateTicketServiceSpec extends AsyncHmrcSpec {
       )
 
       val fields: Map[String, String] = Map.empty
-      val expectedDeskproTicket       = DeskproTicket(DeskproPerson(name, email), subject, DeskproTicketMessage(message), brand, fields)
+      val expectedDeskproTicket       = DeskproTicket(DeskproPerson(fullName, email), subject, DeskproTicketMessage(message), brand, fields)
 
       when(mockDeskproConnector.createTicket(*)(*)).thenReturn(Future.successful(Right(DeskproTicketCreated(ref))))
 

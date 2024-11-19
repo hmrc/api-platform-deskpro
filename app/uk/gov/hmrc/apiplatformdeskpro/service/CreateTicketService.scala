@@ -41,16 +41,16 @@ class CreateTicketService @Inject() (
 
   private def createDeskproTicket(request: CreateTicketRequest): DeskproTicket = {
 
-    val maybeOrganisation           = request.organisation.fold(Map.empty[String, String])(v => Map(config.deskproOrganisation -> v))
-    val maybeTeamMemberEmailAddress = request.teamMemberEmailAddress.fold(Map.empty[String, String])(v => Map(config.deskproTeamMemberEmail -> v))
-    val maybeApiName                = request.apiName.fold(Map.empty[String, String])(v => Map(config.deskproApiName -> v))
-    val maybeApplicationId          = request.applicationId.fold(Map.empty[String, String])(v => Map(config.deskproApplicationId -> v))
-    val maybeSupportReason          = request.supportReason.fold(Map.empty[String, String])(v => Map(config.deskproSupportReason -> v))
+    val maybeOrganisation    = request.organisation.fold(Map.empty[String, String])(v => Map(config.deskproOrganisation -> v))
+    val maybeTeamMemberEmail = request.teamMemberEmail.fold(Map.empty[String, String])(v => Map(config.deskproTeamMemberEmail -> v))
+    val maybeApiName         = request.apiName.fold(Map.empty[String, String])(v => Map(config.deskproApiName -> v))
+    val maybeApplicationId   = request.applicationId.fold(Map.empty[String, String])(v => Map(config.deskproApplicationId -> v))
+    val maybeSupportReason   = request.supportReason.fold(Map.empty[String, String])(v => Map(config.deskproSupportReason -> v))
 
-    val fields = maybeOrganisation ++ maybeTeamMemberEmailAddress ++ maybeApiName ++ maybeApplicationId ++ maybeSupportReason
+    val fields = maybeOrganisation ++ maybeTeamMemberEmail ++ maybeApiName ++ maybeApplicationId ++ maybeSupportReason
 
     DeskproTicket(
-      DeskproPerson(request.person.name, request.person.email),
+      DeskproPerson(request.fullName, request.email),
       request.subject,
       DeskproTicketMessage.fromRaw(request.message),
       config.deskproBrand,
