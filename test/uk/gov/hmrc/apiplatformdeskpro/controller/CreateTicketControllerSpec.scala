@@ -66,7 +66,12 @@ class CreateTicketControllerSpec extends AsyncHmrcSpec with StubControllerCompon
               "email": "$email"
             },
             "subject": "$subject",
-            "message": "$message"
+            "message": "$message",
+            "apiName": "$apiName",
+            "applicationId": "$applicationId",
+            "organisation": "$organisation",
+            "supportReason": "$supportReason",
+            "teamMemberEmailAddress": "$teamMemberEmailAddress"
           }
       """
     )
