@@ -62,7 +62,7 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
             logger.error(s"Deskpro ticket creation failed as unauthorized for: ${deskproTicket.subject}")
             Left(DeskproTicketCreationFailed("Missing authorization"))
           case _            =>
-            val errorMessage = (Json.parse(response.body) \ "errors" \ "errors" \ 0 \ "message").toOption.map(_.toString).getOrElse("(none)")
+            val errorMessage = (Json.parse(response.body) \\ "message").map(_.toString).mkString(",")
             logger.error(s"Deskpro ticket creation failed with message $errorMessage for: ${deskproTicket.subject}")
             Left(DeskproTicketCreationFailed(errorMessage))
         }
