@@ -64,7 +64,7 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
           case _            =>
             val errorMessage = (Json.parse(response.body) \\ "message").mkString(",")
             logger.error(s"Deskpro ticket creation failed with message $errorMessage for: ${deskproTicket.subject}")
-            Left(DeskproTicketCreationFailed(errorMessage))
+            Left(DeskproTicketCreationFailed("Unknown reason"))
         }
       )
   }

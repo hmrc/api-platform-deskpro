@@ -56,6 +56,7 @@ trait DeskproStub {
         post(urlMatching("/api/v2/tickets"))
           .willReturn(
             aResponse()
+              .withBody("""{"status":400,"code":"invalid_input","message":"Request input is invalid.","errors":{"errors":[{"code":"dupe_ticket","message":"Duplicate ticket."}]}}""")
               .withStatus(INTERNAL_SERVER_ERROR)
           )
       )
