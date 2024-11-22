@@ -17,19 +17,19 @@
 package uk.gov.hmrc.apiplatformdeskpro.controller
 
 import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
-import play.api.test.FakeRequest
 import play.api.test.Helpers._
+import play.api.test.WsTestClient
 import uk.gov.hmrc.apiplatformdeskpro.domain.models._
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproTicket, DeskproTicketMessage}
 import uk.gov.hmrc.apiplatformdeskpro.stubs.{DeskproStub, InternalAuthStub}
 import uk.gov.hmrc.apiplatformdeskpro.utils.{AsyncHmrcSpec, ConfigBuilder}
 import uk.gov.hmrc.http.test.WireMockSupport
 
-class CreateTicketControllerISpec extends AsyncHmrcSpec with WireMockSupport with ConfigBuilder with GuiceOneAppPerSuite {
+class CreateTicketControllerISpec extends AsyncHmrcSpec with WireMockSupport with ConfigBuilder with GuiceOneServerPerSuite with WsTestClient {
 
   override def fakeApplication() = GuiceApplicationBuilder()
     .configure(stubConfig(wireMockPort))
@@ -37,8 +37,9 @@ class CreateTicketControllerISpec extends AsyncHmrcSpec with WireMockSupport wit
 
   trait Setup extends DeskproStub with InternalAuthStub {
 
-    val token     = "123456"
-    val underTest = app.injector.instanceOf[CreateTicketController]
+    val token            = "123456"
+    val underTest        = app.injector.instanceOf[CreateTicketController]
+    implicit val appPort = port
   }
 
   "createTicket" should {
@@ -58,11 +59,12 @@ class CreateTicketControllerISpec extends AsyncHmrcSpec with WireMockSupport wit
       val deskproTicket = DeskproTicket(DeskproPerson("Dave", "dave@example.com"), "subject", DeskproTicketMessage("message"), 1)
       CreateTicket.stubSuccess(deskproTicket)
 
-      val fakeRequest = FakeRequest("POST", "/ticket").withJsonBody(Json.toJson(createTicketRequest)).withHeaders("Authorization" -> token)
+      val response = await(wsUrl(s"/ticket")
+        .addHttpHeaders("Authorization" -> token)
+        .post(Json.toJson(createTicketRequest)))
 
-      val result = route(app, fakeRequest).get
-
-      status(result) mustBe CREATED
+      response.status mustBe CREATED
+      response.json.as[CreateTicketResponse] mustBe CreateTicketResponse("SDST-1234")
     }
   }
 }

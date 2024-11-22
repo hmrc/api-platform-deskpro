@@ -17,12 +17,12 @@
 package uk.gov.hmrc.apiplatformdeskpro.controller
 
 import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
-import play.api.test.FakeRequest
 import play.api.test.Helpers._
+import play.api.test.WsTestClient
 import uk.gov.hmrc.apiplatformdeskpro.domain.models._
 import uk.gov.hmrc.apiplatformdeskpro.stubs.{DeskproStub, InternalAuthStub}
 import uk.gov.hmrc.apiplatformdeskpro.utils.{AsyncHmrcSpec, ConfigBuilder}
@@ -30,7 +30,7 @@ import uk.gov.hmrc.http.test.WireMockSupport
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
-class OrganisationControllerISpec extends AsyncHmrcSpec with WireMockSupport with ConfigBuilder with GuiceOneAppPerSuite {
+class OrganisationControllerISpec extends AsyncHmrcSpec with WireMockSupport with ConfigBuilder with GuiceOneServerPerSuite with WsTestClient {
 
   override def fakeApplication() = GuiceApplicationBuilder()
     .configure(stubConfig(wireMockPort))
@@ -38,8 +38,9 @@ class OrganisationControllerISpec extends AsyncHmrcSpec with WireMockSupport wit
 
   trait Setup extends DeskproStub with InternalAuthStub {
 
-    val token     = "123456"
-    val underTest = app.injector.instanceOf[OrganisationController]
+    val token            = "123456"
+    val underTest        = app.injector.instanceOf[OrganisationController]
+    implicit val appPort = port
   }
 
   "getOrganisation" should {
@@ -49,11 +50,16 @@ class OrganisationControllerISpec extends AsyncHmrcSpec with WireMockSupport wit
       GetOrganisationById.stubSuccess(orgId)
       GetPeopleByOrganisationId.stubSuccess(orgId)
 
-      val fakeRequest = FakeRequest("GET", s"/organisation/$orgId").withHeaders("Authorization" -> token)
+      val response = await(wsUrl(s"/organisation/$orgId").addHttpHeaders("Authorization" -> token).get())
 
-      val result = route(app, fakeRequest).get
+      response.status mustBe OK
 
-      status(result) mustBe OK
+      Json.parse(response.body).as[DeskproOrganisation] mustBe
+        DeskproOrganisation(
+          organisationId = OrganisationId("1"),
+          organisationName = "Example Accounting",
+          people = List(DeskproPerson("Bob Emu", "bob@example.com"))
+        )
     }
 
     "return 404 if not found" in new Setup {
@@ -61,11 +67,7 @@ class OrganisationControllerISpec extends AsyncHmrcSpec with WireMockSupport wit
       val orgId: OrganisationId = OrganisationId("1")
       GetOrganisationById.stubFailure(orgId)
 
-      val fakeRequest = FakeRequest("GET", s"/organisation/$orgId").withHeaders("Authorization" -> token)
-
-      val result = route(app, fakeRequest).get
-
-      status(result) mustBe NOT_FOUND
+      await(wsUrl(s"/organisation/$orgId").addHttpHeaders("Authorization" -> token).get()).status mustBe NOT_FOUND
     }
   }
 
@@ -76,11 +78,24 @@ class OrganisationControllerISpec extends AsyncHmrcSpec with WireMockSupport wit
 
       GetOrganisationsByEmail.stubSuccess(personEmail)
 
-      val fakeRequest = FakeRequest("POST", "/organisation/query").withJsonBody(Json.parse(s"""{"email": "${personEmail.text}"}""")).withHeaders("Authorization" -> token)
+      val response = await(wsUrl(s"/organisation/query")
+        .addHttpHeaders("Authorization" -> token)
+        .post(Json.parse(s"""{"email": "${personEmail.text}"}""")))
 
-      val result = route(app, fakeRequest).get
-
-      status(result) mustBe OK
+      response.status mustBe OK
+      Json.parse(response.body).as[List[DeskproOrganisation]] mustBe
+        List(
+          DeskproOrganisation(
+            organisationId = OrganisationId("1"),
+            organisationName = "Saga Accounting dkfjgh",
+            people = List.empty
+          ),
+          DeskproOrganisation(
+            organisationId = OrganisationId("3"),
+            organisationName = "Deans Demo Org",
+            people = List.empty
+          )
+        )
     }
   }
 }

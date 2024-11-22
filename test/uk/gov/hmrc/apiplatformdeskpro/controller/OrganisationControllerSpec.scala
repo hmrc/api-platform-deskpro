@@ -61,7 +61,6 @@ class OrganisationControllerSpec extends AsyncHmrcSpec with StubControllerCompon
       organisationName = orgName1,
       people = List(DeskproPerson(personName, personEmail))
     )
-
   }
 
   "OrganisationController" should {
@@ -74,7 +73,20 @@ class OrganisationControllerSpec extends AsyncHmrcSpec with StubControllerCompon
       val result: Future[Result] = objToTest.getOrganisation(orgId1)(request)
 
       status(result) shouldBe OK
-      contentAsJson(result).as[DeskproOrganisation] shouldBe response
+      contentAsJson(result) shouldBe Json.parse(
+        s"""
+            {
+              "organisationId": "$orgId1",
+              "organisationName": "$orgName1",
+              "people": [
+                {
+                  "name": "$personName",
+                  "email": "$personEmail"
+                }
+              ]
+            }
+          """
+      )
 
       verify(mockService).getOrganisationById(eqTo(orgId1))(*)
     }
@@ -129,7 +141,8 @@ class OrganisationControllerSpec extends AsyncHmrcSpec with StubControllerCompon
 
       val result = objToTest.getOrganisationsByPersonEmail()(request)
 
-      val expectedResponse = Json.parse(
+      status(result) shouldBe OK
+      contentAsJson(result) shouldBe Json.parse(
         s"""
           [
             {
@@ -145,9 +158,6 @@ class OrganisationControllerSpec extends AsyncHmrcSpec with StubControllerCompon
           ]
           """
       )
-
-      status(result) shouldBe OK
-      contentAsJson(result) shouldBe expectedResponse
 
       verify(mockService).getOrganisationsByEmail(eqTo(LaxEmailAddress(personEmail)))(*)
     }
