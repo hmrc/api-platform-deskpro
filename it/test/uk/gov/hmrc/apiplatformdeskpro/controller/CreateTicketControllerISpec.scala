@@ -46,7 +46,8 @@ class CreateTicketControllerISpec extends AsyncHmrcSpec with WireMockSupport wit
     "return 201 on the agreed route" in new Setup {
       Authenticate.returns(token)
       val createTicketRequest = CreateTicketRequest(
-        DeskproPerson("Dave", "dave@example.com"),
+        "Dave",
+        "dave@example.com",
         "subject",
         "message",
         None,

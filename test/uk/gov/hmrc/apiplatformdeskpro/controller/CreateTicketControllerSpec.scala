@@ -48,30 +48,28 @@ class CreateTicketControllerSpec extends AsyncHmrcSpec with StubControllerCompon
 
     val expectedPredicate = Permission(Resource(ResourceType("api-platform-deskpro"), ResourceLocation("tickets/all")), IAAction("WRITE"))
 
-    val name                   = "Bob Holness"
-    val email                  = "bob@exmaple.com"
-    val subject                = "Subject of the ticket"
-    val message                = "This is where the message for the ticket goes"
-    val apiName                = "apiName"
-    val applicationId          = ApplicationId.random.toString()
-    val organisation           = "organisation"
-    val supportReason          = "supportReason"
-    val teamMemberEmailAddress = "frank@example.com"
+    val fullName        = "Bob Holness"
+    val email           = "bob@exmaple.com"
+    val subject         = "Subject of the ticket"
+    val message         = "This is where the message for the ticket goes"
+    val apiName         = "apiName"
+    val applicationId   = ApplicationId.random.toString()
+    val organisation    = "organisation"
+    val supportReason   = "supportReason"
+    val teamMemberEmail = "frank@example.com"
 
     val createTicketRequestJson = Json.parse(
       s"""
           {
-            "person": {
-              "name": "$name",
-              "email": "$email"
-            },
+            "fullName": "$fullName",
+            "email": "$email",
             "subject": "$subject",
             "message": "$message",
             "apiName": "$apiName",
             "applicationId": "$applicationId",
             "organisation": "$organisation",
             "supportReason": "$supportReason",
-            "teamMemberEmailAddress": "$teamMemberEmailAddress"
+            "teamMemberEmail": "$teamMemberEmail"
           }
       """
     )
