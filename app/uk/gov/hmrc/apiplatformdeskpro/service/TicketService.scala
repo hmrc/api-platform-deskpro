@@ -21,13 +21,13 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.connector.DeskproConnector
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproTicket, DeskproTicketCreated, DeskproTicketMessage}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{CreateDeskproTicket, DeskproTicketCreated, DeskproTicketMessage}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.{CreateTicketRequest, DeskproTicketCreationFailed, _}
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HeaderCarrier
 
 @Singleton
-class CreateTicketService @Inject() (
+class TicketService @Inject() (
     deskproConnector: DeskproConnector,
     config: AppConfig
   )(implicit val ec: ExecutionContext
@@ -35,11 +35,11 @@ class CreateTicketService @Inject() (
 
   def submitTicket(createTicketRequest: CreateTicketRequest)(implicit hc: HeaderCarrier): Future[Either[DeskproTicketCreationFailed, DeskproTicketCreated]] = {
 
-    val deskproTicket: DeskproTicket = createDeskproTicket(createTicketRequest)
+    val deskproTicket: CreateDeskproTicket = createDeskproTicket(createTicketRequest)
     deskproConnector.createTicket(deskproTicket)
   }
 
-  private def createDeskproTicket(request: CreateTicketRequest): DeskproTicket = {
+  private def createDeskproTicket(request: CreateTicketRequest): CreateDeskproTicket = {
 
     val maybeOrganisation    = request.organisation.fold(Map.empty[String, String])(v => Map(config.deskproOrganisation -> v))
     val maybeTeamMemberEmail = request.teamMemberEmail.fold(Map.empty[String, String])(v => Map(config.deskproTeamMemberEmail -> v))
@@ -49,7 +49,7 @@ class CreateTicketService @Inject() (
 
     val fields = maybeOrganisation ++ maybeTeamMemberEmail ++ maybeApiName ++ maybeApplicationId ++ maybeSupportReason
 
-    DeskproTicket(
+    CreateDeskproTicket(
       DeskproPerson(request.fullName, request.email),
       request.subject,
       DeskproTicketMessage.fromRaw(request.message),

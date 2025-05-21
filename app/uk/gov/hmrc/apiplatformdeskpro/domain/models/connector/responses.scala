@@ -16,8 +16,12 @@
 
 package uk.gov.hmrc.apiplatformdeskpro.domain.models.connector
 
+import java.time.Instant
+
 import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json._
+
+import uk.gov.hmrc.apiplatform.modules.common.domain.services.InstantJsonFormatter
 
 case class DeskproOrganisationResponse(id: Int, name: String)
 
@@ -72,4 +76,18 @@ case class DeskproPeopleResponse(data: List[DeskproPersonResponse], meta: Deskpr
 
 object DeskproPeopleResponse {
   implicit val reads: Reads[DeskproPeopleResponse] = Json.reads[DeskproPeopleResponse]
+}
+
+case class DeskproTicketResponse(id: Int, ref: String, person: Int, status: String, date_created: Instant, date_last_agent_reply: Option[Instant], subject: String)
+
+object DeskproTicketResponse {
+  implicit val instantFormatter: Reads[Instant] = InstantJsonFormatter.lenientInstantReads
+
+  implicit val reads: Reads[DeskproTicketResponse] = Json.reads[DeskproTicketResponse]
+}
+
+case class DeskproTicketsWrapperResponse(data: List[DeskproTicketResponse])
+
+object DeskproTicketsWrapperResponse {
+  implicit val reads: Reads[DeskproTicketsWrapperResponse] = Json.reads[DeskproTicketsWrapperResponse]
 }

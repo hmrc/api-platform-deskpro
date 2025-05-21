@@ -21,14 +21,14 @@ import scala.concurrent.Future
 
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.connector.DeskproConnector
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproTicket, DeskproTicketCreated, DeskproTicketMessage}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{CreateDeskproTicket, DeskproTicketCreated, DeskproTicketMessage}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.{CreateTicketRequest, DeskproPerson}
 import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 
-class CreateTicketServiceSpec extends AsyncHmrcSpec {
+class TicketServiceSpec extends AsyncHmrcSpec {
 
   trait Setup {
     implicit val hc: HeaderCarrier = HeaderCarrier()
@@ -47,10 +47,10 @@ class CreateTicketServiceSpec extends AsyncHmrcSpec {
     val teamMemberEmail = "frank@example.com"
     val ref             = "ref"
     val brand           = 1
-    val underTest       = new CreateTicketService(mockDeskproConnector, mockAppConfig)
+    val underTest       = new TicketService(mockDeskproConnector, mockAppConfig)
   }
 
-  "CreateTicketService" should {
+  "TicketService" should {
     "successfully create a new deskpro ticket with all custom fields" in new Setup {
 
       val createTicketRequest = CreateTicketRequest(
@@ -66,7 +66,7 @@ class CreateTicketServiceSpec extends AsyncHmrcSpec {
       )
 
       val fields                = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "6" -> teamMemberEmail)
-      val expectedDeskproTicket = DeskproTicket(DeskproPerson(fullName, email), subject, DeskproTicketMessage(message), brand, fields)
+      val expectedDeskproTicket = CreateDeskproTicket(DeskproPerson(fullName, email), subject, DeskproTicketMessage(message), brand, fields)
 
       when(mockDeskproConnector.createTicket(*)(*)).thenReturn(Future.successful(Right(DeskproTicketCreated(ref))))
 
@@ -98,7 +98,7 @@ class CreateTicketServiceSpec extends AsyncHmrcSpec {
       )
 
       val fields: Map[String, String] = Map.empty
-      val expectedDeskproTicket       = DeskproTicket(DeskproPerson(fullName, email), subject, DeskproTicketMessage(message), brand, fields)
+      val expectedDeskproTicket       = CreateDeskproTicket(DeskproPerson(fullName, email), subject, DeskproTicketMessage(message), brand, fields)
 
       when(mockDeskproConnector.createTicket(*)(*)).thenReturn(Future.successful(Right(DeskproTicketCreated(ref))))
 

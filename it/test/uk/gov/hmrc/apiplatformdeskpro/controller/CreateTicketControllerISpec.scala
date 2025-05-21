@@ -24,7 +24,7 @@ import play.api.libs.json.Json
 import play.api.test.Helpers._
 import play.api.test.WsTestClient
 import uk.gov.hmrc.apiplatformdeskpro.domain.models._
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproTicket, DeskproTicketMessage}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{CreateDeskproTicket, DeskproTicketMessage}
 import uk.gov.hmrc.apiplatformdeskpro.stubs.{DeskproStub, InternalAuthStub}
 import uk.gov.hmrc.apiplatformdeskpro.utils.{AsyncHmrcSpec, ConfigBuilder}
 import uk.gov.hmrc.http.test.WireMockSupport
@@ -57,7 +57,7 @@ class CreateTicketControllerISpec extends AsyncHmrcSpec with WireMockSupport wit
         None
       )
 
-      val deskproTicket = DeskproTicket(DeskproPerson("Dave", "dave@example.com"), "subject", DeskproTicketMessage("message"), 1)
+      val deskproTicket = CreateDeskproTicket(DeskproPerson("Dave", "dave@example.com"), "subject", DeskproTicketMessage("message"), 1)
       CreateTicket.stubSuccess(deskproTicket)
 
       val response = await(wsUrl(s"/ticket")

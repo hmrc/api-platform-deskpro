@@ -47,7 +47,7 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
   lazy val serviceBaseUrl: String = config.deskproUrl
   val api: API                    = API("deskpro")
 
-  def createTicket(deskproTicket: DeskproTicket)(implicit hc: HeaderCarrier): Future[Either[DeskproTicketCreationFailed, DeskproTicketCreated]] = metrics.record(api) {
+  def createTicket(deskproTicket: CreateDeskproTicket)(implicit hc: HeaderCarrier): Future[Either[DeskproTicketCreationFailed, DeskproTicketCreated]] = metrics.record(api) {
     http.post(url"${requestUrl("/api/v2/tickets")}")
       .withProxy
       .withBody(Json.toJson(deskproTicket))
@@ -181,6 +181,15 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
         .withBody(requestBody)
         .execute[DeskproLinkedOrganisationWrapper]
     }
+  }
+
+  def getTicketsForPersonId(personId: Int)(implicit hc: HeaderCarrier): Future[DeskproTicketsWrapperResponse] = metrics.record(api) {
+    val queryParams = Seq("person" -> personId)
+    http
+      .get(url"${requestUrl(s"/api/v2/tickets")}?$queryParams")
+      .withProxy
+      .setHeader(AUTHORIZATION -> config.deskproApiKey)
+      .execute[DeskproTicketsWrapperResponse]
   }
 
   private def requestUrl[B, A](uri: String): String = s"$serviceBaseUrl$uri"

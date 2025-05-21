@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.apiplatformdeskpro.connector
 
-import java.time.Clock
 import java.time.format.DateTimeFormatter
+import java.time.{Clock, Instant, LocalDateTime, ZoneOffset}
 
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 
@@ -68,7 +68,7 @@ class DeskproConnectorISpec
     val deskproPerson: DeskproPerson                 = DeskproPerson(name, email)
     val deskproPersonUpdate: DeskproPersonUpdate     = DeskproPersonUpdate(name)
     val deskproInactivePerson: DeskproInactivePerson = DeskproInactivePerson(Map("5" -> "1", "4" -> DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(now)))
-    val deskproTicket: DeskproTicket                 = DeskproTicket(deskproPerson, subject, DeskproTicketMessage(message), brand, fields)
+    val deskproTicket: CreateDeskproTicket           = CreateDeskproTicket(deskproPerson, subject, DeskproTicketMessage(message), brand, fields)
 
   }
 
@@ -301,6 +301,28 @@ class DeskproConnectorISpec
       intercept[UpstreamErrorResponse] {
         await(objInTest.getPersonForEmail(emailAddress))
       }
+    }
+  }
+
+  "getTicketsForPersonId" should {
+    "return DeskproTicketsWrapperResponse when 200 returned from deskpro with response body" in new Setup {
+      val personId: Int                = 61
+      val createdDate1: Instant        = LocalDateTime.parse("2025-05-01T08:02:02+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
+      val lastAgentReplyDate1: Instant = LocalDateTime.parse("2025-05-20T07:24:41+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
+      val createdDate2: Instant        = LocalDateTime.parse("2024-04-19T12:32:26+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
+
+      GetTicketsForPersonId.stubSuccess(personId)
+
+      val result = await(objInTest.getTicketsForPersonId(personId))
+
+      val expectedResponse = DeskproTicketsWrapperResponse(
+        List(
+          DeskproTicketResponse(3432, "SDST-2025XON927", personId, "awaiting_user", createdDate1, Some(lastAgentReplyDate1), "HMRC Developer Hub: Support Enquiry"),
+          DeskproTicketResponse(443, "SDST-2024EKL881", personId, "awaiting_agent", createdDate2, None, "HMRC Developer Hub: Support Enquiry")
+        )
+      )
+
+      result shouldBe expectedResponse
     }
   }
 }
