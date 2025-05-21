@@ -21,14 +21,15 @@ import scala.concurrent.Future
 
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.connector.DeskproConnector
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{CreateDeskproTicket, DeskproTicketCreated, DeskproTicketMessage}
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.{CreateTicketRequest, DeskproPerson}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector._
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.{CreateTicketRequest, DeskproPerson, DeskproPersonNotFound, DeskproTicket}
 import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
-class TicketServiceSpec extends AsyncHmrcSpec {
+class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
 
   trait Setup {
     implicit val hc: HeaderCarrier = HeaderCarrier()
@@ -47,10 +48,16 @@ class TicketServiceSpec extends AsyncHmrcSpec {
     val teamMemberEmail = "frank@example.com"
     val ref             = "ref"
     val brand           = 1
-    val underTest       = new TicketService(mockDeskproConnector, mockAppConfig)
+
+    val personId       = 34
+    val personEmail    = LaxEmailAddress("bob@example.com")
+    val deskproTicket1 = DeskproTicketResponse(123, "ref1", personId, "awaiting_user", instant, Some(instant), "subject 1")
+    val deskproTicket2 = DeskproTicketResponse(456, "ref2", personId, "awaiting_agent", instant, None, "subject 2")
+
+    val underTest = new TicketService(mockDeskproConnector, mockAppConfig)
   }
 
-  "TicketService" should {
+  "submitTicket" should {
     "successfully create a new deskpro ticket with all custom fields" in new Setup {
 
       val createTicketRequest = CreateTicketRequest(
@@ -108,6 +115,39 @@ class TicketServiceSpec extends AsyncHmrcSpec {
 
       result shouldBe Right(DeskproTicketCreated(ref))
       verify(mockDeskproConnector).createTicket(eqTo(expectedDeskproTicket))(*)
+    }
+  }
+
+  "getTicketsForPerson" should {
+    "return a list of DeskproTickets" in new Setup {
+      val personWrapper = DeskproLinkedOrganisationWrapper(
+        List(DeskproPersonResponse(personId, Some(personEmail.text), "Bob the Builder")),
+        DeskproLinkedOrganisationObject(Map.empty)
+      )
+
+      when(mockDeskproConnector.getPersonForEmail(eqTo(personEmail))(*)).thenReturn(Future.successful(personWrapper))
+      when(mockDeskproConnector.getTicketsForPersonId(*)(*)).thenReturn(Future.successful(DeskproTicketsWrapperResponse(List(deskproTicket1, deskproTicket2))))
+
+      val result = await(underTest.getTicketsForPerson(personEmail))
+
+      val expectedResponse = List(
+        DeskproTicket(123, "ref1", personId, "awaiting_user", instant, Some(instant), "subject 1"),
+        DeskproTicket(456, "ref2", personId, "awaiting_agent", instant, None, "subject 2")
+      )
+      result shouldBe expectedResponse
+    }
+
+    "throw an DeskproPersonNotFound exception when person is not found" in new Setup {
+      val personWrapper = DeskproLinkedOrganisationWrapper(
+        List.empty,
+        DeskproLinkedOrganisationObject(Map.empty)
+      )
+
+      when(mockDeskproConnector.getPersonForEmail(eqTo(personEmail))(*)).thenReturn(Future.successful(personWrapper))
+
+      intercept[DeskproPersonNotFound] {
+        await(underTest.getTicketsForPerson(personEmail))
+      }
     }
   }
 }

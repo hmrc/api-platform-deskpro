@@ -26,6 +26,8 @@ import uk.gov.hmrc.apiplatformdeskpro.domain.models.{CreateTicketRequest, Deskpr
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+
 @Singleton
 class TicketService @Inject() (
     deskproConnector: DeskproConnector,
@@ -56,5 +58,13 @@ class TicketService @Inject() (
       config.deskproBrand,
       fields
     )
+  }
+
+  def getTicketsForPerson(personEmail: LaxEmailAddress)(implicit hc: HeaderCarrier): Future[List[DeskproTicket]] = {
+    for {
+      personResponse <- deskproConnector.getPersonForEmail(personEmail)
+      personId        = personResponse.data.headOption.getOrElse(throw new DeskproPersonNotFound("Person not found")).id
+      ticketResponse <- deskproConnector.getTicketsForPersonId(personId)
+    } yield ticketResponse.data.map(response => DeskproTicket.build(response))
   }
 }
