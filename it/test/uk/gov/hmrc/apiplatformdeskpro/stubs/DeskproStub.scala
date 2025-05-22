@@ -1159,7 +1159,136 @@ trait DeskproStub {
                           |  },
                           |  "linked": {}
                           |}""".stripMargin)
-              .withStatus(CREATED)
+              .withStatus(OK)
+          )
+      )
+    }
+  }
+
+  object FetchTicket {
+
+    def stubSuccess(ticketId: Int) = {
+      stubFor(
+        get(urlPathEqualTo(s"/api/v2/tickets/$ticketId"))
+          .willReturn(
+            aResponse()
+              .withBody("""{
+                          |  "data": { 
+                          |    "id": 3432,
+                          |    "ref": "SDST-2025XON927",
+                          |    "auth": "WTKK9AWM9ZY6SJK",
+                          |    "parent": null,
+                          |    "language": null,
+                          |    "brand": 3,
+                          |    "department": 37,
+                          |    "category": null,
+                          |    "priority": null,
+                          |    "workflow": null,
+                          |    "product": null,
+                          |    "person": 61,
+                          |    "person_email": "pete.kirby@digital.hmrc.gov.uk",
+                          |    "agent": 61,
+                          |    "agent_team": 8,
+                          |    "organization": 13,
+                          |    "linked_chat": null,
+                          |    "sent_to_address": [],
+                          |    "email_account": null,
+                          |    "email_account_address": "",
+                          |    "creation_system": "web.api",
+                          |    "creation_system_option": "",
+                          |    "ticket_hash": "be1a60543910a4a33911df10cd5a5ccd5c49d3d6",
+                          |    "status": "awaiting_user",
+                          |    "ticket_status": "awaiting_user",
+                          |    "is_hold": false,
+                          |    "labels": null,
+                          |    "urgency": 1,
+                          |    "feedback_rating": null,
+                          |    "date_feedback_rating": null,
+                          |    "date_created": "2025-05-01T08:02:02+0000",
+                          |    "date_resolved": null,
+                          |    "date_archived": null,
+                          |    "date_first_agent_assign": "2025-05-19T11:51:18+0000",
+                          |    "date_first_agent_reply": "2025-05-01T08:02:02+0000",
+                          |    "date_last_agent_reply": "2025-05-20T07:24:41+0000",
+                          |    "date_last_user_reply": "2025-05-20T07:24:41+0000",
+                          |    "date_agent_waiting": "2025-05-20T07:24:40+0000",
+                          |    "date_user_waiting": null,
+                          |    "date_status": "2025-05-20T07:24:41+0000",
+                          |    "total_user_waiting": 1639358,
+                          |    "total_to_first_reply": 0,
+                          |    "total_user_waiting_wh": 421187,
+                          |    "total_to_first_reply_wh": 0,
+                          |    "locked_by_agent": null,
+                          |    "date_locked": null,
+                          |    "date_on_hold": null,
+                          |    "has_attachments": true,
+                          |    "subject": "HMRC Developer Hub: Support Enquiry",
+                          |    "original_subject": "HMRC Developer Hub: Support Enquiry",
+                          |    "properties": null,
+                          |    "problems": [],
+                          |    "count_agent_replies": 3,
+                          |    "count_user_replies": 0,
+                          |    "worst_sla_status": null,
+                          |    "waiting_times": [
+                          |      {
+                          |        "start": 1746086523,
+                          |        "end": 1747655693,
+                          |        "length": 1569170,
+                          |        "ticket_status": "awaiting_agent"
+                          |      },
+                          |      {
+                          |        "start": 1747655694,
+                          |        "end": 1747656009,
+                          |        "length": 315,
+                          |        "ticket_status": "pending"
+                          |      },
+                          |      {
+                          |        "start": 1747656009,
+                          |        "end": 1747725880,
+                          |        "length": 69871,
+                          |        "ticket_status": "pending"
+                          |      }
+                          |    ],
+                          |    "ticket_slas": [
+                          |      3404
+                          |    ],
+                          |    "fields": {
+                          |      "7": {
+                          |        "aliases": [],
+                          |        "value": "Finding the API needed to build my software"
+                          |      },
+                          |      "8": {
+                          |        "aliases": [],
+                          |        "value": "Bob's burgers"
+                          |      }
+                          |    },
+                          |    "contextual_fields": {},
+                          |    "children": [],
+                          |    "siblings": [],
+                          |    "cc": [],
+                          |    "star": null,
+                          |    "ticket_layout": null,
+                          |    "ticket_excerpt": null,
+                          |    "ticket_agent_errors": null,
+                          |    "ticket_user_errors": null,
+                          |    "ticket_permissions": null,
+                          |    "access_code": "FCAWTKK9AWM9ZY6SJK",
+                          |    "followers": ""
+                          |  },
+                          |  "meta": {},
+                          |  "linked": {}
+                          |}""".stripMargin)
+              .withStatus(OK)
+          )
+      )
+    }
+
+    def stubFailure(ticketId: Int) = {
+      stubFor(
+        get(urlPathEqualTo(s"/api/v2/tickets/$ticketId"))
+          .willReturn(
+            aResponse()
+              .withStatus(NOT_FOUND)
           )
       )
     }

@@ -20,7 +20,8 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import play.api.libs.json.Json
-import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
+import play.api.mvc.{Action, AnyContent, ControllerComponents, Result, Results}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.DeskproTicket
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.GetTicketsByEmailRequest
 import uk.gov.hmrc.apiplatformdeskpro.service.TicketService
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
@@ -40,6 +41,17 @@ class TicketController @Inject() (ticketService: TicketService, cc: ControllerCo
             .map { tickets =>
               Ok(Json.toJson(tickets))
             } recover recovery
+        }
+    }
+
+  def fetchTicket(ticketId: Int): Action[AnyContent] =
+    auth.authorizedAction(predicate = Predicate.Permission(Resource.from("api-platform-deskpro", "tickets/all"), IAAction("READ"))).async {
+      implicit request: AuthenticatedRequest[AnyContent, Unit] =>
+        {
+          lazy val failed = NotFound(Results.EmptyContent())
+
+          val success = (t: DeskproTicket) => Ok(Json.toJson(t))
+          ticketService.fetchTicket(ticketId).map(_.fold(failed)(success))
         }
     }
 

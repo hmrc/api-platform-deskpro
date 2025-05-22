@@ -67,4 +67,10 @@ class TicketService @Inject() (
       ticketResponse <- deskproConnector.getTicketsForPersonId(personId)
     } yield ticketResponse.data.map(response => DeskproTicket.build(response))
   }
+
+  def fetchTicket(ticketId: Int)(implicit hc: HeaderCarrier): Future[Option[DeskproTicket]] = {
+    deskproConnector.fetchTicket(ticketId) map {
+      _.map(response => DeskproTicket.build(response.data))
+    }
+  }
 }

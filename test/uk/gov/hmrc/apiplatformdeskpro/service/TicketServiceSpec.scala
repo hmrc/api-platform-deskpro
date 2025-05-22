@@ -54,6 +54,8 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
     val deskproTicket1 = DeskproTicketResponse(123, "ref1", personId, "awaiting_user", instant, Some(instant), "subject 1")
     val deskproTicket2 = DeskproTicketResponse(456, "ref2", personId, "awaiting_agent", instant, None, "subject 2")
 
+    val ticketId: Int = 123
+
     val underTest = new TicketService(mockDeskproConnector, mockAppConfig)
   }
 
@@ -148,6 +150,26 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       intercept[DeskproPersonNotFound] {
         await(underTest.getTicketsForPerson(personEmail))
       }
+    }
+  }
+
+  "fetchTicket" should {
+    "return a DeskproTicket" in new Setup {
+      when(mockDeskproConnector.fetchTicket(*)(*)).thenReturn(Future.successful(Some(DeskproTicketWrapperResponse(deskproTicket1))))
+
+      val result = await(underTest.fetchTicket(ticketId))
+
+      val expectedResponse = DeskproTicket(123, "ref1", personId, "awaiting_user", instant, Some(instant), "subject 1")
+
+      result shouldBe Some(expectedResponse)
+    }
+
+    "return a None if not found" in new Setup {
+      when(mockDeskproConnector.fetchTicket(*)(*)).thenReturn(Future.successful(None))
+
+      val result = await(underTest.fetchTicket(ticketId))
+
+      result shouldBe None
     }
   }
 }

@@ -325,4 +325,32 @@ class DeskproConnectorISpec
       result shouldBe expectedResponse
     }
   }
+
+  "fetchTicket" should {
+    "return DeskproTicketWrapperResponse when 200 returned from deskpro with response body" in new Setup {
+      val ticketId: Int                = 3432
+      val createdDate1: Instant        = LocalDateTime.parse("2025-05-01T08:02:02+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
+      val lastAgentReplyDate1: Instant = LocalDateTime.parse("2025-05-20T07:24:41+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
+
+      FetchTicket.stubSuccess(ticketId)
+
+      val result = await(objInTest.fetchTicket(ticketId))
+
+      val expectedResponse = DeskproTicketWrapperResponse(
+        DeskproTicketResponse(ticketId, "SDST-2025XON927", 61, "awaiting_user", createdDate1, Some(lastAgentReplyDate1), "HMRC Developer Hub: Support Enquiry")
+      )
+
+      result shouldBe Some(expectedResponse)
+    }
+
+    "return None if not found" in new Setup {
+      val ticketId: Int = 3432
+
+      FetchTicket.stubFailure(ticketId)
+
+      val result = await(objInTest.fetchTicket(ticketId))
+
+      result shouldBe None
+    }
+  }
 }

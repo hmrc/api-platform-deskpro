@@ -91,3 +91,9 @@ case class DeskproTicketsWrapperResponse(data: List[DeskproTicketResponse])
 object DeskproTicketsWrapperResponse {
   implicit val reads: Reads[DeskproTicketsWrapperResponse] = Json.reads[DeskproTicketsWrapperResponse]
 }
+
+case class DeskproTicketWrapperResponse(data: DeskproTicketResponse)
+
+object DeskproTicketWrapperResponse {
+  implicit val reads: Reads[DeskproTicketWrapperResponse] = Json.reads[DeskproTicketWrapperResponse]
+}

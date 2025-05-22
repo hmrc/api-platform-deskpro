@@ -60,8 +60,11 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
       """
     )
 
+    val ticketId: Int = 123
+    val ticket        = DeskproTicket(ticketId, "ref1", personId, "awaiting_user", instant, Some(instant), "subject 1")
+
     val listOfTickets = List(
-      DeskproTicket(123, "ref1", personId, "awaiting_user", instant, Some(instant), "subject 1"),
+      ticket,
       DeskproTicket(456, "ref2", personId, "awaiting_agent", instant, None, "subject 2")
     )
   }
@@ -121,11 +124,51 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
     "return UpstreamErrorResponse for invalid token" in new Setup {
       val request = FakeRequest(POST, "/ticket")
         .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
-        .withBody(AnyContentAsText("""Not JSON"""))
+        .withJsonBody(getTicketsByEmailRequestJson)
       when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.failed(UpstreamErrorResponse("Unauthorized", UNAUTHORIZED)))
 
       intercept[UpstreamErrorResponse] {
         await(objToTest.getTicketsByPersonEmail()(request))
+      }
+    }
+  }
+
+  "fetchTicket" should {
+    "return 200 with a ticket" in new Setup {
+
+      when(mockService.fetchTicket(*)(*)).thenReturn(Future.successful(Some(ticket)))
+      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
+
+      val request = FakeRequest(GET, s"/ticket/$ticketId")
+        .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
+
+      val result: Future[Result] = objToTest.fetchTicket(ticketId)(request)
+
+      status(result) shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(ticket)
+    }
+
+    "return 404 when not found" in new Setup {
+
+      when(mockService.fetchTicket(*)(*)).thenReturn(Future.successful(None))
+      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
+
+      val request = FakeRequest(GET, s"/ticket/$ticketId")
+        .withHeaders("Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
+
+      val result: Future[Result] = objToTest.fetchTicket(ticketId)(request)
+
+      status(result) shouldBe NOT_FOUND
+    }
+
+    "return UpstreamErrorResponse for invalid token" in new Setup {
+      val request = FakeRequest(GET, s"/ticket/$ticketId")
+        .withHeaders("Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
+
+      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.failed(UpstreamErrorResponse("Unauthorized", UNAUTHORIZED)))
+
+      intercept[UpstreamErrorResponse] {
+        await(objToTest.fetchTicket(ticketId)(request))
       }
     }
   }
