@@ -65,12 +65,19 @@ class TicketService @Inject() (
       personResponse <- deskproConnector.getPersonForEmail(personEmail)
       personId        = personResponse.data.headOption.getOrElse(throw new DeskproPersonNotFound("Person not found")).id
       ticketResponse <- deskproConnector.getTicketsForPersonId(personId)
-    } yield ticketResponse.data.map(response => DeskproTicket.build(response))
+    } yield ticketResponse.data.map(response => DeskproTicket.build(response, List.empty))
   }
 
   def fetchTicket(ticketId: Int)(implicit hc: HeaderCarrier): Future[Option[DeskproTicket]] = {
-    deskproConnector.fetchTicket(ticketId) map {
-      _.map(response => DeskproTicket.build(response.data))
-    }
+    for {
+      ticketResponse   <- deskproConnector.fetchTicket(ticketId)
+      messagesResponse <- deskproConnector.getTicketMessages(ticketId)
+    } yield ticketResponse map { response => DeskproTicket.build(response.data, messagesResponse.data) }
   }
+
+  // def fetchTicket2(ticketId: Int)(implicit hc: HeaderCarrier): Future[Option[DeskproTicket]] = {
+  //   deskproConnector.fetchTicket(ticketId) map {
+  //      _.map(response => DeskproTicket.build(response.data, List.empty))
+  //    }
+  // }
 }

@@ -200,5 +200,13 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
       .execute[Option[DeskproTicketWrapperResponse]]
   }
 
+  def getTicketMessages(ticketId: Int)(implicit hc: HeaderCarrier): Future[DeskproMessagesWrapperResponse] = metrics.record(api) {
+    http
+      .get(url"${requestUrl(s"/api/v2/tickets/$ticketId/messages")}")
+      .withProxy
+      .setHeader(AUTHORIZATION -> config.deskproApiKey)
+      .execute[DeskproMessagesWrapperResponse]
+  }
+
   private def requestUrl[B, A](uri: String): String = s"$serviceBaseUrl$uri"
 }

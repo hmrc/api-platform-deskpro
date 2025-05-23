@@ -1293,4 +1293,103 @@ trait DeskproStub {
       )
     }
   }
+
+  object GetTicketMessages {
+
+    def stubSuccess(ticketId: Int) = {
+      stubFor(
+        get(urlPathEqualTo(s"/api/v2/tickets/$ticketId/messages"))
+          .willReturn(
+            aResponse()
+              .withBody("""{
+                          |  "data": [ 
+                          |    {
+                          |      "id": 3467,
+                          |      "ticket": 3432,
+                          |      "person": 33,
+                          |      "email_source": null,
+                          |      "attributes": [
+                          |        {
+                          |          "name": "agent_type",
+                          |          "value": "agent",
+                          |          "date_created": "2025-05-01T08:02:02+0000",
+                          |          "type": "value"
+                          |        },
+                          |        {
+                          |          "name": "email_recipients",
+                          |          "value": "[{\"type\":\"to\",\"address\":\"pete.kirby@digital.hmrc.gov.uk\"}]",
+                          |          "date_created": "2025-05-01T08:02:02+0000",
+                          |          "type": "value"
+                          |        }
+                          |      ],
+                          |      "attachments": [],
+                          |      "date_created": "2025-05-01T08:02:02+0000",
+                          |      "is_agent_note": 0,
+                          |      "creation_system": "web.api",
+                          |      "ip_address": "",
+                          |      "visitor_id": null,
+                          |      "hostname": "",
+                          |      "email": "",
+                          |      "message_hash": "7fe219f88a4ed6bd2b7b8f6c6bc1712e6d0d5a70",
+                          |      "primary_translation": null,
+                          |      "message": "Hi.  What API do I need to get next weeks lottery numbers?",
+                          |      "message_full": "",
+                          |      "message_raw": null,
+                          |      "message_preview_text": "Hi. What API do I need to get next weeks lottery numbers?",
+                          |      "show_full_hint": false,
+                          |      "lang_code": null
+                          |    },
+                          |    {
+                          |      "id": 3698,
+                          |      "ticket": 3432,
+                          |      "person": 61,
+                          |      "email_source": null,
+                          |      "attributes": [
+                          |        {
+                          |          "name": "agent_type",
+                          |          "value": "agent",
+                          |          "date_created": "2025-05-19T11:54:53+0000",
+                          |          "type": "value"
+                          |        },
+                          |        {
+                          |          "name": "email_recipients",
+                          |          "value": "[{\"type\":\"to\",\"address\":\"pete.kirby@digital.hmrc.gov.uk\"}]",
+                          |          "date_created": "2025-05-19T11:54:53+0000",
+                          |          "type": "value"
+                          |        }
+                          |      ],
+                          |      "attachments": [],
+                          |      "date_created": "2025-05-19T11:54:53+0000",
+                          |      "is_agent_note": 0,
+                          |      "creation_system": "web",
+                          |      "ip_address": "",
+                          |      "visitor_id": null,
+                          |      "hostname": "",
+                          |      "email": "",
+                          |      "message_hash": "72d080ba0552fdf024c843a20fff3831f8f76387",
+                          |      "primary_translation": null,
+                          |      "message": "<p>Reply message from agent.  What else gets filled in? </p>",
+                          |      "message_full": "",
+                          |      "message_raw": null,
+                          |      "message_preview_text": "Reply message from agent. What else gets filled in?",
+                          |      "show_full_hint": false,
+                          |      "lang_code": null
+                          |    }
+                          |  ],
+                          |  "meta": {
+                          |    "pagination": {
+                          |      "total": 4,
+                          |      "count": 4,
+                          |      "per_page": 10,
+                          |      "current_page": 1,
+                          |      "total_pages": 1
+                          |    }
+                          |  },
+                          |  "linked": {}
+                          |}""".stripMargin)
+              .withStatus(OK)
+          )
+      )
+    }
+  }
 }

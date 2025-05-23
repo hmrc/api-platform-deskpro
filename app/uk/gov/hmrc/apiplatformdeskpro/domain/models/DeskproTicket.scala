@@ -19,7 +19,30 @@ package uk.gov.hmrc.apiplatformdeskpro.domain.models
 import java.time.Instant
 
 import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.DeskproTicketResponse
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproMessageResponse, DeskproTicketResponse}
+
+case class DeskproMessage(
+    id: Int,
+    ticketId: Int,
+    person: Int,
+    dateCreated: Instant,
+    message: String
+  )
+
+object DeskproMessage {
+
+  def build(response: DeskproMessageResponse): DeskproMessage = {
+    DeskproMessage(
+      response.id,
+      response.ticket,
+      response.person,
+      response.date_created,
+      response.message
+    )
+  }
+
+  implicit val format: OFormat[DeskproMessage] = Json.format[DeskproMessage]
+}
 
 case class DeskproTicket(
     id: Int,
@@ -28,12 +51,13 @@ case class DeskproTicket(
     status: String,
     dateCreated: Instant,
     dateLastAgentReply: Option[Instant],
-    subject: String
+    subject: String,
+    messages: List[DeskproMessage]
   )
 
 object DeskproTicket {
 
-  def build(response: DeskproTicketResponse): DeskproTicket = {
+  def build(response: DeskproTicketResponse, messagesResponse: List[DeskproMessageResponse]): DeskproTicket = {
     DeskproTicket(
       response.id,
       response.ref,
@@ -41,7 +65,8 @@ object DeskproTicket {
       response.status,
       response.date_created,
       response.date_last_agent_reply,
-      response.subject
+      response.subject,
+      messagesResponse.map(msg => DeskproMessage.build(msg))
     )
   }
 

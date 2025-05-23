@@ -353,4 +353,25 @@ class DeskproConnectorISpec
       result shouldBe None
     }
   }
+
+  "getTicketMessages" should {
+    "return DeskproMessagesWrapperResponse when 200 returned from deskpro with response body" in new Setup {
+      val ticketId: Int         = 3432
+      val createdDate1: Instant = LocalDateTime.parse("2025-05-01T08:02:02+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
+      val createdDate2: Instant = LocalDateTime.parse("2025-05-19T11:54:53+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
+
+      GetTicketMessages.stubSuccess(ticketId)
+
+      val result = await(objInTest.getTicketMessages(ticketId))
+
+      val expectedResponse = DeskproMessagesWrapperResponse(
+        List(
+          DeskproMessageResponse(3467, ticketId, 33, createdDate1, "Hi.  What API do I need to get next weeks lottery numbers?"),
+          DeskproMessageResponse(3698, ticketId, 61, createdDate2, "<p>Reply message from agent.  What else gets filled in? </p>")
+        )
+      )
+
+      result shouldBe expectedResponse
+    }
+  }
 }

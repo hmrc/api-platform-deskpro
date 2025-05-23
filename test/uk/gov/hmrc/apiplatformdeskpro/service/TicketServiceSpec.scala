@@ -22,7 +22,7 @@ import scala.concurrent.Future
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.connector.DeskproConnector
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector._
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.{CreateTicketRequest, DeskproPerson, DeskproPersonNotFound, DeskproTicket}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.{CreateTicketRequest, DeskproMessage, DeskproPerson, DeskproPersonNotFound, DeskproTicket}
 import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -53,6 +53,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
     val personEmail    = LaxEmailAddress("bob@example.com")
     val deskproTicket1 = DeskproTicketResponse(123, "ref1", personId, "awaiting_user", instant, Some(instant), "subject 1")
     val deskproTicket2 = DeskproTicketResponse(456, "ref2", personId, "awaiting_agent", instant, None, "subject 2")
+    val deskproMessage = DeskproMessageResponse(789, 123, personId, instant, "message 1")
 
     val ticketId: Int = 123
 
@@ -133,8 +134,8 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       val result = await(underTest.getTicketsForPerson(personEmail))
 
       val expectedResponse = List(
-        DeskproTicket(123, "ref1", personId, "awaiting_user", instant, Some(instant), "subject 1"),
-        DeskproTicket(456, "ref2", personId, "awaiting_agent", instant, None, "subject 2")
+        DeskproTicket(123, "ref1", personId, "awaiting_user", instant, Some(instant), "subject 1", List.empty),
+        DeskproTicket(456, "ref2", personId, "awaiting_agent", instant, None, "subject 2", List.empty)
       )
       result shouldBe expectedResponse
     }
@@ -156,16 +157,19 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
   "fetchTicket" should {
     "return a DeskproTicket" in new Setup {
       when(mockDeskproConnector.fetchTicket(*)(*)).thenReturn(Future.successful(Some(DeskproTicketWrapperResponse(deskproTicket1))))
+      when(mockDeskproConnector.getTicketMessages(*)(*)).thenReturn(Future.successful(DeskproMessagesWrapperResponse(List(deskproMessage))))
 
       val result = await(underTest.fetchTicket(ticketId))
 
-      val expectedResponse = DeskproTicket(123, "ref1", personId, "awaiting_user", instant, Some(instant), "subject 1")
+      val expectedResponse =
+        DeskproTicket(123, "ref1", personId, "awaiting_user", instant, Some(instant), "subject 1", List(DeskproMessage(789, ticketId, personId, instant, "message 1")))
 
       result shouldBe Some(expectedResponse)
     }
 
     "return a None if not found" in new Setup {
       when(mockDeskproConnector.fetchTicket(*)(*)).thenReturn(Future.successful(None))
+      when(mockDeskproConnector.getTicketMessages(*)(*)).thenReturn(Future.successful(DeskproMessagesWrapperResponse(List.empty)))
 
       val result = await(underTest.fetchTicket(ticketId))
 
