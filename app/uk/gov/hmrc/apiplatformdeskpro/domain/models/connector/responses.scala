@@ -78,7 +78,16 @@ object DeskproPeopleResponse {
   implicit val reads: Reads[DeskproPeopleResponse] = Json.reads[DeskproPeopleResponse]
 }
 
-case class DeskproTicketResponse(id: Int, ref: String, person: Int, status: String, date_created: Instant, date_last_agent_reply: Option[Instant], subject: String)
+case class DeskproTicketResponse(
+    id: Int,
+    ref: String,
+    person: Int,
+    person_email: String,
+    status: String,
+    date_created: Instant,
+    date_last_agent_reply: Option[Instant],
+    subject: String
+  )
 
 object DeskproTicketResponse {
   implicit val instantFormatter: Reads[Instant] = InstantJsonFormatter.lenientInstantReads
@@ -98,7 +107,7 @@ object DeskproTicketWrapperResponse {
   implicit val reads: Reads[DeskproTicketWrapperResponse] = Json.reads[DeskproTicketWrapperResponse]
 }
 
-case class DeskproMessageResponse(id: Int, ticket: Int, person: Int, date_created: Instant, message: String)
+case class DeskproMessageResponse(id: Int, ticket: Int, person: Int, date_created: Instant, message: String, message_preview_text: String)
 
 object DeskproMessageResponse {
   implicit val instantFormatter: Reads[Instant] = InstantJsonFormatter.lenientInstantReads

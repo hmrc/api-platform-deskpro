@@ -62,11 +62,11 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
 
     val ticketId: Int = 123
     val message       = DeskproMessage(789, ticketId, personId, instant, "message")
-    val ticket        = DeskproTicket(ticketId, "ref1", personId, "awaiting_user", instant, Some(instant), "subject 1", List(message))
+    val ticket        = DeskproTicket(ticketId, "ref1", personId, LaxEmailAddress("bob@example.com"), "awaiting_user", instant, Some(instant), "subject 1", List(message))
 
     val listOfTickets = List(
       ticket,
-      DeskproTicket(456, "ref2", personId, "awaiting_agent", instant, None, "subject 2", List.empty)
+      DeskproTicket(456, "ref2", personId, LaxEmailAddress("bob@example.com"), "awaiting_agent", instant, None, "subject 2", List.empty)
     )
   }
 

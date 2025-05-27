@@ -51,9 +51,9 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
 
     val personId       = 34
     val personEmail    = LaxEmailAddress("bob@example.com")
-    val deskproTicket1 = DeskproTicketResponse(123, "ref1", personId, "awaiting_user", instant, Some(instant), "subject 1")
-    val deskproTicket2 = DeskproTicketResponse(456, "ref2", personId, "awaiting_agent", instant, None, "subject 2")
-    val deskproMessage = DeskproMessageResponse(789, 123, personId, instant, "message 1")
+    val deskproTicket1 = DeskproTicketResponse(123, "ref1", personId, "bob@example.com", "awaiting_user", instant, Some(instant), "subject 1")
+    val deskproTicket2 = DeskproTicketResponse(456, "ref2", personId, "bob@example.com", "awaiting_agent", instant, None, "subject 2")
+    val deskproMessage = DeskproMessageResponse(789, 123, personId, instant, "<p>message 1</p>", "message 1")
 
     val ticketId: Int = 123
 
@@ -134,8 +134,8 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       val result = await(underTest.getTicketsForPerson(personEmail))
 
       val expectedResponse = List(
-        DeskproTicket(123, "ref1", personId, "awaiting_user", instant, Some(instant), "subject 1", List.empty),
-        DeskproTicket(456, "ref2", personId, "awaiting_agent", instant, None, "subject 2", List.empty)
+        DeskproTicket(123, "ref1", personId, LaxEmailAddress("bob@example.com"), "awaiting_user", instant, Some(instant), "subject 1", List.empty),
+        DeskproTicket(456, "ref2", personId, LaxEmailAddress("bob@example.com"), "awaiting_agent", instant, None, "subject 2", List.empty)
       )
       result shouldBe expectedResponse
     }
@@ -162,7 +162,17 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       val result = await(underTest.fetchTicket(ticketId))
 
       val expectedResponse =
-        DeskproTicket(123, "ref1", personId, "awaiting_user", instant, Some(instant), "subject 1", List(DeskproMessage(789, ticketId, personId, instant, "message 1")))
+        DeskproTicket(
+          123,
+          "ref1",
+          personId,
+          LaxEmailAddress("bob@example.com"),
+          "awaiting_user",
+          instant,
+          Some(instant),
+          "subject 1",
+          List(DeskproMessage(789, ticketId, personId, instant, "message 1"))
+        )
 
       result shouldBe Some(expectedResponse)
     }

@@ -317,8 +317,17 @@ class DeskproConnectorISpec
 
       val expectedResponse = DeskproTicketsWrapperResponse(
         List(
-          DeskproTicketResponse(3432, "SDST-2025XON927", personId, "awaiting_user", createdDate1, Some(lastAgentReplyDate1), "HMRC Developer Hub: Support Enquiry"),
-          DeskproTicketResponse(443, "SDST-2024EKL881", personId, "awaiting_agent", createdDate2, None, "HMRC Developer Hub: Support Enquiry")
+          DeskproTicketResponse(
+            3432,
+            "SDST-2025XON927",
+            personId,
+            "bob@example.com",
+            "awaiting_user",
+            createdDate1,
+            Some(lastAgentReplyDate1),
+            "HMRC Developer Hub: Support Enquiry"
+          ),
+          DeskproTicketResponse(443, "SDST-2024EKL881", personId, "bob@example.com", "awaiting_agent", createdDate2, None, "HMRC Developer Hub: Support Enquiry")
         )
       )
 
@@ -337,7 +346,7 @@ class DeskproConnectorISpec
       val result = await(objInTest.fetchTicket(ticketId))
 
       val expectedResponse = DeskproTicketWrapperResponse(
-        DeskproTicketResponse(ticketId, "SDST-2025XON927", 61, "awaiting_user", createdDate1, Some(lastAgentReplyDate1), "HMRC Developer Hub: Support Enquiry")
+        DeskproTicketResponse(ticketId, "SDST-2025XON927", 61, "bob@example.com", "awaiting_user", createdDate1, Some(lastAgentReplyDate1), "HMRC Developer Hub: Support Enquiry")
       )
 
       result shouldBe Some(expectedResponse)
@@ -366,8 +375,22 @@ class DeskproConnectorISpec
 
       val expectedResponse = DeskproMessagesWrapperResponse(
         List(
-          DeskproMessageResponse(3467, ticketId, 33, createdDate1, "Hi.  What API do I need to get next weeks lottery numbers?"),
-          DeskproMessageResponse(3698, ticketId, 61, createdDate2, "<p>Reply message from agent.  What else gets filled in? </p>")
+          DeskproMessageResponse(
+            3467,
+            ticketId,
+            33,
+            createdDate1,
+            "Hi. What API do I need to get next weeks lottery numbers?",
+            "Hi. What API do I need to get next weeks lottery numbers?"
+          ),
+          DeskproMessageResponse(
+            3698,
+            ticketId,
+            61,
+            createdDate2,
+            "<p>Reply message from agent. What else gets filled in?</p>",
+            "Reply message from agent. What else gets filled in?"
+          )
         )
       )
 

@@ -21,6 +21,8 @@ import java.time.Instant
 import play.api.libs.json.{Json, OFormat}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproMessageResponse, DeskproTicketResponse}
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+
 case class DeskproMessage(
     id: Int,
     ticketId: Int,
@@ -37,7 +39,7 @@ object DeskproMessage {
       response.ticket,
       response.person,
       response.date_created,
-      response.message
+      response.message_preview_text
     )
   }
 
@@ -48,6 +50,7 @@ case class DeskproTicket(
     id: Int,
     ref: String,
     person: Int,
+    personEmail: LaxEmailAddress,
     status: String,
     dateCreated: Instant,
     dateLastAgentReply: Option[Instant],
@@ -62,6 +65,7 @@ object DeskproTicket {
       response.id,
       response.ref,
       response.person,
+      LaxEmailAddress(response.person_email),
       response.status,
       response.date_created,
       response.date_last_agent_reply,
