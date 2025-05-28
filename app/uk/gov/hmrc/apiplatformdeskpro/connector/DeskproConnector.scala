@@ -183,8 +183,8 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
     }
   }
 
-  def getTicketsForPersonId(personId: Int)(implicit hc: HeaderCarrier): Future[DeskproTicketsWrapperResponse] = metrics.record(api) {
-    val queryParams = Seq("person" -> personId)
+  def getTicketsForPersonId(personId: Int, pageWanted: Int = 1)(implicit hc: HeaderCarrier): Future[DeskproTicketsWrapperResponse] = metrics.record(api) {
+    val queryParams = Seq("person" -> personId, "count" -> 200, "page" -> pageWanted)
     http
       .get(url"${requestUrl("/api/v2/tickets")}?$queryParams")
       .withProxy
@@ -200,9 +200,10 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
       .execute[Option[DeskproTicketWrapperResponse]]
   }
 
-  def getTicketMessages(ticketId: Int)(implicit hc: HeaderCarrier): Future[DeskproMessagesWrapperResponse] = metrics.record(api) {
+  def getTicketMessages(ticketId: Int, pageWanted: Int = 1)(implicit hc: HeaderCarrier): Future[DeskproMessagesWrapperResponse] = metrics.record(api) {
+    val queryParams = Seq("count" -> 200, "page" -> pageWanted)
     http
-      .get(url"${requestUrl(s"/api/v2/tickets/$ticketId/messages")}")
+      .get(url"${requestUrl(s"/api/v2/tickets/$ticketId/messages")}?$queryParams")
       .withProxy
       .setHeader(AUTHORIZATION -> config.deskproApiKey)
       .execute[DeskproMessagesWrapperResponse]

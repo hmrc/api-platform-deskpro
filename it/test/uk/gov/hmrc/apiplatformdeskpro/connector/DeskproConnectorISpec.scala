@@ -380,7 +380,7 @@ class DeskproConnectorISpec
             ticketId,
             33,
             createdDate1,
-            "Hi. What API do I need to get next weeks lottery numbers?",
+            0,
             "Hi. What API do I need to get next weeks lottery numbers?"
           ),
           DeskproMessageResponse(
@@ -388,7 +388,7 @@ class DeskproConnectorISpec
             ticketId,
             61,
             createdDate2,
-            "<p>Reply message from agent. What else gets filled in?</p>",
+            0,
             "Reply message from agent. What else gets filled in?"
           )
         )

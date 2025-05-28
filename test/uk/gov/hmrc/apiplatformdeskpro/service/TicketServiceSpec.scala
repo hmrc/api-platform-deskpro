@@ -53,7 +53,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
     val personEmail    = LaxEmailAddress("bob@example.com")
     val deskproTicket1 = DeskproTicketResponse(123, "ref1", personId, "bob@example.com", "awaiting_user", instant, Some(instant), "subject 1")
     val deskproTicket2 = DeskproTicketResponse(456, "ref2", personId, "bob@example.com", "awaiting_agent", instant, None, "subject 2")
-    val deskproMessage = DeskproMessageResponse(789, 123, personId, instant, "<p>message 1</p>", "message 1")
+    val deskproMessage = DeskproMessageResponse(789, 123, personId, instant, 0, "message 1")
 
     val ticketId: Int = 123
 
@@ -129,7 +129,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       )
 
       when(mockDeskproConnector.getPersonForEmail(eqTo(personEmail))(*)).thenReturn(Future.successful(personWrapper))
-      when(mockDeskproConnector.getTicketsForPersonId(*)(*)).thenReturn(Future.successful(DeskproTicketsWrapperResponse(List(deskproTicket1, deskproTicket2))))
+      when(mockDeskproConnector.getTicketsForPersonId(*, *)(*)).thenReturn(Future.successful(DeskproTicketsWrapperResponse(List(deskproTicket1, deskproTicket2))))
 
       val result = await(underTest.getTicketsForPerson(personEmail))
 
@@ -157,7 +157,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
   "fetchTicket" should {
     "return a DeskproTicket" in new Setup {
       when(mockDeskproConnector.fetchTicket(*)(*)).thenReturn(Future.successful(Some(DeskproTicketWrapperResponse(deskproTicket1))))
-      when(mockDeskproConnector.getTicketMessages(*)(*)).thenReturn(Future.successful(DeskproMessagesWrapperResponse(List(deskproMessage))))
+      when(mockDeskproConnector.getTicketMessages(*, *)(*)).thenReturn(Future.successful(DeskproMessagesWrapperResponse(List(deskproMessage))))
 
       val result = await(underTest.fetchTicket(ticketId))
 
@@ -171,7 +171,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
           instant,
           Some(instant),
           "subject 1",
-          List(DeskproMessage(789, ticketId, personId, instant, "message 1"))
+          List(DeskproMessage(789, ticketId, personId, instant, false, "message 1"))
         )
 
       result shouldBe Some(expectedResponse)
@@ -179,7 +179,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
 
     "return a None if not found" in new Setup {
       when(mockDeskproConnector.fetchTicket(*)(*)).thenReturn(Future.successful(None))
-      when(mockDeskproConnector.getTicketMessages(*)(*)).thenReturn(Future.successful(DeskproMessagesWrapperResponse(List.empty)))
+      when(mockDeskproConnector.getTicketMessages(*, *)(*)).thenReturn(Future.successful(DeskproMessagesWrapperResponse(List.empty)))
 
       val result = await(underTest.fetchTicket(ticketId))
 

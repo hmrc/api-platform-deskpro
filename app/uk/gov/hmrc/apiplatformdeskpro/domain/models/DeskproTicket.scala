@@ -28,6 +28,7 @@ case class DeskproMessage(
     ticketId: Int,
     person: Int,
     dateCreated: Instant,
+    isAgentNote: Boolean,
     message: String
   )
 
@@ -39,6 +40,7 @@ object DeskproMessage {
       response.ticket,
       response.person,
       response.date_created,
+      (response.is_agent_note > 0),
       response.message_preview_text
     )
   }
