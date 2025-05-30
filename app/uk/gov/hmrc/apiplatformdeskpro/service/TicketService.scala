@@ -60,11 +60,11 @@ class TicketService @Inject() (
     )
   }
 
-  def getTicketsForPerson(personEmail: LaxEmailAddress)(implicit hc: HeaderCarrier): Future[List[DeskproTicket]] = {
+  def getTicketsForPerson(personEmail: LaxEmailAddress, status: Option[String])(implicit hc: HeaderCarrier): Future[List[DeskproTicket]] = {
     for {
       personResponse <- deskproConnector.getPersonForEmail(personEmail)
       personId        = personResponse.data.headOption.getOrElse(throw new DeskproPersonNotFound("Person not found")).id
-      ticketResponse <- deskproConnector.getTicketsForPersonId(personId)
+      ticketResponse <- deskproConnector.getTicketsForPersonId(personId, status)
     } yield ticketResponse.data.map(response => DeskproTicket.build(response, List.empty))
   }
 

@@ -51,6 +51,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
 
     val personId       = 34
     val personEmail    = LaxEmailAddress("bob@example.com")
+    val status         = Some("resolved")
     val deskproTicket1 = DeskproTicketResponse(123, "ref1", personId, "bob@example.com", "awaiting_user", instant, Some(instant), "subject 1")
     val deskproTicket2 = DeskproTicketResponse(456, "ref2", personId, "bob@example.com", "awaiting_agent", instant, None, "subject 2")
     val deskproMessage = DeskproMessageResponse(789, 123, personId, instant, 0, "message 1")
@@ -129,9 +130,12 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       )
 
       when(mockDeskproConnector.getPersonForEmail(eqTo(personEmail))(*)).thenReturn(Future.successful(personWrapper))
-      when(mockDeskproConnector.getTicketsForPersonId(*, *)(*)).thenReturn(Future.successful(DeskproTicketsWrapperResponse(List(deskproTicket1, deskproTicket2))))
+      when(mockDeskproConnector.getTicketsForPersonId(eqTo(personId), eqTo(status), *)(*)).thenReturn(Future.successful(DeskproTicketsWrapperResponse(List(
+        deskproTicket1,
+        deskproTicket2
+      ))))
 
-      val result = await(underTest.getTicketsForPerson(personEmail))
+      val result = await(underTest.getTicketsForPerson(personEmail, status))
 
       val expectedResponse = List(
         DeskproTicket(123, "ref1", personId, LaxEmailAddress("bob@example.com"), "awaiting_user", instant, Some(instant), "subject 1", List.empty),
@@ -149,7 +153,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       when(mockDeskproConnector.getPersonForEmail(eqTo(personEmail))(*)).thenReturn(Future.successful(personWrapper))
 
       intercept[DeskproPersonNotFound] {
-        await(underTest.getTicketsForPerson(personEmail))
+        await(underTest.getTicketsForPerson(personEmail, status))
       }
     }
   }

@@ -37,7 +37,7 @@ class TicketController @Inject() (ticketService: TicketService, cc: ControllerCo
     auth.authorizedAction(predicate = Predicate.Permission(Resource.from("api-platform-deskpro", "tickets/all"), IAAction("READ"))).async {
       implicit request: AuthenticatedRequest[AnyContent, Unit] =>
         withJsonBodyFromAnyContent[GetTicketsByEmailRequest] { parsedRequest =>
-          ticketService.getTicketsForPerson(parsedRequest.email)
+          ticketService.getTicketsForPerson(parsedRequest.email, parsedRequest.status)
             .map { tickets =>
               Ok(Json.toJson(tickets))
             } recover recovery

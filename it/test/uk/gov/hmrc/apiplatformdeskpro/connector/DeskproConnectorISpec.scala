@@ -305,15 +305,46 @@ class DeskproConnectorISpec
   }
 
   "getTicketsForPersonId" should {
-    "return DeskproTicketsWrapperResponse when 200 returned from deskpro with response body" in new Setup {
+    "return DeskproTicketsWrapperResponse when 200 returned from deskpro with response body with status" in new Setup {
       val personId: Int                = 61
+      val status                       = Some("resolved")
       val createdDate1: Instant        = LocalDateTime.parse("2025-05-01T08:02:02+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
       val lastAgentReplyDate1: Instant = LocalDateTime.parse("2025-05-20T07:24:41+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
       val createdDate2: Instant        = LocalDateTime.parse("2024-04-19T12:32:26+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
 
-      GetTicketsForPersonId.stubSuccess(personId)
+      GetTicketsForPersonId.stubSuccess(personId, status)
 
-      val result = await(objInTest.getTicketsForPersonId(personId))
+      val result = await(objInTest.getTicketsForPersonId(personId, status))
+
+      val expectedResponse = DeskproTicketsWrapperResponse(
+        List(
+          DeskproTicketResponse(
+            3432,
+            "SDST-2025XON927",
+            personId,
+            "bob@example.com",
+            "awaiting_user",
+            createdDate1,
+            Some(lastAgentReplyDate1),
+            "HMRC Developer Hub: Support Enquiry"
+          ),
+          DeskproTicketResponse(443, "SDST-2024EKL881", personId, "bob@example.com", "awaiting_agent", createdDate2, None, "HMRC Developer Hub: Support Enquiry")
+        )
+      )
+
+      result shouldBe expectedResponse
+    }
+
+    "return DeskproTicketsWrapperResponse when 200 returned from deskpro with response body with no status" in new Setup {
+      val personId: Int                = 61
+      val status                       = None
+      val createdDate1: Instant        = LocalDateTime.parse("2025-05-01T08:02:02+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
+      val lastAgentReplyDate1: Instant = LocalDateTime.parse("2025-05-20T07:24:41+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
+      val createdDate2: Instant        = LocalDateTime.parse("2024-04-19T12:32:26+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
+
+      GetTicketsForPersonId.stubSuccess(personId, status)
+
+      val result = await(objInTest.getTicketsForPersonId(personId, status))
 
       val expectedResponse = DeskproTicketsWrapperResponse(
         List(

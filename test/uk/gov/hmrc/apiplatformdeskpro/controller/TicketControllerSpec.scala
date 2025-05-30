@@ -73,7 +73,7 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
   "getTicketsForPerson" should {
     "return 200 with a list of tickets" in new Setup {
 
-      when(mockService.getTicketsForPerson(*[LaxEmailAddress])(*)).thenReturn(Future.successful(listOfTickets))
+      when(mockService.getTicketsForPerson(*[LaxEmailAddress], *)(*)).thenReturn(Future.successful(listOfTickets))
       when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
 
       val request = FakeRequest(POST, "/ticket/query")
@@ -110,7 +110,7 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
 
     "return 500 when the call to deskpro fails" in new Setup {
 
-      when(mockService.getTicketsForPerson(*[LaxEmailAddress])(*)).thenReturn(Future.failed(DeskproPersonNotFound("Person not found")))
+      when(mockService.getTicketsForPerson(*[LaxEmailAddress], *)(*)).thenReturn(Future.failed(DeskproPersonNotFound("Person not found")))
 
       val request = FakeRequest(POST, "/ticket")
         .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")

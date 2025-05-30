@@ -20,7 +20,7 @@ import play.api.libs.json.{Json, OFormat}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
-case class GetTicketsByEmailRequest(email: LaxEmailAddress)
+case class GetTicketsByEmailRequest(email: LaxEmailAddress, status: Option[String] = None)
 
 object GetTicketsByEmailRequest {
   implicit val getTicketsByEmailRequest: OFormat[GetTicketsByEmailRequest] = Json.format[GetTicketsByEmailRequest]
