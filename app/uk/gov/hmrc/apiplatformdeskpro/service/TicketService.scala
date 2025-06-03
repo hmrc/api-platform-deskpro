@@ -21,13 +21,15 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.connector.DeskproConnector
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproTicket, DeskproTicketCreated, DeskproTicketMessage}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{CreateDeskproTicket, DeskproTicketCreated, DeskproTicketMessage}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.{CreateTicketRequest, DeskproTicketCreationFailed, _}
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+
 @Singleton
-class CreateTicketService @Inject() (
+class TicketService @Inject() (
     deskproConnector: DeskproConnector,
     config: AppConfig
   )(implicit val ec: ExecutionContext
@@ -35,11 +37,11 @@ class CreateTicketService @Inject() (
 
   def submitTicket(createTicketRequest: CreateTicketRequest)(implicit hc: HeaderCarrier): Future[Either[DeskproTicketCreationFailed, DeskproTicketCreated]] = {
 
-    val deskproTicket: DeskproTicket = createDeskproTicket(createTicketRequest)
+    val deskproTicket: CreateDeskproTicket = createDeskproTicket(createTicketRequest)
     deskproConnector.createTicket(deskproTicket)
   }
 
-  private def createDeskproTicket(request: CreateTicketRequest): DeskproTicket = {
+  private def createDeskproTicket(request: CreateTicketRequest): CreateDeskproTicket = {
 
     val maybeOrganisation    = request.organisation.fold(Map.empty[String, String])(v => Map(config.deskproOrganisation -> v))
     val maybeTeamMemberEmail = request.teamMemberEmail.fold(Map.empty[String, String])(v => Map(config.deskproTeamMemberEmail -> v))
@@ -49,12 +51,27 @@ class CreateTicketService @Inject() (
 
     val fields = maybeOrganisation ++ maybeTeamMemberEmail ++ maybeApiName ++ maybeApplicationId ++ maybeSupportReason
 
-    DeskproTicket(
+    CreateDeskproTicket(
       DeskproPerson(request.fullName, request.email),
       request.subject,
       DeskproTicketMessage.fromRaw(request.message),
       config.deskproBrand,
       fields
     )
+  }
+
+  def getTicketsForPerson(personEmail: LaxEmailAddress, status: Option[String])(implicit hc: HeaderCarrier): Future[List[DeskproTicket]] = {
+    for {
+      personResponse <- deskproConnector.getPersonForEmail(personEmail)
+      personId        = personResponse.data.headOption.getOrElse(throw new DeskproPersonNotFound("Person not found")).id
+      ticketResponse <- deskproConnector.getTicketsForPersonId(personId, status)
+    } yield ticketResponse.data.map(response => DeskproTicket.build(response, List.empty))
+  }
+
+  def fetchTicket(ticketId: Int)(implicit hc: HeaderCarrier): Future[Option[DeskproTicket]] = {
+    for {
+      ticketResponse   <- deskproConnector.fetchTicket(ticketId)
+      messagesResponse <- deskproConnector.getTicketMessages(ticketId)
+    } yield ticketResponse map { response => DeskproTicket.build(response.data, messagesResponse.data) }
   }
 }

@@ -16,8 +16,12 @@
 
 package uk.gov.hmrc.apiplatformdeskpro.domain.models.connector
 
+import java.time.Instant
+
 import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json._
+
+import uk.gov.hmrc.apiplatform.modules.common.domain.services.InstantJsonFormatter
 
 case class DeskproOrganisationResponse(id: Int, name: String)
 
@@ -72,4 +76,47 @@ case class DeskproPeopleResponse(data: List[DeskproPersonResponse], meta: Deskpr
 
 object DeskproPeopleResponse {
   implicit val reads: Reads[DeskproPeopleResponse] = Json.reads[DeskproPeopleResponse]
+}
+
+case class DeskproTicketResponse(
+    id: Int,
+    ref: String,
+    person: Int,
+    person_email: String,
+    status: String,
+    date_created: Instant,
+    date_last_agent_reply: Option[Instant],
+    subject: String
+  )
+
+object DeskproTicketResponse {
+  implicit val instantFormatter: Reads[Instant] = InstantJsonFormatter.lenientInstantReads
+
+  implicit val reads: Reads[DeskproTicketResponse] = Json.reads[DeskproTicketResponse]
+}
+
+case class DeskproTicketsWrapperResponse(data: List[DeskproTicketResponse])
+
+object DeskproTicketsWrapperResponse {
+  implicit val reads: Reads[DeskproTicketsWrapperResponse] = Json.reads[DeskproTicketsWrapperResponse]
+}
+
+case class DeskproTicketWrapperResponse(data: DeskproTicketResponse)
+
+object DeskproTicketWrapperResponse {
+  implicit val reads: Reads[DeskproTicketWrapperResponse] = Json.reads[DeskproTicketWrapperResponse]
+}
+
+case class DeskproMessageResponse(id: Int, ticket: Int, person: Int, date_created: Instant, is_agent_note: Int, message_preview_text: String)
+
+object DeskproMessageResponse {
+  implicit val instantFormatter: Reads[Instant] = InstantJsonFormatter.lenientInstantReads
+
+  implicit val reads: Reads[DeskproMessageResponse] = Json.reads[DeskproMessageResponse]
+}
+
+case class DeskproMessagesWrapperResponse(data: List[DeskproMessageResponse])
+
+object DeskproMessagesWrapperResponse {
+  implicit val reads: Reads[DeskproMessagesWrapperResponse] = Json.reads[DeskproMessagesWrapperResponse]
 }

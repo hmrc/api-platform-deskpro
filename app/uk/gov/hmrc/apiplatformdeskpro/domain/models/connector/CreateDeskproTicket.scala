@@ -30,7 +30,7 @@ object DeskproTicketMessage {
   def fromRaw(message: String): DeskproTicketMessage = DeskproTicketMessage(message.replaceAll(Properties.lineSeparator, "<br>"))
 }
 
-case class DeskproTicket(
+case class CreateDeskproTicket(
     person: DeskproPerson,
     subject: String,
     message: DeskproTicketMessage,
@@ -38,9 +38,9 @@ case class DeskproTicket(
     fields: Map[String, String] = Map.empty
   )
 
-object DeskproTicket {
+object CreateDeskproTicket {
   implicit val ticketMessageFormat: OFormat[DeskproTicketMessage] = Json.format[DeskproTicketMessage]
-  implicit val ticketFormat: OFormat[DeskproTicket]               = Json.format[DeskproTicket]
+  implicit val ticketFormat: OFormat[CreateDeskproTicket]         = Json.format[CreateDeskproTicket]
 
 }
 

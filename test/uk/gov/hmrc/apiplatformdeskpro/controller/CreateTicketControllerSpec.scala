@@ -26,7 +26,7 @@ import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers, StubControllerComponentsFactory, StubPlayBodyParsersFactory}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.DeskproTicketCreationFailed
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.DeskproTicketCreated
-import uk.gov.hmrc.apiplatformdeskpro.service.CreateTicketService
+import uk.gov.hmrc.apiplatformdeskpro.service.TicketService
 import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.internalauth.client.Predicate.Permission
@@ -41,7 +41,7 @@ class CreateTicketControllerSpec extends AsyncHmrcSpec with StubControllerCompon
     implicit val hc: HeaderCarrier        = HeaderCarrier()
     implicit val cc: ControllerComponents = Helpers.stubControllerComponents()
 
-    val mockService       = mock[CreateTicketService]
+    val mockService       = mock[TicketService]
     val mockStubBehaviour = mock[StubBehaviour]
 
     val objToTest = new CreateTicketController(mockService, cc, BackendAuthComponentsStub(mockStubBehaviour))

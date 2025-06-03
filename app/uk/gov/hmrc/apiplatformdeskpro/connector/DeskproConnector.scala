@@ -47,7 +47,7 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
   lazy val serviceBaseUrl: String = config.deskproUrl
   val api: API                    = API("deskpro")
 
-  def createTicket(deskproTicket: DeskproTicket)(implicit hc: HeaderCarrier): Future[Either[DeskproTicketCreationFailed, DeskproTicketCreated]] = metrics.record(api) {
+  def createTicket(deskproTicket: CreateDeskproTicket)(implicit hc: HeaderCarrier): Future[Either[DeskproTicketCreationFailed, DeskproTicketCreated]] = metrics.record(api) {
     http.post(url"${requestUrl("/api/v2/tickets")}")
       .withProxy
       .withBody(Json.toJson(deskproTicket))
@@ -181,6 +181,36 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
         .withBody(requestBody)
         .execute[DeskproLinkedOrganisationWrapper]
     }
+  }
+
+  def getTicketsForPersonId(personId: Int, maybeStatus: Option[String], pageWanted: Int = 1)(implicit hc: HeaderCarrier): Future[DeskproTicketsWrapperResponse] =
+    metrics.record(api) {
+      val queryParams = maybeStatus match {
+        case Some(status) => Seq("person" -> personId, "status" -> status, "count" -> 200, "page" -> pageWanted)
+        case _            => Seq("person" -> personId, "count" -> 200, "page" -> pageWanted)
+      }
+      http
+        .get(url"${requestUrl("/api/v2/tickets")}?$queryParams")
+        .withProxy
+        .setHeader(AUTHORIZATION -> config.deskproApiKey)
+        .execute[DeskproTicketsWrapperResponse]
+    }
+
+  def fetchTicket(ticketId: Int)(implicit hc: HeaderCarrier): Future[Option[DeskproTicketWrapperResponse]] = metrics.record(api) {
+    http
+      .get(url"${requestUrl(s"/api/v2/tickets/$ticketId")}")
+      .withProxy
+      .setHeader(AUTHORIZATION -> config.deskproApiKey)
+      .execute[Option[DeskproTicketWrapperResponse]]
+  }
+
+  def getTicketMessages(ticketId: Int, pageWanted: Int = 1)(implicit hc: HeaderCarrier): Future[DeskproMessagesWrapperResponse] = metrics.record(api) {
+    val queryParams = Seq("count" -> 200, "page" -> pageWanted)
+    http
+      .get(url"${requestUrl(s"/api/v2/tickets/$ticketId/messages")}?$queryParams")
+      .withProxy
+      .setHeader(AUTHORIZATION -> config.deskproApiKey)
+      .execute[DeskproMessagesWrapperResponse]
   }
 
   private def requestUrl[B, A](uri: String): String = s"$serviceBaseUrl$uri"
