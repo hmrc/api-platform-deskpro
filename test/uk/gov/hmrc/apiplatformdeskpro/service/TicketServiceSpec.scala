@@ -192,7 +192,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
   }
 
   "batchFetchTicket" should {
-    "return a DeskproTicket" in new Setup {
+    "return a DeskproTicket with messages" in new Setup {
       val batchResponse = BatchResponse(
         BatchTicketResponse(
           BatchTicketWrapperResponse(BatchHeadersResponse(200), Some(deskproTicket1)),
@@ -214,6 +214,60 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
           Some(instant),
           "subject 1",
           List(DeskproMessage(789, ticketId, personId, instant, false, "message 1"))
+        )
+
+      result shouldBe Some(expectedResponse)
+    }
+
+    "return a DeskproTicket with no messages" in new Setup {
+      val batchResponse = BatchResponse(
+        BatchTicketResponse(
+          BatchTicketWrapperResponse(BatchHeadersResponse(200), Some(deskproTicket1)),
+          BatchMessagesWrapperResponse(BatchHeadersResponse(200), Some(List.empty))
+        )
+      )
+      when(mockDeskproConnector.batchFetchTicket(*)(*)).thenReturn(Future.successful(batchResponse))
+
+      val result = await(underTest.batchFetchTicket(ticketId))
+
+      val expectedResponse =
+        DeskproTicket(
+          123,
+          "ref1",
+          personId,
+          LaxEmailAddress("bob@example.com"),
+          "awaiting_user",
+          instant,
+          Some(instant),
+          "subject 1",
+          List.empty
+        )
+
+      result shouldBe Some(expectedResponse)
+    }
+
+    "return a DeskproTicket with messages not found" in new Setup {
+      val batchResponse = BatchResponse(
+        BatchTicketResponse(
+          BatchTicketWrapperResponse(BatchHeadersResponse(200), Some(deskproTicket1)),
+          BatchMessagesWrapperResponse(BatchHeadersResponse(404), None)
+        )
+      )
+      when(mockDeskproConnector.batchFetchTicket(*)(*)).thenReturn(Future.successful(batchResponse))
+
+      val result = await(underTest.batchFetchTicket(ticketId))
+
+      val expectedResponse =
+        DeskproTicket(
+          123,
+          "ref1",
+          personId,
+          LaxEmailAddress("bob@example.com"),
+          "awaiting_user",
+          instant,
+          Some(instant),
+          "subject 1",
+          List.empty
         )
 
       result shouldBe Some(expectedResponse)

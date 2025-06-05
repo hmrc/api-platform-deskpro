@@ -421,6 +421,22 @@ class DeskproConnectorISpec
 
       result shouldBe expectedResponse
     }
+
+    "return empty response if not found" in new Setup {
+      val ticketId: Int = 3432
+
+      BatchFetchTicket.stubFailure(ticketId)
+
+      val result = await(objInTest.batchFetchTicket(ticketId))
+
+      val expectedResponse = BatchResponse(
+        BatchTicketResponse(
+          BatchTicketWrapperResponse(BatchHeadersResponse(404), None),
+          BatchMessagesWrapperResponse(BatchHeadersResponse(404), None)
+        )
+      )
+      result shouldBe expectedResponse
+    }
   }
 
   "getTicketMessages" should {

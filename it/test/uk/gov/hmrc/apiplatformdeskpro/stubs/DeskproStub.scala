@@ -1548,6 +1548,60 @@ trait DeskproStub {
           )
       )
     }
+
+    def stubFailure(ticketId: Int) = {
+      stubFor(
+        post(urlPathEqualTo("/api/v2/batch"))
+          .withRequestBody(equalToJson(
+            s"""
+               |{
+               |  "requests": {
+               |    "ticket": {
+               |      "method": "GET",
+               |      "url": "/api/v2/tickets/$ticketId"
+               |    },
+               |    "messages": {
+               |      "method": "GET",
+               |      "url": "/api/v2/tickets/$ticketId/messages"
+               |    }
+               |  }    
+               |}
+               |""".stripMargin
+          ))
+          .willReturn(
+            aResponse()
+              .withBody("""{
+                          |  "responses": {
+                          |    "ticket": {
+                          |      "headers": {
+                          |        "status-code": 404,
+                          |        "cache-control": "no-cache",
+                          |        "content-type": "application/json",
+                          |        "date": "Wed, 04 Jun 2025 13:39:40 GMT"
+                          |      },
+                          |      "status": 404,
+                          |      "code": "#3432 Not Found",
+                          |      "message": "#3432 Not Found",
+                          |      "errors": null
+                          |    },
+                          |    "messages": {
+                          |      "headers": {
+                          |        "status-code": 404,
+                          |        "cache-control": "no-cache",
+                          |        "content-type": "application/json",
+                          |        "date": "Wed, 04 Jun 2025 13:39:40 GMT"
+                          |      },
+                          |      "status": 404,
+                          |      "code": "#3432 Not Found",
+                          |      "message": "#3432 Not Found",
+                          |      "errors": null
+                          |    }
+                          |  }
+                          |}""".stripMargin)
+              .withStatus(OK)
+          )
+      )
+    }
   }
 
   object GetTicketMessages {
