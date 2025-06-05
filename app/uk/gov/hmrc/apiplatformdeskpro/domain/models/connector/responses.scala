@@ -120,3 +120,50 @@ case class DeskproMessagesWrapperResponse(data: List[DeskproMessageResponse])
 object DeskproMessagesWrapperResponse {
   implicit val reads: Reads[DeskproMessagesWrapperResponse] = Json.reads[DeskproMessagesWrapperResponse]
 }
+
+/*
+ * Batch responses
+ */
+
+case class BatchHeadersResponse(
+    `status-code`: Int
+  )
+
+object BatchHeadersResponse {
+  implicit val reads: Reads[BatchHeadersResponse] = Json.reads[BatchHeadersResponse]
+}
+
+case class BatchTicketWrapperResponse(
+    headers: BatchHeadersResponse,
+    data: Option[DeskproTicketResponse]
+  )
+
+object BatchTicketWrapperResponse {
+  implicit val reads: Reads[BatchTicketWrapperResponse] = Json.reads[BatchTicketWrapperResponse]
+}
+
+case class BatchMessagesWrapperResponse(
+    headers: BatchHeadersResponse,
+    data: Option[List[DeskproMessageResponse]]
+  )
+
+object BatchMessagesWrapperResponse {
+  implicit val reads: Reads[BatchMessagesWrapperResponse] = Json.reads[BatchMessagesWrapperResponse]
+}
+
+case class BatchTicketResponse(
+    ticket: BatchTicketWrapperResponse,
+    messages: BatchMessagesWrapperResponse
+  )
+
+object BatchTicketResponse {
+  implicit val reads: Reads[BatchTicketResponse] = Json.reads[BatchTicketResponse]
+}
+
+case class BatchResponse(
+    responses: BatchTicketResponse
+  )
+
+object BatchResponse {
+  implicit val reads: Reads[BatchResponse] = Json.reads[BatchResponse]
+}

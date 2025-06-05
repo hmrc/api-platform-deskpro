@@ -394,6 +394,51 @@ class DeskproConnectorISpec
     }
   }
 
+  "batchFetchTicket" should {
+    "return BatchResponse when 200 returned from deskpro with response body" in new Setup {
+      val ticketId: Int                = 3432
+      val createdDate1: Instant        = LocalDateTime.parse("2025-05-01T08:02:02+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
+      val createdDate2: Instant        = LocalDateTime.parse("2025-05-19T11:54:53+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
+      val lastAgentReplyDate1: Instant = LocalDateTime.parse("2025-05-20T07:24:41+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
+
+      BatchFetchTicket.stubSuccess(ticketId)
+
+      val result = await(objInTest.batchFetchTicket(ticketId))
+
+      val expectedTicket   =
+        DeskproTicketResponse(ticketId, "SDST-2025XON927", 61, "bob@example.com", "awaiting_user", createdDate1, Some(lastAgentReplyDate1), "HMRC Developer Hub: Support Enquiry")
+      val expectedMessages = List(
+        DeskproMessageResponse(3467, ticketId, 33, createdDate1, 0, "Hi. What API do I need to get next weeks lottery numbers?"),
+        DeskproMessageResponse(3698, ticketId, 61, createdDate2, 0, "Reply message from agent. What else gets filled in?")
+      )
+
+      val expectedResponse = BatchResponse(
+        BatchTicketResponse(
+          BatchTicketWrapperResponse(BatchHeadersResponse(200), Some(expectedTicket)),
+          BatchMessagesWrapperResponse(BatchHeadersResponse(200), Some(expectedMessages))
+        )
+      )
+
+      result shouldBe expectedResponse
+    }
+
+    "return empty response if not found" in new Setup {
+      val ticketId: Int = 3432
+
+      BatchFetchTicket.stubFailure(ticketId)
+
+      val result = await(objInTest.batchFetchTicket(ticketId))
+
+      val expectedResponse = BatchResponse(
+        BatchTicketResponse(
+          BatchTicketWrapperResponse(BatchHeadersResponse(404), None),
+          BatchMessagesWrapperResponse(BatchHeadersResponse(404), None)
+        )
+      )
+      result shouldBe expectedResponse
+    }
+  }
+
   "getTicketMessages" should {
     "return DeskproMessagesWrapperResponse when 200 returned from deskpro with response body" in new Setup {
       val ticketId: Int         = 3432
