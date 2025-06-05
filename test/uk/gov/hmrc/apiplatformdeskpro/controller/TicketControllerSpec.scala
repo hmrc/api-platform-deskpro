@@ -137,7 +137,7 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
   "fetchTicket" should {
     "return 200 with a ticket" in new Setup {
 
-      when(mockService.fetchTicket(*)(*)).thenReturn(Future.successful(Some(ticket)))
+      when(mockService.batchFetchTicket(*)(*)).thenReturn(Future.successful(Some(ticket)))
       when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
 
       val request = FakeRequest(GET, s"/ticket/$ticketId")
@@ -151,7 +151,7 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
 
     "return 404 when not found" in new Setup {
 
-      when(mockService.fetchTicket(*)(*)).thenReturn(Future.successful(None))
+      when(mockService.batchFetchTicket(*)(*)).thenReturn(Future.successful(None))
       when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
 
       val request = FakeRequest(GET, s"/ticket/$ticketId")

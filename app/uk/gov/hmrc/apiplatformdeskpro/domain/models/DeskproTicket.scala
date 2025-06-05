@@ -19,7 +19,7 @@ package uk.gov.hmrc.apiplatformdeskpro.domain.models
 import java.time.Instant
 
 import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproMessageResponse, DeskproTicketResponse}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{BatchMessagesWrapperResponse, BatchTicketWrapperResponse, DeskproMessageResponse, DeskproTicketResponse}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
@@ -61,6 +61,13 @@ case class DeskproTicket(
   )
 
 object DeskproTicket {
+
+  def build(ticketResponse: BatchTicketWrapperResponse, messagesResponse: BatchMessagesWrapperResponse): Option[DeskproTicket] = {
+    ticketResponse.data match {
+      case Some(data) => Some(build(data, messagesResponse.data.getOrElse(List.empty)))
+      case _          => None
+    }
+  }
 
   def build(response: DeskproTicketResponse, messagesResponse: List[DeskproMessageResponse]): DeskproTicket = {
     DeskproTicket(
