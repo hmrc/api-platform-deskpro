@@ -40,3 +40,36 @@ object GetPersonByEmailRequest extends QueryPersonRequest {
   implicit val config: Aux[Json.MacroOptions]           = JsonConfiguration(SnakeCase)
   implicit val format: OFormat[GetPersonByEmailRequest] = Json.format[GetPersonByEmailRequest]
 }
+
+/*
+ * Batch requests
+ */
+
+case class BatchRequestDetails(
+    url: String,
+    method: String = "GET",
+    payload: Option[String] = None
+  )
+
+object BatchRequestDetails {
+  implicit val format: OFormat[BatchRequestDetails] = Json.format[BatchRequestDetails]
+}
+
+sealed trait BatchDetails
+
+case class BatchTicketRequest(
+    ticket: BatchRequestDetails,
+    messages: BatchRequestDetails
+  )
+
+object BatchTicketRequest extends BatchDetails {
+  implicit val format: OFormat[BatchTicketRequest] = Json.format[BatchTicketRequest]
+}
+
+case class BatchRequest(
+    requests: BatchTicketRequest
+  )
+
+object BatchRequest {
+  implicit val format: OFormat[BatchRequest] = Json.format[BatchRequest]
+}

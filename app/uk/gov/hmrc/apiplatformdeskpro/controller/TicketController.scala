@@ -51,7 +51,7 @@ class TicketController @Inject() (ticketService: TicketService, cc: ControllerCo
           lazy val failed = NotFound(Results.EmptyContent())
 
           val success = (t: DeskproTicket) => Ok(Json.toJson(t))
-          ticketService.fetchTicket(ticketId).map(_.fold(failed)(success))
+          ticketService.batchFetchTicket(ticketId).map(_.fold(failed)(success))
         }
     }
 
