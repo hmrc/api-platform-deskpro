@@ -21,8 +21,8 @@ import scala.concurrent.Future
 
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.connector.DeskproConnector
+import uk.gov.hmrc.apiplatformdeskpro.domain.models._
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector._
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.{CreateTicketRequest, DeskproMessage, DeskproPerson, DeskproPersonNotFound, DeskproTicket}
 import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -285,6 +285,26 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       val result = await(underTest.batchFetchTicket(ticketId))
 
       result shouldBe None
+    }
+  }
+
+  "closeTicket" should {
+    "return DeskproTicketDeleteSuccess when ticket deleted" in new Setup {
+      when(mockDeskproConnector.closeTicket(*)(*)).thenReturn(Future.successful(DeskproTicketDeleteSuccess))
+
+      await(underTest.closeTicket(ticketId)) shouldBe DeskproTicketDeleteSuccess
+    }
+
+    "return DeskproTicketDeleteNotFound if ticket not found" in new Setup {
+      when(mockDeskproConnector.closeTicket(*)(*)).thenReturn(Future.successful(DeskproTicketDeleteNotFound))
+
+      await(underTest.closeTicket(ticketId)) shouldBe DeskproTicketDeleteNotFound
+    }
+
+    "return DeskproTicketDeleteFailure if delete failed" in new Setup {
+      when(mockDeskproConnector.closeTicket(*)(*)).thenReturn(Future.successful(DeskproTicketDeleteFailure))
+
+      await(underTest.closeTicket(ticketId)) shouldBe DeskproTicketDeleteFailure
     }
   }
 }

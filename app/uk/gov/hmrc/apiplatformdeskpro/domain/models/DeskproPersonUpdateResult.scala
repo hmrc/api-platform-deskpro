@@ -20,6 +20,11 @@ sealed trait DeskproPersonUpdateResult
 object DeskproPersonUpdateSuccess extends DeskproPersonUpdateResult
 object DeskproPersonUpdateFailure extends DeskproPersonUpdateResult
 
+sealed trait DeskproTicketDeleteResult
+object DeskproTicketDeleteSuccess  extends DeskproTicketDeleteResult
+object DeskproTicketDeleteNotFound extends DeskproTicketDeleteResult
+object DeskproTicketDeleteFailure  extends DeskproTicketDeleteResult
+
 case class DeskproPersonNotFound(
     message: String
   ) extends Exception(message)
