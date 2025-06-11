@@ -16,18 +16,27 @@
 
 package uk.gov.hmrc.apiplatformdeskpro.service
 
+import java.time.Clock
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import uk.gov.hmrc.apiplatformdeskpro.connector.DeskproConnector
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.DeskproPersonCache
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproPersonNotFound, DeskproPersonUpdateResult}
+import uk.gov.hmrc.apiplatformdeskpro.repository.DeskproPersonCacheRepository
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 
 @Singleton
-class PersonService @Inject() (deskproConnector: DeskproConnector)(implicit val ec: ExecutionContext) extends ApplicationLogger {
+class PersonService @Inject() (
+    deskproConnector: DeskproConnector,
+    deskproPersonCacheRepository: DeskproPersonCacheRepository,
+    val clock: Clock
+  )(implicit val ec: ExecutionContext
+  ) extends ApplicationLogger with ClockNow {
 
   def updatePersonByEmail(email: LaxEmailAddress, name: String)(implicit hc: HeaderCarrier): Future[DeskproPersonUpdateResult] = {
     for {
@@ -43,9 +52,22 @@ class PersonService @Inject() (deskproConnector: DeskproConnector)(implicit val 
     } yield result
   }
 
+  private def fetchPersonIdFromDeskproAndCache(email: LaxEmailAddress)(implicit hc: HeaderCarrier): Future[Int] = {
+    for {
+      response <- deskproConnector.getPersonForEmail(email)
+      personId  = response.data.headOption.getOrElse(throw new DeskproPersonNotFound("Person not found")).id
+      _        <- deskproPersonCacheRepository.saveDeskproPersonCache(DeskproPersonCache(email, personId, instant()))
+    } yield personId
+  }
+
   def getPersonForEmail(email: LaxEmailAddress)(implicit hc: HeaderCarrier): Future[Int] = {
-    deskproConnector.getPersonForEmail(email).map {
-      response => response.data.headOption.getOrElse(throw new DeskproPersonNotFound("Person not found")).id
-    }
+    for {
+      maybeCachePerson <- deskproPersonCacheRepository.fetchByEmailAddress(email)
+      personId         <- maybeCachePerson match {
+                            case Some(person) => Future.successful(person.personId)
+                            case _            => fetchPersonIdFromDeskproAndCache(email)
+                          }
+    } yield personId
+
   }
 }
