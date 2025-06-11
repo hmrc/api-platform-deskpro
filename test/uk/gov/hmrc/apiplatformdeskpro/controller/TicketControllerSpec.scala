@@ -177,10 +177,10 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
   "closeTicket" should {
     "return 200 when ticket closed successfully" in new Setup {
 
-      when(mockService.closeTicket(*)(*)).thenReturn(Future.successful(DeskproTicketDeleteSuccess))
+      when(mockService.closeTicket(*)(*)).thenReturn(Future.successful(DeskproTicketCloseSuccess))
       when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
 
-      val request = FakeRequest(DELETE, s"/ticket/$ticketId")
+      val request = FakeRequest(POST, s"/ticket/$ticketId/close")
         .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
 
       val result: Future[Result] = objToTest.closeTicket(ticketId)(request)
@@ -188,25 +188,25 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
       status(result) shouldBe OK
     }
 
-    "return 200 when ticket to delete not found (already deleted)" in new Setup {
+    "return 404 when ticket to close not found" in new Setup {
 
-      when(mockService.closeTicket(*)(*)).thenReturn(Future.successful(DeskproTicketDeleteNotFound))
+      when(mockService.closeTicket(*)(*)).thenReturn(Future.successful(DeskproTicketCloseNotFound))
       when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
 
-      val request = FakeRequest(DELETE, s"/ticket/$ticketId")
+      val request = FakeRequest(POST, s"/ticket/$ticketId/close")
         .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
 
       val result: Future[Result] = objToTest.closeTicket(ticketId)(request)
 
-      status(result) shouldBe OK
+      status(result) shouldBe NOT_FOUND
     }
 
-    "return 500 when ticket delete failed" in new Setup {
+    "return 500 when ticket close failed" in new Setup {
 
-      when(mockService.closeTicket(*)(*)).thenReturn(Future.successful(DeskproTicketDeleteFailure))
+      when(mockService.closeTicket(*)(*)).thenReturn(Future.successful(DeskproTicketCloseFailure))
       when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
 
-      val request = FakeRequest(DELETE, s"/ticket/$ticketId")
+      val request = FakeRequest(POST, s"/ticket/$ticketId/close")
         .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
 
       val result: Future[Result] = objToTest.closeTicket(ticketId)(request)
@@ -215,7 +215,7 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
     }
 
     "return UpstreamErrorResponse for invalid token" in new Setup {
-      val request = FakeRequest(DELETE, s"/ticket/$ticketId")
+      val request = FakeRequest(POST, s"/ticket/$ticketId/close")
         .withHeaders("Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
 
       when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.failed(UpstreamErrorResponse("Unauthorized", UNAUTHORIZED)))

@@ -79,7 +79,7 @@ class TicketService @Inject() (
     deskproConnector.batchFetchTicket(ticketId) map { response => DeskproTicket.build(response.responses.ticket, response.responses.messages) }
   }
 
-  def closeTicket(ticketId: Int)(implicit hc: HeaderCarrier): Future[DeskproTicketDeleteResult] = {
+  def closeTicket(ticketId: Int)(implicit hc: HeaderCarrier): Future[DeskproTicketCloseResult] = {
     for {
       result <- deskproConnector.closeTicket(ticketId)
     } yield result

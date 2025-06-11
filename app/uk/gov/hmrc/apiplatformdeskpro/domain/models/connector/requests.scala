@@ -18,7 +18,7 @@ package uk.gov.hmrc.apiplatformdeskpro.domain.models.connector
 
 import play.api.libs.json.JsonConfiguration.Aux
 import play.api.libs.json.JsonNaming.SnakeCase
-import play.api.libs.json.{Json, JsonConfiguration, OFormat}
+import play.api.libs.json.{Format, Json, JsonConfiguration, OFormat}
 
 sealed trait QueryPersonRequest
 
@@ -39,6 +39,14 @@ case class GetPersonByEmailRequest(
 object GetPersonByEmailRequest extends QueryPersonRequest {
   implicit val config: Aux[Json.MacroOptions]           = JsonConfiguration(SnakeCase)
   implicit val format: OFormat[GetPersonByEmailRequest] = Json.format[GetPersonByEmailRequest]
+}
+
+case class UpdateTicketStatusRequest(
+    status: String
+  )
+
+object UpdateTicketStatusRequest {
+  implicit val updateTicketStatusRequestFormat: Format[UpdateTicketStatusRequest] = Json.format[UpdateTicketStatusRequest]
 }
 
 /*

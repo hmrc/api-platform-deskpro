@@ -204,23 +204,24 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
       .execute[Option[DeskproTicketWrapperResponse]]
   }
 
-  def closeTicket(ticketId: Int)(implicit hc: HeaderCarrier): Future[DeskproTicketDeleteResult] = metrics.record(api) {
+  def closeTicket(ticketId: Int)(implicit hc: HeaderCarrier): Future[DeskproTicketCloseResult] = metrics.record(api) {
     http
-      .delete(url"${requestUrl(s"/api/v2/tickets/$ticketId")}")
+      .put(url"${requestUrl(s"/api/v2/tickets/$ticketId")}")
       .withProxy
+      .withBody(Json.toJson(UpdateTicketStatusRequest("resolved")))
       .setHeader(AUTHORIZATION -> config.deskproApiKey)
       .execute[HttpResponse]
       .map(response =>
         response.status match {
-          case OK        =>
-            logger.info(s"Deskpro delete ticket '$ticketId' success")
-            DeskproTicketDeleteSuccess
-          case NOT_FOUND =>
-            logger.warn(s"Deskpro delete ticket '$ticketId' failed Not found")
-            DeskproTicketDeleteNotFound
-          case _         =>
-            logger.error(s"Deskpro delete ticket '$ticketId' failed status: ${response.status}")
-            DeskproTicketDeleteFailure
+          case NO_CONTENT =>
+            logger.info(s"Deskpro close ticket '$ticketId' success")
+            DeskproTicketCloseSuccess
+          case NOT_FOUND  =>
+            logger.warn(s"Deskpro close ticket '$ticketId' failed Not found")
+            DeskproTicketCloseNotFound
+          case _          =>
+            logger.error(s"Deskpro close ticket '$ticketId' failed status: ${response.status}")
+            DeskproTicketCloseFailure
         }
       )
   }

@@ -22,10 +22,10 @@ import scala.concurrent.ExecutionContext
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result, Results}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.GetTicketsByEmailRequest
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproTicket, DeskproTicketDeleteFailure, DeskproTicketDeleteNotFound, DeskproTicketDeleteSuccess}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproTicket, DeskproTicketCloseFailure, DeskproTicketCloseNotFound, DeskproTicketCloseSuccess}
 import uk.gov.hmrc.apiplatformdeskpro.service.TicketService
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
-import uk.gov.hmrc.internalauth.client.{BackendAuthComponents, _}
+import uk.gov.hmrc.internalauth.client._
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 @Singleton
@@ -61,8 +61,9 @@ class TicketController @Inject() (ticketService: TicketService, cc: ControllerCo
         {
           ticketService.closeTicket(ticketId)
             .map {
-              case DeskproTicketDeleteSuccess | DeskproTicketDeleteNotFound => Ok
-              case DeskproTicketDeleteFailure                               => InternalServerError
+              case DeskproTicketCloseSuccess  => Ok
+              case DeskproTicketCloseNotFound => NotFound
+              case DeskproTicketCloseFailure  => InternalServerError
             } recover recovery
         }
     }

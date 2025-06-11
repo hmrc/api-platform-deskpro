@@ -1608,17 +1608,19 @@ trait DeskproStub {
 
     def stubSuccess(ticketId: Int) = {
       stubFor(
-        delete(urlPathEqualTo(s"/api/v2/tickets/$ticketId"))
+        put(urlPathEqualTo(s"/api/v2/tickets/$ticketId"))
+          .withRequestBody(equalToJson("""{ "status": "resolved"}"""))
           .willReturn(
             aResponse()
-              .withStatus(OK)
+              .withStatus(NO_CONTENT)
           )
       )
     }
 
     def stubNotFound(ticketId: Int) = {
       stubFor(
-        delete(urlPathEqualTo(s"/api/v2/tickets/$ticketId"))
+        put(urlPathEqualTo(s"/api/v2/tickets/$ticketId"))
+          .withRequestBody(equalToJson("""{ "status": "resolved"}"""))
           .willReturn(
             aResponse()
               .withStatus(NOT_FOUND)
@@ -1628,7 +1630,8 @@ trait DeskproStub {
 
     def stubFailure(ticketId: Int) = {
       stubFor(
-        delete(urlPathEqualTo(s"/api/v2/tickets/$ticketId"))
+        put(urlPathEqualTo(s"/api/v2/tickets/$ticketId"))
+          .withRequestBody(equalToJson("""{ "status": "resolved"}"""))
           .willReturn(
             aResponse()
               .withStatus(INTERNAL_SERVER_ERROR)

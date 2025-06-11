@@ -289,22 +289,22 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
   }
 
   "closeTicket" should {
-    "return DeskproTicketDeleteSuccess when ticket deleted" in new Setup {
-      when(mockDeskproConnector.closeTicket(*)(*)).thenReturn(Future.successful(DeskproTicketDeleteSuccess))
+    "return DeskproTicketCloseSuccess when ticket closed" in new Setup {
+      when(mockDeskproConnector.closeTicket(*)(*)).thenReturn(Future.successful(DeskproTicketCloseSuccess))
 
-      await(underTest.closeTicket(ticketId)) shouldBe DeskproTicketDeleteSuccess
+      await(underTest.closeTicket(ticketId)) shouldBe DeskproTicketCloseSuccess
     }
 
-    "return DeskproTicketDeleteNotFound if ticket not found" in new Setup {
-      when(mockDeskproConnector.closeTicket(*)(*)).thenReturn(Future.successful(DeskproTicketDeleteNotFound))
+    "return DeskproTicketCloseNotFound if ticket not found" in new Setup {
+      when(mockDeskproConnector.closeTicket(*)(*)).thenReturn(Future.successful(DeskproTicketCloseNotFound))
 
-      await(underTest.closeTicket(ticketId)) shouldBe DeskproTicketDeleteNotFound
+      await(underTest.closeTicket(ticketId)) shouldBe DeskproTicketCloseNotFound
     }
 
-    "return DeskproTicketDeleteFailure if delete failed" in new Setup {
-      when(mockDeskproConnector.closeTicket(*)(*)).thenReturn(Future.successful(DeskproTicketDeleteFailure))
+    "return DeskproTicketCloseFailure if close failed" in new Setup {
+      when(mockDeskproConnector.closeTicket(*)(*)).thenReturn(Future.successful(DeskproTicketCloseFailure))
 
-      await(underTest.closeTicket(ticketId)) shouldBe DeskproTicketDeleteFailure
+      await(underTest.closeTicket(ticketId)) shouldBe DeskproTicketCloseFailure
     }
   }
 }
