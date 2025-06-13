@@ -24,7 +24,7 @@ import play.api.libs.json.Json
 import play.api.mvc.{AnyContentAsText, ControllerComponents, Result}
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers, StubControllerComponentsFactory, StubPlayBodyParsersFactory}
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproMessage, DeskproPersonNotFound, DeskproTicket}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models._
 import uk.gov.hmrc.apiplatformdeskpro.service.TicketService
 import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
@@ -170,6 +170,58 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
 
       intercept[UpstreamErrorResponse] {
         await(objToTest.fetchTicket(ticketId)(request))
+      }
+    }
+  }
+
+  "closeTicket" should {
+    "return 200 when ticket closed successfully" in new Setup {
+
+      when(mockService.closeTicket(*)(*)).thenReturn(Future.successful(DeskproTicketCloseSuccess))
+      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
+
+      val request = FakeRequest(POST, s"/ticket/$ticketId/close")
+        .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
+
+      val result: Future[Result] = objToTest.closeTicket(ticketId)(request)
+
+      status(result) shouldBe OK
+    }
+
+    "return 404 when ticket to close not found" in new Setup {
+
+      when(mockService.closeTicket(*)(*)).thenReturn(Future.successful(DeskproTicketCloseNotFound))
+      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
+
+      val request = FakeRequest(POST, s"/ticket/$ticketId/close")
+        .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
+
+      val result: Future[Result] = objToTest.closeTicket(ticketId)(request)
+
+      status(result) shouldBe NOT_FOUND
+    }
+
+    "return 500 when ticket close failed" in new Setup {
+
+      when(mockService.closeTicket(*)(*)).thenReturn(Future.successful(DeskproTicketCloseFailure))
+      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
+
+      val request = FakeRequest(POST, s"/ticket/$ticketId/close")
+        .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
+
+      val result: Future[Result] = objToTest.closeTicket(ticketId)(request)
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+
+    "return UpstreamErrorResponse for invalid token" in new Setup {
+      val request = FakeRequest(POST, s"/ticket/$ticketId/close")
+        .withHeaders("Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
+
+      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.failed(UpstreamErrorResponse("Unauthorized", UNAUTHORIZED)))
+
+      intercept[UpstreamErrorResponse] {
+        await(objToTest.closeTicket(ticketId)(request))
       }
     }
   }

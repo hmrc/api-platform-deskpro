@@ -439,6 +439,38 @@ class DeskproConnectorISpec
     }
   }
 
+  "closeTicket" should {
+    "return DeskproTicketCloseSuccess when 200 returned from deskpro" in new Setup {
+      val ticketId: Int = 3432
+
+      CloseTicket.stubSuccess(ticketId)
+
+      val result = await(objInTest.closeTicket(ticketId))
+
+      result shouldBe DeskproTicketCloseSuccess
+    }
+
+    "return DeskproTicketCloseNotFound if ticket not found" in new Setup {
+      val ticketId: Int = 3432
+
+      CloseTicket.stubNotFound(ticketId)
+
+      val result = await(objInTest.closeTicket(ticketId))
+
+      result shouldBe DeskproTicketCloseNotFound
+    }
+
+    "return DeskproTicketCloseFailure if ticket not found" in new Setup {
+      val ticketId: Int = 3432
+
+      CloseTicket.stubFailure(ticketId)
+
+      val result = await(objInTest.closeTicket(ticketId))
+
+      result shouldBe DeskproTicketCloseFailure
+    }
+  }
+
   "getTicketMessages" should {
     "return DeskproMessagesWrapperResponse when 200 returned from deskpro with response body" in new Setup {
       val ticketId: Int         = 3432

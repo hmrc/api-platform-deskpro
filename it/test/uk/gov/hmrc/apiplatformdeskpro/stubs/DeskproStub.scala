@@ -1604,6 +1604,42 @@ trait DeskproStub {
     }
   }
 
+  object CloseTicket {
+
+    def stubSuccess(ticketId: Int) = {
+      stubFor(
+        put(urlPathEqualTo(s"/api/v2/tickets/$ticketId"))
+          .withRequestBody(equalToJson("""{ "status": "resolved"}"""))
+          .willReturn(
+            aResponse()
+              .withStatus(NO_CONTENT)
+          )
+      )
+    }
+
+    def stubNotFound(ticketId: Int) = {
+      stubFor(
+        put(urlPathEqualTo(s"/api/v2/tickets/$ticketId"))
+          .withRequestBody(equalToJson("""{ "status": "resolved"}"""))
+          .willReturn(
+            aResponse()
+              .withStatus(NOT_FOUND)
+          )
+      )
+    }
+
+    def stubFailure(ticketId: Int) = {
+      stubFor(
+        put(urlPathEqualTo(s"/api/v2/tickets/$ticketId"))
+          .withRequestBody(equalToJson("""{ "status": "resolved"}"""))
+          .willReturn(
+            aResponse()
+              .withStatus(INTERNAL_SERVER_ERROR)
+          )
+      )
+    }
+  }
+
   object GetTicketMessages {
 
     def stubSuccess(ticketId: Int) = {

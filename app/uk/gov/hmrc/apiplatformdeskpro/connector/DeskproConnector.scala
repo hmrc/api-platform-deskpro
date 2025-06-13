@@ -22,7 +22,7 @@ import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.http.HeaderNames.AUTHORIZATION
-import play.api.http.Status.{BAD_REQUEST, CREATED, NO_CONTENT, UNAUTHORIZED}
+import play.api.http.Status._
 import play.api.libs.json.{JsValue, Json}
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.domain.models._
@@ -202,6 +202,28 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
       .withProxy
       .setHeader(AUTHORIZATION -> config.deskproApiKey)
       .execute[Option[DeskproTicketWrapperResponse]]
+  }
+
+  def closeTicket(ticketId: Int)(implicit hc: HeaderCarrier): Future[DeskproTicketCloseResult] = metrics.record(api) {
+    http
+      .put(url"${requestUrl(s"/api/v2/tickets/$ticketId")}")
+      .withProxy
+      .withBody(Json.toJson(UpdateTicketStatusRequest("resolved")))
+      .setHeader(AUTHORIZATION -> config.deskproApiKey)
+      .execute[HttpResponse]
+      .map(response =>
+        response.status match {
+          case NO_CONTENT =>
+            logger.info(s"Deskpro close ticket '$ticketId' success")
+            DeskproTicketCloseSuccess
+          case NOT_FOUND  =>
+            logger.warn(s"Deskpro close ticket '$ticketId' failed Not found")
+            DeskproTicketCloseNotFound
+          case _          =>
+            logger.error(s"Deskpro close ticket '$ticketId' failed status: ${response.status}")
+            DeskproTicketCloseFailure
+        }
+      )
   }
 
   def getTicketMessages(ticketId: Int, pageWanted: Int = 1)(implicit hc: HeaderCarrier): Future[DeskproMessagesWrapperResponse] = metrics.record(api) {
