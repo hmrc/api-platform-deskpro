@@ -21,11 +21,11 @@ import scala.concurrent.ExecutionContext
 
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result, Results}
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.DeskproTicket
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.GetTicketsByEmailRequest
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproTicket, DeskproTicketCloseFailure, DeskproTicketCloseNotFound, DeskproTicketCloseSuccess}
 import uk.gov.hmrc.apiplatformdeskpro.service.TicketService
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
-import uk.gov.hmrc.internalauth.client.{BackendAuthComponents, _}
+import uk.gov.hmrc.internalauth.client._
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 @Singleton
@@ -52,6 +52,19 @@ class TicketController @Inject() (ticketService: TicketService, cc: ControllerCo
 
           val success = (t: DeskproTicket) => Ok(Json.toJson(t))
           ticketService.batchFetchTicket(ticketId).map(_.fold(failed)(success))
+        }
+    }
+
+  def closeTicket(ticketId: Int): Action[AnyContent] =
+    auth.authorizedAction(predicate = Predicate.Permission(Resource.from("api-platform-deskpro", "tickets/all"), IAAction("READ"))).async {
+      implicit request: AuthenticatedRequest[AnyContent, Unit] =>
+        {
+          ticketService.closeTicket(ticketId)
+            .map {
+              case DeskproTicketCloseSuccess  => Ok
+              case DeskproTicketCloseNotFound => NotFound
+              case DeskproTicketCloseFailure  => InternalServerError
+            } recover recovery
         }
     }
 
