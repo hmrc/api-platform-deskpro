@@ -125,7 +125,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
 
   "getTicketsForPerson" should {
     "return a list of DeskproTickets" in new Setup {
-      when(mockPersonService.getPersonForEmail(eqTo(personEmail))(*)).thenReturn(Future.successful(personId))
+      when(mockPersonService.getPersonIdForEmail(eqTo(personEmail))(*)).thenReturn(Future.successful(personId))
       when(mockDeskproConnector.getTicketsForPersonId(eqTo(personId), eqTo(status), *)(*)).thenReturn(Future.successful(DeskproTicketsWrapperResponse(List(
         deskproTicket1,
         deskproTicket2

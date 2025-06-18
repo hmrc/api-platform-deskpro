@@ -49,13 +49,13 @@ class PersonServiceSpec extends AsyncHmrcSpec with FixedClock {
 
   "PersonService" when {
 
-    "getPersonForEmail" should {
+    "getPersonIdForEmail" should {
       "successfully return person id when person is found in cache" in new Setup {
 
         when(mockDeskproPersonCacheRepository.fetchByEmailAddress(eqTo(personEmail1)))
           .thenReturn(Future.successful(Some(DeskproPersonCache(personEmail1, personId1, instant))))
 
-        val result = await(underTest.getPersonForEmail(personEmail1))
+        val result = await(underTest.getPersonIdForEmail(personEmail1))
 
         result shouldBe personId1
 
@@ -77,7 +77,7 @@ class PersonServiceSpec extends AsyncHmrcSpec with FixedClock {
         when(mockDeskproPersonCacheRepository.saveDeskproPersonCache(*))
           .thenReturn(Future.successful(Some(DeskproPersonCache(personEmail1, personId1, instant))))
 
-        val result = await(underTest.getPersonForEmail(personEmail1))
+        val result = await(underTest.getPersonIdForEmail(personEmail1))
 
         result shouldBe personId1
 
@@ -98,7 +98,7 @@ class PersonServiceSpec extends AsyncHmrcSpec with FixedClock {
           .thenReturn(Future.successful(wrapper))
 
         intercept[DeskproPersonNotFound] {
-          await(underTest.getPersonForEmail(personEmail1))
+          await(underTest.getPersonIdForEmail(personEmail1))
         }
 
         verify(mockDeskproPersonCacheRepository).fetchByEmailAddress(eqTo(personEmail1))

@@ -40,14 +40,14 @@ class PersonService @Inject() (
 
   def updatePersonByEmail(email: LaxEmailAddress, name: String)(implicit hc: HeaderCarrier): Future[DeskproPersonUpdateResult] = {
     for {
-      personId <- getPersonForEmail(email)
+      personId <- getPersonIdForEmail(email)
       result   <- deskproConnector.updatePerson(personId, name)
     } yield result
   }
 
   def markPersonInactive(email: LaxEmailAddress)(implicit hc: HeaderCarrier): Future[DeskproPersonUpdateResult] = {
     for {
-      personId <- getPersonForEmail(email)
+      personId <- getPersonIdForEmail(email)
       result   <- deskproConnector.markPersonInactive(personId)
     } yield result
   }
@@ -60,7 +60,7 @@ class PersonService @Inject() (
     } yield personId
   }
 
-  def getPersonForEmail(email: LaxEmailAddress)(implicit hc: HeaderCarrier): Future[Int] = {
+  def getPersonIdForEmail(email: LaxEmailAddress)(implicit hc: HeaderCarrier): Future[Int] = {
     for {
       maybeCachePerson <- deskproPersonCacheRepository.fetchByEmailAddress(email)
       personId         <- maybeCachePerson match {
