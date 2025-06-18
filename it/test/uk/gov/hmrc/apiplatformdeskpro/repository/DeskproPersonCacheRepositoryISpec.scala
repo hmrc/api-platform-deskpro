@@ -56,14 +56,14 @@ class DeskproPersonCacheRepositoryISpec extends AsyncHmrcSpec
       "save the person successfully" in new Setup {
         val deskproPerson = DeskproPersonCache(email, personId, instant)
         val result        = await(deskproPersonCacheRepository.saveDeskproPersonCache(deskproPerson))
-        result shouldBe Some(deskproPerson)
+        result shouldBe deskproPerson
       }
 
-      "not save duplicates" in new Setup {
+      "also save duplicates" in new Setup {
         val deskproPerson = DeskproPersonCache(email, personId, instant)
         await(deskproPersonCacheRepository.saveDeskproPersonCache(deskproPerson))
         val result        = await(deskproPersonCacheRepository.saveDeskproPersonCache(deskproPerson))
-        result shouldBe None
+        result shouldBe deskproPerson
       }
     }
 

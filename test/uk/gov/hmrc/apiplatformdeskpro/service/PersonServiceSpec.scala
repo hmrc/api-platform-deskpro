@@ -75,7 +75,7 @@ class PersonServiceSpec extends AsyncHmrcSpec with FixedClock {
         when(mockDeskproConnector.getPersonForEmail(eqTo(personEmail1))(*))
           .thenReturn(Future.successful(wrapper))
         when(mockDeskproPersonCacheRepository.saveDeskproPersonCache(*))
-          .thenReturn(Future.successful(Some(DeskproPersonCache(personEmail1, personId1, instant))))
+          .thenReturn(Future.successful(DeskproPersonCache(personEmail1, personId1, instant)))
 
         val result = await(underTest.getPersonIdForEmail(personEmail1))
 
@@ -118,7 +118,7 @@ class PersonServiceSpec extends AsyncHmrcSpec with FixedClock {
         when(mockDeskproConnector.getPersonForEmail(eqTo(personEmail1))(*))
           .thenReturn(Future.successful(wrapper))
         when(mockDeskproPersonCacheRepository.saveDeskproPersonCache(*))
-          .thenReturn(Future.successful(Some(DeskproPersonCache(personEmail1, personId1, instant))))
+          .thenReturn(Future.successful(DeskproPersonCache(personEmail1, personId1, instant)))
         when(mockDeskproConnector.updatePerson(eqTo(personId1), eqTo(personName2))(*))
           .thenReturn(Future.successful(DeskproPersonUpdateSuccess))
 
@@ -141,7 +141,7 @@ class PersonServiceSpec extends AsyncHmrcSpec with FixedClock {
         when(mockDeskproConnector.getPersonForEmail(eqTo(personEmail1))(*))
           .thenReturn(Future.successful(wrapper))
         when(mockDeskproPersonCacheRepository.saveDeskproPersonCache(*))
-          .thenReturn(Future.successful(Some(DeskproPersonCache(personEmail1, personId1, instant))))
+          .thenReturn(Future.successful(DeskproPersonCache(personEmail1, personId1, instant)))
         when(mockDeskproConnector.updatePerson(eqTo(personId1), eqTo(personName2))(*))
           .thenReturn(Future.successful(DeskproPersonUpdateFailure))
 
@@ -194,7 +194,7 @@ class PersonServiceSpec extends AsyncHmrcSpec with FixedClock {
         when(mockDeskproConnector.getPersonForEmail(eqTo(personEmail1))(*))
           .thenReturn(Future.successful(wrapper))
         when(mockDeskproPersonCacheRepository.saveDeskproPersonCache(*))
-          .thenReturn(Future.successful(Some(DeskproPersonCache(personEmail1, personId1, instant))))
+          .thenReturn(Future.successful(DeskproPersonCache(personEmail1, personId1, instant)))
         when(mockDeskproConnector.markPersonInactive(eqTo(personId1))(*))
           .thenReturn(Future.successful(DeskproPersonUpdateSuccess))
 
@@ -217,7 +217,7 @@ class PersonServiceSpec extends AsyncHmrcSpec with FixedClock {
         when(mockDeskproConnector.getPersonForEmail(eqTo(personEmail1))(*))
           .thenReturn(Future.successful(wrapper))
         when(mockDeskproPersonCacheRepository.saveDeskproPersonCache(*))
-          .thenReturn(Future.successful(Some(DeskproPersonCache(personEmail1, personId1, instant))))
+          .thenReturn(Future.successful(DeskproPersonCache(personEmail1, personId1, instant)))
         when(mockDeskproConnector.markPersonInactive(eqTo(personId1))(*))
           .thenReturn(Future.successful(DeskproPersonUpdateFailure))
 

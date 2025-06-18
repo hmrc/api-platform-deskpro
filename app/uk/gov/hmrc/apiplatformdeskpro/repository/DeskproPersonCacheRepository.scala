@@ -23,14 +23,14 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.Indexes.ascending
-import org.mongodb.scala.model.{IndexModel, IndexOptions}
+import org.mongodb.scala.model.{IndexModel, IndexOptions, ReplaceOptions}
 
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.DeskproPersonCache
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
-import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
@@ -75,16 +75,12 @@ class DeskproPersonCacheRepository @Inject() (mongo: MongoComponent, appConfig: 
 
   override lazy val requiresTtlIndex: Boolean = true
 
-  def saveDeskproPersonCache(person: DeskproPersonCache): Future[Option[DeskproPersonCache]] = {
-    collection.find(equal("emailAddress", Codecs.toBson(person.emailAddress))).headOption().flatMap {
-      case Some(value) => {
-        logger.info(s"Cannot create deskpro person cache for person with email ${person.emailAddress.text} because a person already exists.")
-        Future.successful(None)
-      }
-      case None        => {
-        collection.insertOne(person).toFuture().map(_ => Some(person))
-      }
-    }
+  def saveDeskproPersonCache(person: DeskproPersonCache): Future[DeskproPersonCache] = {
+    collection.replaceOne(
+      equal("emailAddress", person.emailAddress.toString),
+      person,
+      options = new ReplaceOptions().upsert(true)
+    ).toFuture().map(_ => person)
   }
 
   def fetchByEmailAddress(email: LaxEmailAddress): Future[Option[DeskproPersonCache]] = {
