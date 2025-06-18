@@ -17,26 +17,29 @@
 package uk.gov.hmrc.apiplatformdeskpro.config
 
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.duration.Duration
 
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 @Singleton
 class AppConfig @Inject() (config: ServicesConfig) {
 
-  val appName: String                = config.getString("appName")
-  val deskproUrl: String             = config.getString("deskpro.uri")
-  private val deskproKeyConfig       = config.getString("deskpro.api-key")
-  val deskproApiKey: String          = s"key $deskproKeyConfig"
-  val deskproBrand: Int              = config.getInt("deskpro.brand")
-  val deskproOrganisation: String    = config.getString("deskpro.organisation")
-  val deskproTeamMemberEmail: String = config.getString("deskpro.team-member-email")
-  val deskproSupportReason: String   = config.getString("deskpro.support-reason")
-  val deskproApplicationId: String   = config.getString("deskpro.application-id")
-  val deskproApiName: String         = config.getString("deskpro.api-name")
-  val deskproInactive: String        = config.getString("deskpro.inactive")
-  val deskproInactivatedDate: String = config.getString("deskpro.inactivated-date")
-  val thirdPartyDeveloperUrl: String = config.baseUrl("third-party-developer")
-  val deskproBatchSize: Int          = config.getInt("importUser.deskpro-batch-size")
-  val deskproBatchPause: Int         = config.getInt("importUser.deskpro-batch-pause")
-  val initialImport: Boolean         = config.getBoolean("importUser.initial-import")
+  val appName: String                     = config.getString("appName")
+  val deskproUrl: String                  = config.getString("deskpro.uri")
+  private val deskproKeyConfig            = config.getString("deskpro.api-key")
+  val deskproApiKey: String               = s"key $deskproKeyConfig"
+  val deskproBrand: Int                   = config.getInt("deskpro.brand")
+  val deskproOrganisation: String         = config.getString("deskpro.organisation")
+  val deskproTeamMemberEmail: String      = config.getString("deskpro.team-member-email")
+  val deskproSupportReason: String        = config.getString("deskpro.support-reason")
+  val deskproApplicationId: String        = config.getString("deskpro.application-id")
+  val deskproApiName: String              = config.getString("deskpro.api-name")
+  val deskproInactive: String             = config.getString("deskpro.inactive")
+  val deskproInactivatedDate: String      = config.getString("deskpro.inactivated-date")
+  val thirdPartyDeveloperUrl: String      = config.baseUrl("third-party-developer")
+  val deskproBatchSize: Int               = config.getInt("importUser.deskpro-batch-size")
+  val deskproBatchPause: Int              = config.getInt("importUser.deskpro-batch-pause")
+  val initialImport: Boolean              = config.getBoolean("importUser.initial-import")
+  val deskproPersonCacheTimeout: Duration = config.getDuration("deskpro-person-cache.timeout")
+
 }

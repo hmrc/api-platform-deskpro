@@ -31,6 +31,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 @Singleton
 class TicketService @Inject() (
     deskproConnector: DeskproConnector,
+    personService: PersonService,
     config: AppConfig
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
@@ -62,8 +63,7 @@ class TicketService @Inject() (
 
   def getTicketsForPerson(personEmail: LaxEmailAddress, status: Option[String])(implicit hc: HeaderCarrier): Future[List[DeskproTicket]] = {
     for {
-      personResponse <- deskproConnector.getPersonForEmail(personEmail)
-      personId        = personResponse.data.headOption.getOrElse(throw new DeskproPersonNotFound("Person not found")).id
+      personId       <- personService.getPersonIdForEmail(personEmail)
       ticketResponse <- deskproConnector.getTicketsForPersonId(personId, status)
     } yield ticketResponse.data.map(response => DeskproTicket.build(response, List.empty))
   }

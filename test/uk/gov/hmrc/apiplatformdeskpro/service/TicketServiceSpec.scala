@@ -35,6 +35,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val mockDeskproConnector = mock[DeskproConnector]
+    val mockPersonService    = mock[PersonService]
     val mockAppConfig        = mock[AppConfig]
 
     val fullName        = "Bob Holness"
@@ -58,7 +59,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
 
     val ticketId: Int = 123
 
-    val underTest = new TicketService(mockDeskproConnector, mockAppConfig)
+    val underTest = new TicketService(mockDeskproConnector, mockPersonService, mockAppConfig)
   }
 
   "submitTicket" should {
@@ -124,12 +125,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
 
   "getTicketsForPerson" should {
     "return a list of DeskproTickets" in new Setup {
-      val personWrapper = DeskproLinkedOrganisationWrapper(
-        List(DeskproPersonResponse(personId, Some(personEmail.text), "Bob the Builder")),
-        DeskproLinkedOrganisationObject(Map.empty)
-      )
-
-      when(mockDeskproConnector.getPersonForEmail(eqTo(personEmail))(*)).thenReturn(Future.successful(personWrapper))
+      when(mockPersonService.getPersonIdForEmail(eqTo(personEmail))(*)).thenReturn(Future.successful(personId))
       when(mockDeskproConnector.getTicketsForPersonId(eqTo(personId), eqTo(status), *)(*)).thenReturn(Future.successful(DeskproTicketsWrapperResponse(List(
         deskproTicket1,
         deskproTicket2
@@ -142,19 +138,6 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
         DeskproTicket(456, "ref2", personId, LaxEmailAddress("bob@example.com"), "awaiting_agent", instant, None, "subject 2", List.empty)
       )
       result shouldBe expectedResponse
-    }
-
-    "throw an DeskproPersonNotFound exception when person is not found" in new Setup {
-      val personWrapper = DeskproLinkedOrganisationWrapper(
-        List.empty,
-        DeskproLinkedOrganisationObject(Map.empty)
-      )
-
-      when(mockDeskproConnector.getPersonForEmail(eqTo(personEmail))(*)).thenReturn(Future.successful(personWrapper))
-
-      intercept[DeskproPersonNotFound] {
-        await(underTest.getTicketsForPerson(personEmail, status))
-      }
     }
   }
 
