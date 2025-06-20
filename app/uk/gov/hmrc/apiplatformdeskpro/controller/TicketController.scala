@@ -21,8 +21,8 @@ import scala.concurrent.ExecutionContext
 
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result, Results}
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.GetTicketsByEmailRequest
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproTicket, DeskproTicketCloseFailure, DeskproTicketCloseNotFound, DeskproTicketCloseSuccess}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models._
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.{CreateTicketResponseRequest, GetTicketsByEmailRequest}
 import uk.gov.hmrc.apiplatformdeskpro.service.TicketService
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.internalauth.client._
@@ -64,6 +64,19 @@ class TicketController @Inject() (ticketService: TicketService, cc: ControllerCo
               case DeskproTicketCloseSuccess  => Ok
               case DeskproTicketCloseNotFound => NotFound
               case DeskproTicketCloseFailure  => InternalServerError
+            } recover recovery
+        }
+    }
+
+  def createResponse(ticketId: Int): Action[AnyContent] =
+    auth.authorizedAction(predicate = Predicate.Permission(Resource.from("api-platform-deskpro", "tickets/all"), IAAction("READ"))).async {
+      implicit request: AuthenticatedRequest[AnyContent, Unit] =>
+        withJsonBodyFromAnyContent[CreateTicketResponseRequest] { parsedRequest =>
+          ticketService.createResponse(ticketId, parsedRequest.userEmail.text, parsedRequest.message)
+            .map {
+              case DeskproTicketResponseSuccess  => Ok
+              case DeskproTicketResponseNotFound => NotFound
+              case DeskproTicketResponseFailure  => InternalServerError
             } recover recovery
         }
     }

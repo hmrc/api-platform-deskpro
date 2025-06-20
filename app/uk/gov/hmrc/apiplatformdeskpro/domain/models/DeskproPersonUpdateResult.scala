@@ -25,6 +25,11 @@ object DeskproTicketCloseSuccess  extends DeskproTicketCloseResult
 object DeskproTicketCloseNotFound extends DeskproTicketCloseResult
 object DeskproTicketCloseFailure  extends DeskproTicketCloseResult
 
+sealed trait DeskproTicketResponseResult
+object DeskproTicketResponseSuccess  extends DeskproTicketResponseResult
+object DeskproTicketResponseNotFound extends DeskproTicketResponseResult
+object DeskproTicketResponseFailure  extends DeskproTicketResponseResult
+
 case class DeskproPersonNotFound(
     message: String
   ) extends Exception(message)

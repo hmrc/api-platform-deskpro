@@ -290,4 +290,24 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       await(underTest.closeTicket(ticketId)) shouldBe DeskproTicketCloseFailure
     }
   }
+
+  "createResponse" should {
+    "return DeskproTicketResponseSuccess when response created" in new Setup {
+      when(mockDeskproConnector.createResponse(*, *, *)(*)).thenReturn(Future.successful(DeskproTicketResponseSuccess))
+
+      await(underTest.createResponse(ticketId, email, message)) shouldBe DeskproTicketResponseSuccess
+    }
+
+    "return DeskproTicketResponseNotFound if ticket to respond not found" in new Setup {
+      when(mockDeskproConnector.createResponse(*, *, *)(*)).thenReturn(Future.successful(DeskproTicketResponseNotFound))
+
+      await(underTest.createResponse(ticketId, email, message)) shouldBe DeskproTicketResponseNotFound
+    }
+
+    "return DeskproTicketResponseFailure if create failed" in new Setup {
+      when(mockDeskproConnector.createResponse(*, *, *)(*)).thenReturn(Future.successful(DeskproTicketResponseFailure))
+
+      await(underTest.createResponse(ticketId, email, message)) shouldBe DeskproTicketResponseFailure
+    }
+  }
 }

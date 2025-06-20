@@ -84,4 +84,10 @@ class TicketService @Inject() (
       result <- deskproConnector.closeTicket(ticketId)
     } yield result
   }
+
+  def createResponse(ticketId: Int, userEmail: String, message: String)(implicit hc: HeaderCarrier): Future[DeskproTicketResponseResult] = {
+    for {
+      result <- deskproConnector.createResponse(ticketId, userEmail, message)
+    } yield result
+  }
 }

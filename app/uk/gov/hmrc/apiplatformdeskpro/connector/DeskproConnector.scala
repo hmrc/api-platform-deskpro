@@ -226,6 +226,28 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
       )
   }
 
+  def createResponse(ticketId: Int, userEmail: String, message: String)(implicit hc: HeaderCarrier): Future[DeskproTicketResponseResult] = metrics.record(api) {
+    http
+      .post(url"${requestUrl(s"/api/v2/tickets/$ticketId/messages")}")
+      .withProxy
+      .withBody(Json.toJson(CreateResponseRequest(userEmail, message)))
+      .setHeader(AUTHORIZATION -> config.deskproApiKey)
+      .execute[HttpResponse]
+      .map(response =>
+        response.status match {
+          case CREATED   =>
+            logger.info(s"Created response for Deskpro ticket '$ticketId' successfully")
+            DeskproTicketResponseSuccess
+          case NOT_FOUND =>
+            logger.warn(s"Failed to created response for Deskpro ticket '$ticketId. Ticket not found")
+            DeskproTicketResponseNotFound
+          case _         =>
+            logger.error(s"Failed to created response for Deskpro ticket '$ticketId. Status: ${response.status}")
+            DeskproTicketResponseFailure
+        }
+      )
+  }
+
   def getTicketMessages(ticketId: Int, pageWanted: Int = 1)(implicit hc: HeaderCarrier): Future[DeskproMessagesWrapperResponse] = metrics.record(api) {
     val queryParams = Seq("count" -> 200, "page" -> pageWanted)
     http

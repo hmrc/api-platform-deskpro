@@ -1640,6 +1640,51 @@ trait DeskproStub {
     }
   }
 
+  object CreateResponse {
+
+    def stubSuccess(ticketId: Int, userEmail: String, message: String) = {
+      stubFor(
+        post(urlPathEqualTo(s"/api/v2/tickets/$ticketId/messages"))
+          .withRequestBody(equalToJson(s"""{
+                                          |  "person": "$userEmail",
+                                          |  "message": "$message"
+                                          |}""".stripMargin))
+          .willReturn(
+            aResponse()
+              .withStatus(CREATED)
+          )
+      )
+    }
+
+    def stubNotFound(ticketId: Int, userEmail: String, message: String) = {
+      stubFor(
+        post(urlPathEqualTo(s"/api/v2/tickets/$ticketId/messages"))
+          .withRequestBody(equalToJson(s"""{
+                                          |  "person": "$userEmail",
+                                          |  "message": "$message"
+                                          |}""".stripMargin))
+          .willReturn(
+            aResponse()
+              .withStatus(NOT_FOUND)
+          )
+      )
+    }
+
+    def stubFailure(ticketId: Int, userEmail: String, message: String) = {
+      stubFor(
+        post(urlPathEqualTo(s"/api/v2/tickets/$ticketId/messages"))
+          .withRequestBody(equalToJson(s"""{
+                                          |  "person": "$userEmail",
+                                          |  "message": "$message"
+                                          |}""".stripMargin))
+          .willReturn(
+            aResponse()
+              .withStatus(INTERNAL_SERVER_ERROR)
+          )
+      )
+    }
+  }
+
   object GetTicketMessages {
 
     def stubSuccess(ticketId: Int) = {
