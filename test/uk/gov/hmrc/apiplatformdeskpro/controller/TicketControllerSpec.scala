@@ -51,12 +51,22 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
     val email         = "bob@example.com"
     val personId: Int = 16
     val subject       = "Subject of the ticket"
+    val response      = "Test response"
 
     val getTicketsByEmailRequestJson = Json.parse(
       s"""
           {
             "email": "$email"
           }
+      """
+    )
+
+    val createTicketResponseRequestJson = Json.parse(
+      s"""
+        {
+          "userEmail": "$email",
+          "message": "$response"
+        }
       """
     )
 
@@ -222,6 +232,61 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
 
       intercept[UpstreamErrorResponse] {
         await(objToTest.closeTicket(ticketId)(request))
+      }
+    }
+  }
+
+  "createResponse" should {
+    "return 200 when response created successfully" in new Setup {
+
+      when(mockService.createResponse(*, *, *)(*)).thenReturn(Future.successful(DeskproTicketResponseSuccess))
+      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
+
+      val request = FakeRequest(POST, s"/ticket/$ticketId/response")
+        .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
+        .withJsonBody(createTicketResponseRequestJson)
+
+      val result: Future[Result] = objToTest.createResponse(ticketId)(request)
+
+      status(result) shouldBe OK
+    }
+
+    "return 404 when ticket to respond not found" in new Setup {
+
+      when(mockService.createResponse(*, *, *)(*)).thenReturn(Future.successful(DeskproTicketResponseNotFound))
+      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
+
+      val request = FakeRequest(POST, s"/ticket/$ticketId/response")
+        .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
+        .withJsonBody(createTicketResponseRequestJson)
+
+      val result: Future[Result] = objToTest.createResponse(ticketId)(request)
+
+      status(result) shouldBe NOT_FOUND
+    }
+
+    "return 500 when response failed" in new Setup {
+
+      when(mockService.createResponse(*, *, *)(*)).thenReturn(Future.successful(DeskproTicketResponseFailure))
+      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
+
+      val request = FakeRequest(POST, s"/ticket/$ticketId/response")
+        .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
+        .withJsonBody(createTicketResponseRequestJson)
+
+      val result: Future[Result] = objToTest.createResponse(ticketId)(request)
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+
+    "return UpstreamErrorResponse for invalid token" in new Setup {
+      val request = FakeRequest(POST, s"/ticket/$ticketId/close")
+        .withHeaders("Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
+
+      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.failed(UpstreamErrorResponse("Unauthorized", UNAUTHORIZED)))
+
+      intercept[UpstreamErrorResponse] {
+        await(objToTest.createResponse(ticketId)(request))
       }
     }
   }

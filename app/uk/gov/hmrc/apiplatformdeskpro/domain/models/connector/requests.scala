@@ -49,6 +49,15 @@ object UpdateTicketStatusRequest {
   implicit val updateTicketStatusRequestFormat: Format[UpdateTicketStatusRequest] = Json.format[UpdateTicketStatusRequest]
 }
 
+case class CreateResponseRequest(
+    person: String,
+    message: String
+  )
+
+object CreateResponseRequest {
+  implicit val createResponseRequestFormat: Format[CreateResponseRequest] = Json.format[CreateResponseRequest]
+}
+
 /*
  * Batch requests
  */

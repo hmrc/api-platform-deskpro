@@ -471,6 +471,41 @@ class DeskproConnectorISpec
     }
   }
 
+  "createResponse" should {
+    "return DeskproTicketResponseSuccess when 200 returned from deskpro" in new Setup {
+      val ticketId: Int = 3432
+      val response      = "response"
+
+      CreateResponse.stubSuccess(ticketId, email, response)
+
+      val result = await(objInTest.createResponse(ticketId, email, response))
+
+      result shouldBe DeskproTicketResponseSuccess
+    }
+
+    "return DeskproTicketResponseNotFound if ticket not found" in new Setup {
+      val ticketId: Int = 3432
+      val response      = "response"
+
+      CreateResponse.stubNotFound(ticketId, email, response)
+
+      val result = await(objInTest.createResponse(ticketId, email, response))
+
+      result shouldBe DeskproTicketResponseNotFound
+    }
+
+    "return DeskproTicketResponseFailure if ticket not found" in new Setup {
+      val ticketId: Int = 3432
+      val response      = "response"
+
+      CreateResponse.stubFailure(ticketId, email, response)
+
+      val result = await(objInTest.createResponse(ticketId, email, response))
+
+      result shouldBe DeskproTicketResponseFailure
+    }
+  }
+
   "getTicketMessages" should {
     "return DeskproMessagesWrapperResponse when 200 returned from deskpro with response body" in new Setup {
       val ticketId: Int         = 3432
