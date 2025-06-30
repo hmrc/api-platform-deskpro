@@ -61,9 +61,9 @@ class TicketController @Inject() (ticketService: TicketService, cc: ControllerCo
         {
           ticketService.closeTicket(ticketId)
             .map {
-              case DeskproTicketCloseSuccess  => Ok
-              case DeskproTicketCloseNotFound => NotFound
-              case DeskproTicketCloseFailure  => InternalServerError
+              case DeskproTicketUpdateSuccess  => Ok
+              case DeskproTicketUpdateNotFound => NotFound
+              case DeskproTicketUpdateFailure  => InternalServerError
             } recover recovery
         }
     }

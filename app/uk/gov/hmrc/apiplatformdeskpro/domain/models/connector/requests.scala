@@ -58,6 +58,13 @@ object CreateResponseRequest {
   implicit val createResponseRequestFormat: Format[CreateResponseRequest] = Json.format[CreateResponseRequest]
 }
 
+abstract class TicketStatus(val value: String)
+
+object TicketStatus {
+  case object AwaitingAgent extends TicketStatus("awaiting_agent")
+  case object Resolved      extends TicketStatus("resolved")
+}
+
 /*
  * Batch requests
  */
