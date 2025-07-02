@@ -187,7 +187,7 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
   "closeTicket" should {
     "return 200 when ticket closed successfully" in new Setup {
 
-      when(mockService.closeTicket(*)(*)).thenReturn(Future.successful(DeskproTicketCloseSuccess))
+      when(mockService.closeTicket(*)(*)).thenReturn(Future.successful(DeskproTicketUpdateSuccess))
       when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
 
       val request = FakeRequest(POST, s"/ticket/$ticketId/close")
@@ -200,7 +200,7 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
 
     "return 404 when ticket to close not found" in new Setup {
 
-      when(mockService.closeTicket(*)(*)).thenReturn(Future.successful(DeskproTicketCloseNotFound))
+      when(mockService.closeTicket(*)(*)).thenReturn(Future.successful(DeskproTicketUpdateNotFound))
       when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
 
       val request = FakeRequest(POST, s"/ticket/$ticketId/close")
@@ -213,7 +213,7 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
 
     "return 500 when ticket close failed" in new Setup {
 
-      when(mockService.closeTicket(*)(*)).thenReturn(Future.successful(DeskproTicketCloseFailure))
+      when(mockService.closeTicket(*)(*)).thenReturn(Future.successful(DeskproTicketUpdateFailure))
       when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
 
       val request = FakeRequest(POST, s"/ticket/$ticketId/close")

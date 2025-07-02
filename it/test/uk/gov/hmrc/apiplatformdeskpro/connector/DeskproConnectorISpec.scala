@@ -445,9 +445,9 @@ class DeskproConnectorISpec
 
       CloseTicket.stubSuccess(ticketId)
 
-      val result = await(objInTest.closeTicket(ticketId))
+      val result = await(objInTest.updateTicketStatus(ticketId, TicketStatus.Resolved))
 
-      result shouldBe DeskproTicketCloseSuccess
+      result shouldBe DeskproTicketUpdateSuccess
     }
 
     "return DeskproTicketCloseNotFound if ticket not found" in new Setup {
@@ -455,9 +455,9 @@ class DeskproConnectorISpec
 
       CloseTicket.stubNotFound(ticketId)
 
-      val result = await(objInTest.closeTicket(ticketId))
+      val result = await(objInTest.updateTicketStatus(ticketId, TicketStatus.Resolved))
 
-      result shouldBe DeskproTicketCloseNotFound
+      result shouldBe DeskproTicketUpdateNotFound
     }
 
     "return DeskproTicketCloseFailure if ticket not found" in new Setup {
@@ -465,9 +465,9 @@ class DeskproConnectorISpec
 
       CloseTicket.stubFailure(ticketId)
 
-      val result = await(objInTest.closeTicket(ticketId))
+      val result = await(objInTest.updateTicketStatus(ticketId, TicketStatus.Resolved))
 
-      result shouldBe DeskproTicketCloseFailure
+      result shouldBe DeskproTicketUpdateFailure
     }
   }
 

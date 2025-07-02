@@ -273,39 +273,56 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
 
   "closeTicket" should {
     "return DeskproTicketCloseSuccess when ticket closed" in new Setup {
-      when(mockDeskproConnector.closeTicket(*)(*)).thenReturn(Future.successful(DeskproTicketCloseSuccess))
+      when(mockDeskproConnector.updateTicketStatus(*, *)(*)).thenReturn(Future.successful(DeskproTicketUpdateSuccess))
 
-      await(underTest.closeTicket(ticketId)) shouldBe DeskproTicketCloseSuccess
+      await(underTest.closeTicket(ticketId)) shouldBe DeskproTicketUpdateSuccess
+
+      verify(mockDeskproConnector).updateTicketStatus(eqTo(ticketId), eqTo(TicketStatus.Resolved))(*)
     }
 
     "return DeskproTicketCloseNotFound if ticket not found" in new Setup {
-      when(mockDeskproConnector.closeTicket(*)(*)).thenReturn(Future.successful(DeskproTicketCloseNotFound))
+      when(mockDeskproConnector.updateTicketStatus(*, *)(*)).thenReturn(Future.successful(DeskproTicketUpdateNotFound))
 
-      await(underTest.closeTicket(ticketId)) shouldBe DeskproTicketCloseNotFound
+      await(underTest.closeTicket(ticketId)) shouldBe DeskproTicketUpdateNotFound
     }
 
     "return DeskproTicketCloseFailure if close failed" in new Setup {
-      when(mockDeskproConnector.closeTicket(*)(*)).thenReturn(Future.successful(DeskproTicketCloseFailure))
+      when(mockDeskproConnector.updateTicketStatus(*, *)(*)).thenReturn(Future.successful(DeskproTicketUpdateFailure))
 
-      await(underTest.closeTicket(ticketId)) shouldBe DeskproTicketCloseFailure
+      await(underTest.closeTicket(ticketId)) shouldBe DeskproTicketUpdateFailure
     }
   }
 
   "createResponse" should {
     "return DeskproTicketResponseSuccess when response created" in new Setup {
       when(mockDeskproConnector.createResponse(*, *, *)(*)).thenReturn(Future.successful(DeskproTicketResponseSuccess))
+      when(mockDeskproConnector.updateTicketStatus(*, *)(*)).thenReturn(Future.successful(DeskproTicketUpdateSuccess))
 
       await(underTest.createResponse(ticketId, email, message)) shouldBe DeskproTicketResponseSuccess
+
+      verify(mockDeskproConnector).createResponse(eqTo(ticketId), eqTo(email), eqTo(message))(*)
+      verify(mockDeskproConnector).updateTicketStatus(eqTo(ticketId), eqTo(TicketStatus.AwaitingAgent))(*)
+    }
+
+    "return DeskproTicketResponseSuccess when response created, even if ticket status update failed" in new Setup {
+      when(mockDeskproConnector.createResponse(*, *, *)(*)).thenReturn(Future.successful(DeskproTicketResponseSuccess))
+      when(mockDeskproConnector.updateTicketStatus(*, *)(*)).thenReturn(Future.successful(DeskproTicketUpdateFailure))
+
+      await(underTest.createResponse(ticketId, email, message)) shouldBe DeskproTicketResponseSuccess
+
+      verify(mockDeskproConnector).createResponse(eqTo(ticketId), eqTo(email), eqTo(message))(*)
     }
 
     "return DeskproTicketResponseNotFound if ticket to respond not found" in new Setup {
       when(mockDeskproConnector.createResponse(*, *, *)(*)).thenReturn(Future.successful(DeskproTicketResponseNotFound))
+      when(mockDeskproConnector.updateTicketStatus(*, *)(*)).thenReturn(Future.successful(DeskproTicketUpdateSuccess))
 
       await(underTest.createResponse(ticketId, email, message)) shouldBe DeskproTicketResponseNotFound
     }
 
     "return DeskproTicketResponseFailure if create failed" in new Setup {
       when(mockDeskproConnector.createResponse(*, *, *)(*)).thenReturn(Future.successful(DeskproTicketResponseFailure))
+      when(mockDeskproConnector.updateTicketStatus(*, *)(*)).thenReturn(Future.successful(DeskproTicketUpdateSuccess))
 
       await(underTest.createResponse(ticketId, email, message)) shouldBe DeskproTicketResponseFailure
     }
