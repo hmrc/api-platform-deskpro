@@ -45,7 +45,8 @@ object DeskproMessage {
     )
   }
 
-  implicit val format: OFormat[DeskproMessage] = Json.format[DeskproMessage]
+  implicit val format: OFormat[DeskproMessage]    = Json.format[DeskproMessage]
+  implicit val ordering: Ordering[DeskproMessage] = Ordering.by[DeskproMessage, Instant](_.dateCreated).reverse
 }
 
 case class DeskproTicket(
@@ -79,7 +80,7 @@ object DeskproTicket {
       response.date_created,
       response.date_last_agent_reply,
       response.subject,
-      messagesResponse.map(msg => DeskproMessage.build(msg))
+      (messagesResponse.map(msg => DeskproMessage.build(msg))).sorted
     )
   }
 
