@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.apiplatformdeskpro.service
 
+import java.time.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -50,12 +51,14 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
     val ref             = "ref"
     val brand           = 1
 
-    val personId       = 34
-    val personEmail    = LaxEmailAddress("bob@example.com")
-    val status         = Some("resolved")
-    val deskproTicket1 = DeskproTicketResponse(123, "ref1", personId, "bob@example.com", "awaiting_user", instant, Some(instant), "subject 1")
-    val deskproTicket2 = DeskproTicketResponse(456, "ref2", personId, "bob@example.com", "awaiting_agent", instant, None, "subject 2")
-    val deskproMessage = DeskproMessageResponse(789, 123, personId, instant, 0, "message 1")
+    val personId        = 34
+    val personEmail     = LaxEmailAddress("bob@example.com")
+    val status          = Some("resolved")
+    val deskproTicket1  = DeskproTicketResponse(123, "ref1", personId, "bob@example.com", "awaiting_user", instant, Some(instant), "subject 1")
+    val deskproTicket2  = DeskproTicketResponse(456, "ref2", personId, "bob@example.com", "awaiting_agent", instant, None, "subject 2")
+    val deskproMessage1 = DeskproMessageResponse(787, 123, personId, instant.minus(Duration.ofDays(5)), 0, "message 1")
+    val deskproMessage2 = DeskproMessageResponse(788, 123, personId, instant.minus(Duration.ofDays(2)), 0, "message 2")
+    val deskproMessage3 = DeskproMessageResponse(789, 123, personId, instant, 0, "message 3")
 
     val ticketId: Int = 123
 
@@ -144,7 +147,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
   "fetchTicket" should {
     "return a DeskproTicket" in new Setup {
       when(mockDeskproConnector.fetchTicket(*)(*)).thenReturn(Future.successful(Some(DeskproTicketWrapperResponse(deskproTicket1))))
-      when(mockDeskproConnector.getTicketMessages(*, *)(*)).thenReturn(Future.successful(DeskproMessagesWrapperResponse(List(deskproMessage))))
+      when(mockDeskproConnector.getTicketMessages(*, *)(*)).thenReturn(Future.successful(DeskproMessagesWrapperResponse(List(deskproMessage1, deskproMessage2, deskproMessage3))))
 
       val result = await(underTest.fetchTicket(ticketId))
 
@@ -158,7 +161,11 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
           instant,
           Some(instant),
           "subject 1",
-          List(DeskproMessage(789, ticketId, personId, instant, false, "message 1"))
+          List(
+            DeskproMessage(789, ticketId, personId, instant, false, "message 3"),
+            DeskproMessage(788, ticketId, personId, instant.minus(Duration.ofDays(2)), false, "message 2"),
+            DeskproMessage(787, ticketId, personId, instant.minus(Duration.ofDays(5)), false, "message 1")
+          )
         )
 
       result shouldBe Some(expectedResponse)
@@ -179,7 +186,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       val batchResponse = BatchResponse(
         BatchTicketResponse(
           BatchTicketWrapperResponse(BatchHeadersResponse(200), Some(deskproTicket1)),
-          BatchMessagesWrapperResponse(BatchHeadersResponse(200), Some(List(deskproMessage)))
+          BatchMessagesWrapperResponse(BatchHeadersResponse(200), Some(List(deskproMessage1, deskproMessage2, deskproMessage3)))
         )
       )
       when(mockDeskproConnector.batchFetchTicket(*)(*)).thenReturn(Future.successful(batchResponse))
@@ -196,7 +203,11 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
           instant,
           Some(instant),
           "subject 1",
-          List(DeskproMessage(789, ticketId, personId, instant, false, "message 1"))
+          List(
+            DeskproMessage(789, ticketId, personId, instant, false, "message 3"),
+            DeskproMessage(788, ticketId, personId, instant.minus(Duration.ofDays(2)), false, "message 2"),
+            DeskproMessage(787, ticketId, personId, instant.minus(Duration.ofDays(5)), false, "message 1")
+          )
         )
 
       result shouldBe Some(expectedResponse)
