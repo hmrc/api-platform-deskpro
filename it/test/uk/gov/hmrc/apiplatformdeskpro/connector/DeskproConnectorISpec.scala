@@ -306,11 +306,12 @@ class DeskproConnectorISpec
 
   "getTicketsForPersonId" should {
     "return DeskproTicketsWrapperResponse when 200 returned from deskpro with response body with status" in new Setup {
-      val personId: Int                = 61
-      val status                       = Some("resolved")
-      val createdDate1: Instant        = LocalDateTime.parse("2025-05-01T08:02:02+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
-      val lastAgentReplyDate1: Instant = LocalDateTime.parse("2025-05-20T07:24:41+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
-      val createdDate2: Instant        = LocalDateTime.parse("2024-04-19T12:32:26+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
+      val personId: Int         = 61
+      val status                = Some("resolved")
+      val createdDate1: Instant = LocalDateTime.parse("2025-05-01T08:02:02+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
+      val statusDate1: Instant  = LocalDateTime.parse("2025-05-20T07:24:41+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
+      val createdDate2: Instant = LocalDateTime.parse("2024-04-19T12:32:26+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
+      val statusDate2: Instant  = LocalDateTime.parse("2024-04-19T12:32:27+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
 
       GetTicketsForPersonId.stubSuccess(personId, status)
 
@@ -325,10 +326,21 @@ class DeskproConnectorISpec
             "bob@example.com",
             "awaiting_user",
             createdDate1,
-            Some(lastAgentReplyDate1),
+            statusDate1,
+            None,
             "HMRC Developer Hub: Support Enquiry"
           ),
-          DeskproTicketResponse(443, "SDST-2024EKL881", personId, "bob@example.com", "awaiting_agent", createdDate2, None, "HMRC Developer Hub: Support Enquiry")
+          DeskproTicketResponse(
+            443,
+            "SDST-2024EKL881",
+            personId,
+            "bob@example.com",
+            "awaiting_agent",
+            createdDate2,
+            statusDate2,
+            None,
+            "HMRC Developer Hub: Support Enquiry"
+          )
         )
       )
 
@@ -336,11 +348,12 @@ class DeskproConnectorISpec
     }
 
     "return DeskproTicketsWrapperResponse when 200 returned from deskpro with response body with no status" in new Setup {
-      val personId: Int                = 61
-      val status                       = None
-      val createdDate1: Instant        = LocalDateTime.parse("2025-05-01T08:02:02+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
-      val lastAgentReplyDate1: Instant = LocalDateTime.parse("2025-05-20T07:24:41+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
-      val createdDate2: Instant        = LocalDateTime.parse("2024-04-19T12:32:26+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
+      val personId: Int         = 61
+      val status                = None
+      val createdDate1: Instant = LocalDateTime.parse("2025-05-01T08:02:02+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
+      val statusDate1: Instant  = LocalDateTime.parse("2025-05-20T07:24:41+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
+      val createdDate2: Instant = LocalDateTime.parse("2024-04-19T12:32:26+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
+      val statusDate2: Instant  = LocalDateTime.parse("2024-04-19T12:32:27+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
 
       GetTicketsForPersonId.stubSuccess(personId, status)
 
@@ -355,10 +368,21 @@ class DeskproConnectorISpec
             "bob@example.com",
             "awaiting_user",
             createdDate1,
-            Some(lastAgentReplyDate1),
+            statusDate1,
+            None,
             "HMRC Developer Hub: Support Enquiry"
           ),
-          DeskproTicketResponse(443, "SDST-2024EKL881", personId, "bob@example.com", "awaiting_agent", createdDate2, None, "HMRC Developer Hub: Support Enquiry")
+          DeskproTicketResponse(
+            443,
+            "SDST-2024EKL881",
+            personId,
+            "bob@example.com",
+            "awaiting_agent",
+            createdDate2,
+            statusDate2,
+            None,
+            "HMRC Developer Hub: Support Enquiry"
+          )
         )
       )
 
@@ -368,16 +392,26 @@ class DeskproConnectorISpec
 
   "fetchTicket" should {
     "return DeskproTicketWrapperResponse when 200 returned from deskpro with response body" in new Setup {
-      val ticketId: Int                = 3432
-      val createdDate1: Instant        = LocalDateTime.parse("2025-05-01T08:02:02+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
-      val lastAgentReplyDate1: Instant = LocalDateTime.parse("2025-05-20T07:24:41+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
+      val ticketId: Int         = 3432
+      val createdDate1: Instant = LocalDateTime.parse("2025-05-01T08:02:02+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
+      val statusDate1: Instant  = LocalDateTime.parse("2025-05-20T07:24:41+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
 
       FetchTicket.stubSuccess(ticketId)
 
       val result = await(objInTest.fetchTicket(ticketId))
 
       val expectedResponse = DeskproTicketWrapperResponse(
-        DeskproTicketResponse(ticketId, "SDST-2025XON927", 61, "bob@example.com", "awaiting_user", createdDate1, Some(lastAgentReplyDate1), "HMRC Developer Hub: Support Enquiry")
+        DeskproTicketResponse(
+          ticketId,
+          "SDST-2025XON927",
+          61,
+          "bob@example.com",
+          "awaiting_user",
+          createdDate1,
+          statusDate1,
+          None,
+          "HMRC Developer Hub: Support Enquiry"
+        )
       )
 
       result shouldBe Some(expectedResponse)
@@ -396,17 +430,17 @@ class DeskproConnectorISpec
 
   "batchFetchTicket" should {
     "return BatchResponse when 200 returned from deskpro with response body" in new Setup {
-      val ticketId: Int                = 3432
-      val createdDate1: Instant        = LocalDateTime.parse("2025-05-01T08:02:02+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
-      val createdDate2: Instant        = LocalDateTime.parse("2025-05-19T11:54:53+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
-      val lastAgentReplyDate1: Instant = LocalDateTime.parse("2025-05-20T07:24:41+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
+      val ticketId: Int         = 3432
+      val createdDate1: Instant = LocalDateTime.parse("2025-05-01T08:02:02+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
+      val createdDate2: Instant = LocalDateTime.parse("2025-05-19T11:54:53+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
+      val statusDate1: Instant  = LocalDateTime.parse("2025-05-20T07:24:41+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
 
       BatchFetchTicket.stubSuccess(ticketId)
 
       val result = await(objInTest.batchFetchTicket(ticketId))
 
       val expectedTicket   =
-        DeskproTicketResponse(ticketId, "SDST-2025XON927", 61, "bob@example.com", "awaiting_user", createdDate1, Some(lastAgentReplyDate1), "HMRC Developer Hub: Support Enquiry")
+        DeskproTicketResponse(ticketId, "SDST-2025XON927", 61, "bob@example.com", "awaiting_user", createdDate1, statusDate1, None, "HMRC Developer Hub: Support Enquiry")
       val expectedMessages = List(
         DeskproMessageResponse(3467, ticketId, 33, createdDate1, 0, "Hi. What API do I need to get next weeks lottery numbers?"),
         DeskproMessageResponse(3698, ticketId, 61, createdDate2, 0, "Reply message from agent. What else gets filled in?")

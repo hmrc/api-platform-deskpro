@@ -85,7 +85,8 @@ case class DeskproTicketResponse(
     person_email: String,
     status: String,
     date_created: Instant,
-    date_last_agent_reply: Option[Instant],
+    date_status: Instant,
+    date_resolved: Option[Instant],
     subject: String
   )
 
