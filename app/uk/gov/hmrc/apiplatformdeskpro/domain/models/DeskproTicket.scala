@@ -56,7 +56,8 @@ case class DeskproTicket(
     personEmail: LaxEmailAddress,
     status: String,
     dateCreated: Instant,
-    dateLastAgentReply: Option[Instant],
+    dateLastUpdated: Instant,
+    dateResolved: Option[Instant],
     subject: String,
     messages: List[DeskproMessage]
   )
@@ -78,7 +79,8 @@ object DeskproTicket {
       LaxEmailAddress(response.person_email),
       response.status,
       response.date_created,
-      response.date_last_agent_reply,
+      response.date_status,
+      response.date_resolved,
       response.subject,
       (messagesResponse.map(msg => DeskproMessage.build(msg))).sorted
     )
