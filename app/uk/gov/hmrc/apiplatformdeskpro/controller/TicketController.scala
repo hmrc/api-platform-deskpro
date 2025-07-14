@@ -22,6 +22,7 @@ import scala.concurrent.ExecutionContext
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result, Results}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models._
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.DeskproBlobWrapperResponse
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.{CreateTicketResponseRequest, GetTicketsByEmailRequest}
 import uk.gov.hmrc.apiplatformdeskpro.service.TicketService
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
@@ -80,6 +81,12 @@ class TicketController @Inject() (ticketService: TicketService, cc: ControllerCo
             } recover recovery
         }
     }
+
+  def createBlob(): Action[AnyContent] = Action.async { implicit request =>
+    ticketService.createBlob().map {
+      case (DeskproBlobWrapperResponse(data), DeskproTicketResponseSuccess) => Ok(s"File id: ${data.blob_id}, auth: ${data.blob_auth}")
+    }
+  }
 
   private def recovery: PartialFunction[Throwable, Result] = {
     case e: Throwable =>
