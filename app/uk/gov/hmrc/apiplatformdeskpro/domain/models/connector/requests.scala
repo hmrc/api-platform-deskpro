@@ -67,7 +67,6 @@ object AttachmentRequest {
 }
 
 case class CreateMessageRequest(
-    person: String,
     message: String,
     attachments: Map[String, AttachmentRequest]
   )

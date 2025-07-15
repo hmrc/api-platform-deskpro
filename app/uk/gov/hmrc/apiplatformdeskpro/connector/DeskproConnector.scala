@@ -297,10 +297,10 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
     }
   }
 
-  def createMessageWithAttachment(ticketId: Int, userEmail: String, message: String, blobId: Int, blobAuth: String)(implicit hc: HeaderCarrier): Future[DeskproTicketResponseResult] =
+  def createMessageWithAttachment(ticketId: Int, message: String, blobId: Int, blobAuth: String)(implicit hc: HeaderCarrier): Future[DeskproTicketResponseResult] =
     metrics.record(api) {
       val attachment     = AttachmentRequest(blobAuth)
-      val messageRequest = CreateMessageRequest(userEmail, message, Map(blobId.toString() -> attachment))
+      val messageRequest = CreateMessageRequest(message, Map(blobId.toString() -> attachment))
 
       http
         .post(url"${requestUrl(s"/api/v2/tickets/$ticketId/messages")}")

@@ -96,12 +96,22 @@ class TicketService @Inject() (
     } yield createResponseResult
   }
 
-  def createBlob()(implicit hc: HeaderCarrier) = {
-    val file: java.nio.file.Path   = Paths.get("panic.txt")
+  def addAttachment(fileName: String, fileType: String, ticketId: Int)(implicit hc: HeaderCarrier) = {
+    val file: java.nio.file.Path   = Paths.get(fileName)
     val src: Source[ByteString, _] = FileIO.fromPath(file)
+
     for {
-      blobResponse <- deskproConnector.createBlob("panic.txt", "text/plain", src)
-      msgResponse  <- deskproConnector.createMessageWithAttachment(3802, "pete.kirby@digital.hmrc.gov.uk", "Test message 1", blobResponse.data.blob_id, blobResponse.data.blob_auth)
+      blobResponse <- deskproConnector.createBlob(
+                        fileName,
+                        fileType,
+                        src
+                      )
+      msgResponse  <- deskproConnector.createMessageWithAttachment(
+                        ticketId,
+                        s"Test message $fileName",
+                        blobResponse.data.blob_id,
+                        blobResponse.data.blob_auth
+                      )
     } yield (blobResponse, msgResponse)
   }
 }
