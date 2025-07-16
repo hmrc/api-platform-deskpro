@@ -190,7 +190,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
           BatchMessagesWrapperResponse(BatchHeadersResponse(200), Some(List(deskproMessage1, deskproMessage2, deskproMessage3)))
         )
       )
-      when(mockDeskproConnector.batchFetchTicket(*)(*)).thenReturn(Future.successful(batchResponse))
+      when(mockDeskproConnector.batchFetchTicket(*, *)(*)).thenReturn(Future.successful(batchResponse))
 
       val result = await(underTest.batchFetchTicket(ticketId))
 
@@ -222,7 +222,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
           BatchMessagesWrapperResponse(BatchHeadersResponse(200), Some(List.empty))
         )
       )
-      when(mockDeskproConnector.batchFetchTicket(*)(*)).thenReturn(Future.successful(batchResponse))
+      when(mockDeskproConnector.batchFetchTicket(*, *)(*)).thenReturn(Future.successful(batchResponse))
 
       val result = await(underTest.batchFetchTicket(ticketId))
 
@@ -250,7 +250,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
           BatchMessagesWrapperResponse(BatchHeadersResponse(404), None)
         )
       )
-      when(mockDeskproConnector.batchFetchTicket(*)(*)).thenReturn(Future.successful(batchResponse))
+      when(mockDeskproConnector.batchFetchTicket(*, *)(*)).thenReturn(Future.successful(batchResponse))
 
       val result = await(underTest.batchFetchTicket(ticketId))
 
@@ -278,7 +278,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
           BatchMessagesWrapperResponse(BatchHeadersResponse(404), None)
         )
       )
-      when(mockDeskproConnector.batchFetchTicket(*)(*)).thenReturn(Future.successful(batchResponse))
+      when(mockDeskproConnector.batchFetchTicket(*, *)(*)).thenReturn(Future.successful(batchResponse))
 
       val result = await(underTest.batchFetchTicket(ticketId))
 

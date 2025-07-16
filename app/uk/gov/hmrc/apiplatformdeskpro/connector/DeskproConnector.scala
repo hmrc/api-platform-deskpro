@@ -257,11 +257,11 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
       .execute[DeskproMessagesWrapperResponse]
   }
 
-  def batchFetchTicket(ticketId: Int)(implicit hc: HeaderCarrier): Future[BatchResponse] = metrics.record(api) {
+  def batchFetchTicket(ticketId: Int, pageWanted: Int = 1)(implicit hc: HeaderCarrier): Future[BatchResponse] = metrics.record(api) {
     val batchRequest = BatchRequest(
       BatchTicketRequest(
         BatchRequestDetails(s"/api/v2/tickets/$ticketId"),
-        BatchRequestDetails(s"/api/v2/tickets/$ticketId/messages")
+        BatchRequestDetails(s"/api/v2/tickets/$ticketId/messages?count=200&page=$pageWanted")
       )
     )
     metrics.record(api) {
