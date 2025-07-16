@@ -1328,7 +1328,7 @@ trait DeskproStub {
                |    },
                |    "messages": {
                |      "method": "GET",
-               |      "url": "/api/v2/tickets/$ticketId/messages"
+               |      "url": "/api/v2/tickets/$ticketId/messages?count=200&page=1"
                |    }
                |  }    
                |}
@@ -1562,7 +1562,7 @@ trait DeskproStub {
                |    },
                |    "messages": {
                |      "method": "GET",
-               |      "url": "/api/v2/tickets/$ticketId/messages"
+               |      "url": "/api/v2/tickets/$ticketId/messages?count=200&page=1"
                |    }
                |  }    
                |}
