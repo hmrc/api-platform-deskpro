@@ -16,8 +16,12 @@
 
 package uk.gov.hmrc.apiplatformdeskpro.service
 
+import java.nio.file.Paths
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+
+import org.apache.pekko.stream.scaladsl.{FileIO, Source}
+import org.apache.pekko.util.ByteString
 
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.connector.DeskproConnector
@@ -91,5 +95,24 @@ class TicketService @Inject() (
       createResponseResult <- deskproConnector.createResponse(ticketId, userEmail, message)
       _                    <- deskproConnector.updateTicketStatus(ticketId, TicketStatus.AwaitingAgent)
     } yield createResponseResult
+  }
+
+  def addAttachment(fileName: String, fileType: String, ticketId: Int)(implicit hc: HeaderCarrier) = {
+    val file: java.nio.file.Path   = Paths.get(fileName)
+    val src: Source[ByteString, _] = FileIO.fromPath(file)
+
+    for {
+      blobResponse <- deskproConnector.createBlob(
+                        fileName,
+                        fileType,
+                        src
+                      )
+      msgResponse  <- deskproConnector.createMessageWithAttachment(
+                        ticketId,
+                        s"Test message $fileName",
+                        blobResponse.data.blob_id,
+                        blobResponse.data.blob_auth
+                      )
+    } yield (blobResponse, msgResponse)
   }
 }

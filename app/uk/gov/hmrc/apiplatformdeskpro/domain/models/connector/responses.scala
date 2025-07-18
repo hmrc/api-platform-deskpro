@@ -122,6 +122,21 @@ object DeskproMessagesWrapperResponse {
   implicit val reads: Reads[DeskproMessagesWrapperResponse] = Json.reads[DeskproMessagesWrapperResponse]
 }
 
+case class DeskproBlobResponse(
+    blob_id: Int,
+    blob_auth: String
+  )
+
+object DeskproBlobResponse {
+  implicit val reads: Reads[DeskproBlobResponse] = Json.reads[DeskproBlobResponse]
+}
+
+case class DeskproBlobWrapperResponse(data: DeskproBlobResponse)
+
+object DeskproBlobWrapperResponse {
+  implicit val reads: Reads[DeskproBlobWrapperResponse] = Json.reads[DeskproBlobWrapperResponse]
+}
+
 /*
  * Batch responses
  */

@@ -344,4 +344,15 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       await(underTest.createResponse(ticketId, email, message)) shouldBe DeskproTicketResponseFailure
     }
   }
+
+  "createBlob" should {
+    "return DeskproBlobWrapperResponse and DeskproTicketResponseSuccess when response created" in new Setup {
+      when(mockDeskproConnector.createBlob(*, *, *)(*)).thenReturn(Future.successful(DeskproBlobWrapperResponse(DeskproBlobResponse(123, "375376365"))))
+      when(mockDeskproConnector.createMessageWithAttachment(*, *, *, *)(*)).thenReturn(Future.successful(DeskproTicketResponseSuccess))
+
+      val result = await(underTest.addAttachment("panic.txt", "test/plain", 3802))
+
+      result shouldBe (DeskproBlobWrapperResponse(DeskproBlobResponse(123, "375376365")), DeskproTicketResponseSuccess)
+    }
+  }
 }
