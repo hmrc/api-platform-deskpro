@@ -57,8 +57,8 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
     val deskproTicket1  = DeskproTicketResponse(123, "ref1", personId, "bob@example.com", "awaiting_user", instant, instant, Some(instant), "subject 1")
     val deskproTicket2  = DeskproTicketResponse(456, "ref2", personId, "bob@example.com", "awaiting_agent", instant, instant, None, "subject 2")
     val deskproMessage1 = DeskproMessageResponse(787, 123, personId, instant.minus(Duration.ofDays(5)), 0, "message 1")
-    val deskproMessage2 = DeskproMessageResponse(788, 123, personId, instant.minus(Duration.ofDays(2)), 0, "message 2")
-    val deskproMessage3 = DeskproMessageResponse(789, 123, personId, instant, 0, "message 3")
+    val deskproMessage2 = DeskproMessageResponse(788, 123, personId, instant.minus(Duration.ofDays(2)), 0, "<p>message 2</p>")
+    val deskproMessage3 = DeskproMessageResponse(789, 123, personId, instant, 0, "<p><span style=\"color:#3d4448;\">message 3</span></p>")
 
     val ticketId: Int = 123
 

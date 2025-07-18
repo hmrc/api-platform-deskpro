@@ -443,7 +443,7 @@ class DeskproConnectorISpec
         DeskproTicketResponse(ticketId, "SDST-2025XON927", 61, "bob@example.com", "awaiting_user", createdDate1, statusDate1, None, "HMRC Developer Hub: Support Enquiry")
       val expectedMessages = List(
         DeskproMessageResponse(3467, ticketId, 33, createdDate1, 0, "Hi. What API do I need to get next weeks lottery numbers?"),
-        DeskproMessageResponse(3698, ticketId, 61, createdDate2, 0, "Reply message from agent. What else gets filled in?")
+        DeskproMessageResponse(3698, ticketId, 61, createdDate2, 0, "<p>Reply message from agent. What else gets filled in?</p>")
       )
 
       val expectedResponse = BatchResponse(
@@ -566,7 +566,7 @@ class DeskproConnectorISpec
             61,
             createdDate2,
             0,
-            "Reply message from agent. What else gets filled in?"
+            "<p>Reply message from agent. What else gets filled in?</p>"
           )
         )
       )
