@@ -68,7 +68,7 @@ class DeskproConnectorISpec
     val deskproPerson: DeskproPerson                 = DeskproPerson(name, email)
     val deskproPersonUpdate: DeskproPersonUpdate     = DeskproPersonUpdate(name)
     val deskproInactivePerson: DeskproInactivePerson = DeskproInactivePerson(Map("5" -> "1", "4" -> DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(now)))
-    val deskproTicket: CreateDeskproTicket           = CreateDeskproTicket(deskproPerson, subject, DeskproTicketMessage(message), brand, fields)
+    val deskproTicket: CreateDeskproTicket           = CreateDeskproTicket(deskproPerson, subject, DeskproTicketMessage(message, deskproPerson), brand, fields)
 
   }
 

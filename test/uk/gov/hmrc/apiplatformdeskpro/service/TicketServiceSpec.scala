@@ -81,7 +81,8 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       )
 
       val fields                = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "6" -> teamMemberEmail)
-      val expectedDeskproTicket = CreateDeskproTicket(DeskproPerson(fullName, email), subject, DeskproTicketMessage(message), brand, fields)
+      val expectedPerson        = DeskproPerson(fullName, email)
+      val expectedDeskproTicket = CreateDeskproTicket(expectedPerson, subject, DeskproTicketMessage(message, expectedPerson), brand, fields)
 
       when(mockDeskproConnector.createTicket(*)(*)).thenReturn(Future.successful(Right(DeskproTicketCreated(ref))))
 
@@ -113,7 +114,8 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       )
 
       val fields: Map[String, String] = Map.empty
-      val expectedDeskproTicket       = CreateDeskproTicket(DeskproPerson(fullName, email), subject, DeskproTicketMessage(message), brand, fields)
+      val expectedPerson              = DeskproPerson(fullName, email)
+      val expectedDeskproTicket       = CreateDeskproTicket(expectedPerson, subject, DeskproTicketMessage(message, expectedPerson), brand, fields)
 
       when(mockDeskproConnector.createTicket(*)(*)).thenReturn(Future.successful(Right(DeskproTicketCreated(ref))))
 

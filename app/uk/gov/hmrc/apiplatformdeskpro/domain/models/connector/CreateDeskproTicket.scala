@@ -23,11 +23,12 @@ import uk.gov.hmrc.apiplatformdeskpro.domain.models.DeskproPerson
 
 case class DeskproTicketMessage(
     message: String,
+    person: DeskproPerson,
     format: String = "html"
   )
 
 object DeskproTicketMessage {
-  def fromRaw(message: String): DeskproTicketMessage = DeskproTicketMessage(message.replaceAll(Properties.lineSeparator, "<br>"))
+  def fromRaw(message: String, person: DeskproPerson): DeskproTicketMessage = DeskproTicketMessage(message.replaceAll(Properties.lineSeparator, "<br>"), person)
 }
 
 case class CreateDeskproTicket(
