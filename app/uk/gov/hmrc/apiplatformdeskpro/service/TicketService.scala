@@ -51,11 +51,12 @@ class TicketService @Inject() (
     val maybeSupportReason   = request.supportReason.fold(Map.empty[String, String])(v => Map(config.deskproSupportReason -> v))
 
     val fields = maybeOrganisation ++ maybeTeamMemberEmail ++ maybeApiName ++ maybeApplicationId ++ maybeSupportReason
+    val person = DeskproPerson(request.fullName, request.email)
 
     CreateDeskproTicket(
-      DeskproPerson(request.fullName, request.email),
+      person,
       request.subject,
-      DeskproTicketMessage.fromRaw(request.message),
+      DeskproTicketMessage.fromRaw(request.message, person),
       config.deskproBrand,
       fields
     )

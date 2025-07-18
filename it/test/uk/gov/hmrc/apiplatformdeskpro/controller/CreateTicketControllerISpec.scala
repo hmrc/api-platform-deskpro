@@ -57,7 +57,8 @@ class CreateTicketControllerISpec extends AsyncHmrcSpec with WireMockSupport wit
         None
       )
 
-      val deskproTicket = CreateDeskproTicket(DeskproPerson("Dave", "dave@example.com"), "subject", DeskproTicketMessage("message"), 1)
+      val deskproPerson = DeskproPerson("Dave", "dave@example.com")
+      val deskproTicket = CreateDeskproTicket(deskproPerson, "subject", DeskproTicketMessage("message", deskproPerson), 1)
       CreateTicket.stubSuccess(deskproTicket)
 
       val response = await(wsUrl(s"/ticket")
