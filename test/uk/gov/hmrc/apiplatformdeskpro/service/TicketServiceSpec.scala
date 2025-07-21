@@ -56,9 +56,9 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
     val status          = Some("resolved")
     val deskproTicket1  = DeskproTicketResponse(123, "ref1", personId, "bob@example.com", "awaiting_user", instant, instant, Some(instant), "subject 1")
     val deskproTicket2  = DeskproTicketResponse(456, "ref2", personId, "bob@example.com", "awaiting_agent", instant, instant, None, "subject 2")
-    val deskproMessage1 = DeskproMessageResponse(787, 123, personId, instant.minus(Duration.ofDays(5)), 0, "message 1")
+    val deskproMessage1 = DeskproMessageResponse(787, 123, personId, instant, 0, "message 1")
     val deskproMessage2 = DeskproMessageResponse(788, 123, personId, instant.minus(Duration.ofDays(2)), 0, "<p>message 2</p>")
-    val deskproMessage3 = DeskproMessageResponse(789, 123, personId, instant, 0, "<p><span style=\"color:#3d4448;\">message 3</span></p>")
+    val deskproMessage3 = DeskproMessageResponse(789, 123, personId, instant.minus(Duration.ofDays(5)), 0, "<p><span style=\"color:#3d4448;\">message 3</span></p>")
 
     val ticketId: Int = 123
 
@@ -149,7 +149,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
   "fetchTicket" should {
     "return a DeskproTicket" in new Setup {
       when(mockDeskproConnector.fetchTicket(*)(*)).thenReturn(Future.successful(Some(DeskproTicketWrapperResponse(deskproTicket1))))
-      when(mockDeskproConnector.getTicketMessages(*, *)(*)).thenReturn(Future.successful(DeskproMessagesWrapperResponse(List(deskproMessage1, deskproMessage2, deskproMessage3))))
+      when(mockDeskproConnector.getTicketMessages(*, *, *, *)(*)).thenReturn(Future.successful(DeskproMessagesWrapperResponse(List(deskproMessage1, deskproMessage2, deskproMessage3))))
 
       val result = await(underTest.fetchTicket(ticketId))
 
@@ -165,9 +165,9 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
           Some(instant),
           "subject 1",
           List(
-            DeskproMessage(789, ticketId, personId, instant, false, "message 3"),
+            DeskproMessage(787, ticketId, personId, instant, false, "message 1"),
             DeskproMessage(788, ticketId, personId, instant.minus(Duration.ofDays(2)), false, "message 2"),
-            DeskproMessage(787, ticketId, personId, instant.minus(Duration.ofDays(5)), false, "message 1")
+            DeskproMessage(789, ticketId, personId, instant.minus(Duration.ofDays(5)), false, "message 3")
           )
         )
 
@@ -176,7 +176,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
 
     "return a None if not found" in new Setup {
       when(mockDeskproConnector.fetchTicket(*)(*)).thenReturn(Future.successful(None))
-      when(mockDeskproConnector.getTicketMessages(*, *)(*)).thenReturn(Future.successful(DeskproMessagesWrapperResponse(List.empty)))
+      when(mockDeskproConnector.getTicketMessages(*, *, *, *)(*)).thenReturn(Future.successful(DeskproMessagesWrapperResponse(List.empty)))
 
       val result = await(underTest.fetchTicket(ticketId))
 
@@ -192,7 +192,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
           BatchMessagesWrapperResponse(BatchHeadersResponse(200), Some(List(deskproMessage1, deskproMessage2, deskproMessage3)))
         )
       )
-      when(mockDeskproConnector.batchFetchTicket(*, *)(*)).thenReturn(Future.successful(batchResponse))
+      when(mockDeskproConnector.batchFetchTicket(*, *, *, *)(*)).thenReturn(Future.successful(batchResponse))
 
       val result = await(underTest.batchFetchTicket(ticketId))
 
@@ -208,9 +208,9 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
           Some(instant),
           "subject 1",
           List(
-            DeskproMessage(789, ticketId, personId, instant, false, "message 3"),
+            DeskproMessage(787, ticketId, personId, instant, false, "message 1"),
             DeskproMessage(788, ticketId, personId, instant.minus(Duration.ofDays(2)), false, "message 2"),
-            DeskproMessage(787, ticketId, personId, instant.minus(Duration.ofDays(5)), false, "message 1")
+            DeskproMessage(789, ticketId, personId, instant.minus(Duration.ofDays(5)), false, "message 3")
           )
         )
 
@@ -224,7 +224,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
           BatchMessagesWrapperResponse(BatchHeadersResponse(200), Some(List.empty))
         )
       )
-      when(mockDeskproConnector.batchFetchTicket(*, *)(*)).thenReturn(Future.successful(batchResponse))
+      when(mockDeskproConnector.batchFetchTicket(*, *, *, *)(*)).thenReturn(Future.successful(batchResponse))
 
       val result = await(underTest.batchFetchTicket(ticketId))
 
@@ -252,7 +252,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
           BatchMessagesWrapperResponse(BatchHeadersResponse(404), None)
         )
       )
-      when(mockDeskproConnector.batchFetchTicket(*, *)(*)).thenReturn(Future.successful(batchResponse))
+      when(mockDeskproConnector.batchFetchTicket(*, *, *, *)(*)).thenReturn(Future.successful(batchResponse))
 
       val result = await(underTest.batchFetchTicket(ticketId))
 
@@ -280,7 +280,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
           BatchMessagesWrapperResponse(BatchHeadersResponse(404), None)
         )
       )
-      when(mockDeskproConnector.batchFetchTicket(*, *)(*)).thenReturn(Future.successful(batchResponse))
+      when(mockDeskproConnector.batchFetchTicket(*, *, *, *)(*)).thenReturn(Future.successful(batchResponse))
 
       val result = await(underTest.batchFetchTicket(ticketId))
 

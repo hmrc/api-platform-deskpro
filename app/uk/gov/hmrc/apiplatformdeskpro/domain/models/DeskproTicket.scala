@@ -41,12 +41,11 @@ object DeskproMessage {
       response.person,
       response.date_created,
       (response.is_agent_note > 0),
-      response.message.replaceAll("""<(?!\/?a(?=>|\s.*>))\/?.*?>""", "")  // Remove any HTML tags 
+      response.message.replaceAll("""<(?!\/?a(?=>|\s.*>))\/?.*?>""", "") // Remove any HTML tags
     )
   }
 
-  implicit val format: OFormat[DeskproMessage]    = Json.format[DeskproMessage]
-  implicit val ordering: Ordering[DeskproMessage] = Ordering.by[DeskproMessage, Instant](_.dateCreated).reverse
+  implicit val format: OFormat[DeskproMessage] = Json.format[DeskproMessage]
 }
 
 case class DeskproTicket(
@@ -82,7 +81,7 @@ object DeskproTicket {
       response.date_status,
       response.date_resolved,
       response.subject,
-      (messagesResponse.map(msg => DeskproMessage.build(msg))).sorted
+      messagesResponse.map(msg => DeskproMessage.build(msg))
     )
   }
 
