@@ -248,8 +248,9 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
       )
   }
 
-  def getTicketMessages(ticketId: Int, pageWanted: Int = 1)(implicit hc: HeaderCarrier): Future[DeskproMessagesWrapperResponse] = metrics.record(api) {
-    val queryParams = Seq("count" -> 200, "page" -> pageWanted)
+  def getTicketMessages(ticketId: Int, orderBy: String = "date_created", orderDir: String = "desc", pageWanted: Int = 1)(implicit hc: HeaderCarrier)
+      : Future[DeskproMessagesWrapperResponse] = metrics.record(api) {
+    val queryParams = Seq("count" -> 200, "page" -> pageWanted, "order_by" -> orderBy, "order_dir" -> orderDir)
     http
       .get(url"${requestUrl(s"/api/v2/tickets/$ticketId/messages")}?$queryParams")
       .withProxy
@@ -257,22 +258,23 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
       .execute[DeskproMessagesWrapperResponse]
   }
 
-  def batchFetchTicket(ticketId: Int, pageWanted: Int = 1)(implicit hc: HeaderCarrier): Future[BatchResponse] = metrics.record(api) {
-    val batchRequest = BatchRequest(
-      BatchTicketRequest(
-        BatchRequestDetails(s"/api/v2/tickets/$ticketId"),
-        BatchRequestDetails(s"/api/v2/tickets/$ticketId/messages?count=200&page=$pageWanted")
-      )
-    )
+  def batchFetchTicket(ticketId: Int, orderBy: String = "date_created", orderDir: String = "desc", pageWanted: Int = 1)(implicit hc: HeaderCarrier): Future[BatchResponse] =
     metrics.record(api) {
-      http
-        .post(url"${requestUrl("/api/v2/batch")}")
-        .withProxy
-        .setHeader(AUTHORIZATION -> config.deskproApiKey)
-        .withBody(Json.toJson(batchRequest))
-        .execute[BatchResponse]
+      val batchRequest = BatchRequest(
+        BatchTicketRequest(
+          BatchRequestDetails(s"/api/v2/tickets/$ticketId"),
+          BatchRequestDetails(s"/api/v2/tickets/$ticketId/messages?order_by=$orderBy&order_dir=$orderDir&count=200&page=$pageWanted")
+        )
+      )
+      metrics.record(api) {
+        http
+          .post(url"${requestUrl("/api/v2/batch")}")
+          .withProxy
+          .setHeader(AUTHORIZATION -> config.deskproApiKey)
+          .withBody(Json.toJson(batchRequest))
+          .execute[BatchResponse]
+      }
     }
-  }
 
   private def requestUrl[B, A](uri: String): String = s"$serviceBaseUrl$uri"
 }
