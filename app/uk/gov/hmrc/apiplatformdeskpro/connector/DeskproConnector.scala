@@ -183,11 +183,12 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
     }
   }
 
-  def getTicketsForPersonId(personId: Int, maybeStatus: Option[String], pageWanted: Int = 1)(implicit hc: HeaderCarrier): Future[DeskproTicketsWrapperResponse] =
+  def getTicketsForPersonId(personId: Int, maybeStatus: Option[String], orderBy: String = "date_status", orderDir: String = "desc", pageWanted: Int = 1)(implicit hc: HeaderCarrier)
+      : Future[DeskproTicketsWrapperResponse] =
     metrics.record(api) {
       val queryParams = maybeStatus match {
-        case Some(status) => Seq("person" -> personId, "status" -> status, "count" -> 200, "page" -> pageWanted)
-        case _            => Seq("person" -> personId, "count" -> 200, "page" -> pageWanted)
+        case Some(status) => Seq("person" -> personId, "status" -> status, "count" -> 200, "page" -> pageWanted, "order_by" -> orderBy, "group_sort" -> orderDir)
+        case _            => Seq("person" -> personId, "count" -> 200, "page" -> pageWanted, "order_by" -> orderBy, "group_sort" -> orderDir)
       }
       http
         .get(url"${requestUrl("/api/v2/tickets")}?$queryParams")
