@@ -41,7 +41,7 @@ object DeskproMessage {
       response.person,
       response.date_created,
       (response.is_agent_note > 0),
-      response.message.replaceAll("""<(?!\/?a(?=>|\s.*>))\/?.*?>""", "") // Remove any HTML tags
+      response.message // .replaceAll("</p>|<br>", "\n").replaceAll("""<(?!\/?a(?=>|\s.*>))\/?.*?>""", "").replaceAll("\n", "<br>") // Remove any HTML tags
     )
   }
 
