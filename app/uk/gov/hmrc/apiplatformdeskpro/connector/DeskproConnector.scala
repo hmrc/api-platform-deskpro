@@ -231,7 +231,7 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
     http
       .post(url"${requestUrl(s"/api/v2/tickets/$ticketId/messages")}")
       .withProxy
-      .withBody(Json.toJson(CreateResponseRequest(userEmail, message)))
+      .withBody(Json.toJson(CreateResponseRequest.fromRaw(userEmail, message)))
       .setHeader(AUTHORIZATION -> config.deskproApiKey)
       .execute[HttpResponse]
       .map(response =>
