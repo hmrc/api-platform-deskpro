@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.apiplatformdeskpro.domain.models.connector
 
+import scala.util.Properties
+
 import play.api.libs.json.JsonConfiguration.Aux
 import play.api.libs.json.JsonNaming.SnakeCase
 import play.api.libs.json.{Format, Json, JsonConfiguration, OFormat}
@@ -55,6 +57,8 @@ case class CreateResponseRequest(
   )
 
 object CreateResponseRequest {
+  def fromRaw(person: String, message: String): CreateResponseRequest = CreateResponseRequest(person, message.replaceAll(Properties.lineSeparator, "<br>"))
+
   implicit val createResponseRequestFormat: Format[CreateResponseRequest] = Json.format[CreateResponseRequest]
 }
 
