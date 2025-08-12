@@ -59,7 +59,6 @@ class TicketController @Inject() (ticketService: TicketService, cc: ControllerCo
     auth.authorizedAction(predicate = Predicate.Permission(Resource.from("api-platform-deskpro", "tickets/all"), IAAction("READ"))).async {
       implicit request: AuthenticatedRequest[AnyContent, Unit] =>
         withJsonBodyFromAnyContent[CreateTicketResponseRequest] { parsedRequest =>
-          logger.error(s"$parsedRequest")
           ticketService.createResponse(ticketId, parsedRequest.userEmail.text, parsedRequest.message, parsedRequest.status)
             .map {
               case DeskproTicketResponseSuccess  => Ok
