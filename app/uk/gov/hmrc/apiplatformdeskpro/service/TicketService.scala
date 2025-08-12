@@ -80,16 +80,10 @@ class TicketService @Inject() (
     deskproConnector.batchFetchTicket(ticketId) map { response => DeskproTicket.build(response.responses.ticket, response.responses.messages) }
   }
 
-  def closeTicket(ticketId: Int)(implicit hc: HeaderCarrier): Future[DeskproTicketUpdateResult] = {
-    for {
-      result <- deskproConnector.updateTicketStatus(ticketId, TicketStatus.Resolved)
-    } yield result
-  }
-
-  def createResponse(ticketId: Int, userEmail: String, message: String)(implicit hc: HeaderCarrier): Future[DeskproTicketResponseResult] = {
+  def createResponse(ticketId: Int, userEmail: String, message: String, status: TicketStatus)(implicit hc: HeaderCarrier): Future[DeskproTicketResponseResult] = {
     for {
       createResponseResult <- deskproConnector.createResponse(ticketId, userEmail, message)
-      _                    <- deskproConnector.updateTicketStatus(ticketId, TicketStatus.AwaitingAgent)
+      _                    <- deskproConnector.updateTicketStatus(ticketId, status)
     } yield createResponseResult
   }
 }

@@ -22,6 +22,8 @@ import play.api.libs.json.JsonConfiguration.Aux
 import play.api.libs.json.JsonNaming.SnakeCase
 import play.api.libs.json.{Format, Json, JsonConfiguration, OFormat}
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.services.SealedTraitJsonFormatting
+
 sealed trait QueryPersonRequest
 
 case class GetOrganisationByPersonEmailRequest(
@@ -62,11 +64,19 @@ object CreateResponseRequest {
   implicit val createResponseRequestFormat: Format[CreateResponseRequest] = Json.format[CreateResponseRequest]
 }
 
-abstract class TicketStatus(val value: String)
+sealed abstract class TicketStatus(val value: String) {
+  override def toString: String = value
+}
 
 object TicketStatus {
   case object AwaitingAgent extends TicketStatus("awaiting_agent")
   case object Resolved      extends TicketStatus("resolved")
+
+  val values: Set[TicketStatus] = Set(AwaitingAgent, Resolved)
+
+  def apply(text: String): Option[TicketStatus] = TicketStatus.values.find(_.value == text)
+
+  implicit val format: Format[TicketStatus] = SealedTraitJsonFormatting.createFormatFor[TicketStatus]("Ticket Status", apply(_))
 }
 
 /*

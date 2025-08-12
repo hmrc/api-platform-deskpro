@@ -17,10 +17,11 @@
 package uk.gov.hmrc.apiplatformdeskpro.domain.models.controller
 
 import play.api.libs.json.{Json, OFormat}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.TicketStatus
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
-case class CreateTicketResponseRequest(userEmail: LaxEmailAddress, message: String)
+case class CreateTicketResponseRequest(userEmail: LaxEmailAddress, message: String, status: TicketStatus)
 
 object CreateTicketResponseRequest {
   implicit val createTicketResponseRequest: OFormat[CreateTicketResponseRequest] = Json.format[CreateTicketResponseRequest]
