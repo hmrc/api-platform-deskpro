@@ -55,24 +55,11 @@ class TicketController @Inject() (ticketService: TicketService, cc: ControllerCo
         }
     }
 
-  def closeTicket(ticketId: Int): Action[AnyContent] =
-    auth.authorizedAction(predicate = Predicate.Permission(Resource.from("api-platform-deskpro", "tickets/all"), IAAction("READ"))).async {
-      implicit request: AuthenticatedRequest[AnyContent, Unit] =>
-        {
-          ticketService.closeTicket(ticketId)
-            .map {
-              case DeskproTicketUpdateSuccess  => Ok
-              case DeskproTicketUpdateNotFound => NotFound
-              case DeskproTicketUpdateFailure  => InternalServerError
-            } recover recovery
-        }
-    }
-
   def createResponse(ticketId: Int): Action[AnyContent] =
     auth.authorizedAction(predicate = Predicate.Permission(Resource.from("api-platform-deskpro", "tickets/all"), IAAction("READ"))).async {
       implicit request: AuthenticatedRequest[AnyContent, Unit] =>
         withJsonBodyFromAnyContent[CreateTicketResponseRequest] { parsedRequest =>
-          ticketService.createResponse(ticketId, parsedRequest.userEmail.text, parsedRequest.message)
+          ticketService.createResponse(ticketId, parsedRequest.userEmail.text, parsedRequest.message, parsedRequest.status)
             .map {
               case DeskproTicketResponseSuccess  => Ok
               case DeskproTicketResponseNotFound => NotFound
