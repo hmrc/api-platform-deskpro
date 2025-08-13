@@ -1783,4 +1783,37 @@ trait DeskproStub {
       )
     }
   }
+
+  object DeleteTicket {
+
+    def stubSuccess(ticketId: Int) = {
+      stubFor(
+        delete(urlPathEqualTo(s"/api/v2/tickets/$ticketId"))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+          )
+      )
+    }
+
+    def stubNotFound(ticketId: Int) = {
+      stubFor(
+        delete(urlPathEqualTo(s"/api/v2/tickets/$ticketId"))
+          .willReturn(
+            aResponse()
+              .withStatus(NOT_FOUND)
+          )
+      )
+    }
+
+    def stubFailure(ticketId: Int) = {
+      stubFor(
+        delete(urlPathEqualTo(s"/api/v2/tickets/$ticketId"))
+          .willReturn(
+            aResponse()
+              .withStatus(INTERNAL_SERVER_ERROR)
+          )
+      )
+    }
+  }
 }

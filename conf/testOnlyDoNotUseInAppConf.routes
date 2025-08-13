@@ -8,6 +8,7 @@
 # Any test-only end-point should be defined here.
 # !!!WARNING!!! Every route defined in this file MUST be prefixed with "/test-only/".
 # Failing to follow this rule may result in test routes deployed in production.
+DELETE     /test-only/ticket/:tid     uk.gov.hmrc.apiplatformdeskpro.controller.TicketController.deleteTicket(tid: Int)
 
 # Add all the application routes to the prod.routes file
 ->         /                          prod.Routes

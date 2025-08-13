@@ -47,8 +47,6 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
 
     val objToTest = new TicketController(mockService, cc, BackendAuthComponentsStub(mockStubBehaviour))
 
-    val expectedPredicate = Permission(Resource(ResourceType("api-platform-deskpro"), ResourceLocation("tickets/all")), IAAction("READ"))
-
     val email         = "bob@example.com"
     val personId: Int = 16
     val subject       = "Subject of the ticket"
@@ -83,6 +81,8 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
   }
 
   "getTicketsForPerson" should {
+    val expectedPredicate = Permission(Resource(ResourceType("api-platform-deskpro"), ResourceLocation("tickets/all")), IAAction("READ"))
+
     "return 200 with a list of tickets" in new Setup {
 
       when(mockService.getTicketsForPerson(*[LaxEmailAddress], *)(*)).thenReturn(Future.successful(listOfTickets))
@@ -147,6 +147,7 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
   }
 
   "fetchTicket" should {
+    val expectedPredicate = Permission(Resource(ResourceType("api-platform-deskpro"), ResourceLocation("tickets/all")), IAAction("READ"))
     "return 200 with a ticket" in new Setup {
 
       when(mockService.batchFetchTicket(*)(*)).thenReturn(Future.successful(Some(ticket)))
@@ -187,6 +188,7 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
   }
 
   "createResponse" should {
+    val expectedPredicate = Permission(Resource(ResourceType("api-platform-deskpro"), ResourceLocation("tickets/all")), IAAction("WRITE"))
     "return 200 when response created successfully" in new Setup {
 
       when(mockService.createResponse(*, *, *, *)(*)).thenReturn(Future.successful(DeskproTicketResponseSuccess))
@@ -237,6 +239,59 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
 
       intercept[UpstreamErrorResponse] {
         await(objToTest.createResponse(ticketId)(request))
+      }
+    }
+  }
+
+  "deleteTicket" should {
+    val expectedPredicate = Permission(Resource(ResourceType("api-platform-deskpro"), ResourceLocation("tickets/all")), IAAction("WRITE"))
+    "return 200 when ticket deleted successfully" in new Setup {
+
+      when(mockService.deleteTicket(*)(*)).thenReturn(Future.successful(DeskproTicketUpdateSuccess))
+      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
+
+      val request = FakeRequest(DELETE, s"/test-only/ticket/$ticketId")
+        .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
+
+      val result: Future[Result] = objToTest.deleteTicket(ticketId)(request)
+
+      status(result) shouldBe OK
+    }
+
+    "return 404 when ticket not found" in new Setup {
+
+      when(mockService.deleteTicket(*)(*)).thenReturn(Future.successful(DeskproTicketUpdateNotFound))
+      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
+
+      val request = FakeRequest(DELETE, s"/test-only/ticket/$ticketId")
+        .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
+
+      val result: Future[Result] = objToTest.deleteTicket(ticketId)(request)
+
+      status(result) shouldBe NOT_FOUND
+    }
+
+    "return 500 when failed" in new Setup {
+
+      when(mockService.deleteTicket(*)(*)).thenReturn(Future.successful(DeskproTicketUpdateFailure))
+      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
+
+      val request = FakeRequest(DELETE, s"/test-only/ticket/$ticketId")
+        .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
+
+      val result: Future[Result] = objToTest.deleteTicket(ticketId)(request)
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+
+    "return UpstreamErrorResponse for invalid token" in new Setup {
+      val request = FakeRequest(DELETE, s"/test-only/ticket/$ticketId")
+        .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
+
+      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.failed(UpstreamErrorResponse("Unauthorized", UNAUTHORIZED)))
+
+      intercept[UpstreamErrorResponse] {
+        await(objToTest.deleteTicket(ticketId)(request))
       }
     }
   }

@@ -227,6 +227,27 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
       )
   }
 
+  def deleteTicket(ticketId: Int)(implicit hc: HeaderCarrier): Future[DeskproTicketUpdateResult] = metrics.record(api) {
+    http
+      .delete(url"${requestUrl(s"/api/v2/tickets/$ticketId")}")
+      .withProxy
+      .setHeader(AUTHORIZATION -> config.deskproApiKey)
+      .execute[HttpResponse]
+      .map(response =>
+        response.status match {
+          case OK        =>
+            logger.info(s"Deleted Deskpro ticket '$ticketId' successfully")
+            DeskproTicketUpdateSuccess
+          case NOT_FOUND =>
+            logger.warn(s"Failed to delete Deskpro ticket '$ticketId. Ticket not found")
+            DeskproTicketUpdateNotFound
+          case _         =>
+            logger.error(s"Failed to delete Deskpro ticket '$ticketId. Status: ${response.status}")
+            DeskproTicketUpdateFailure
+        }
+      )
+  }
+
   def createResponse(ticketId: Int, userEmail: String, message: String)(implicit hc: HeaderCarrier): Future[DeskproTicketResponseResult] = metrics.record(api) {
     http
       .post(url"${requestUrl(s"/api/v2/tickets/$ticketId/messages")}")
