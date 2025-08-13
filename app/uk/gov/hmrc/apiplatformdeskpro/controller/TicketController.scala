@@ -68,17 +68,6 @@ class TicketController @Inject() (ticketService: TicketService, cc: ControllerCo
         }
     }
 
-  def deleteTicket(ticketId: Int): Action[AnyContent] =
-    auth.authorizedAction(predicate = Predicate.Permission(Resource.from("api-platform-deskpro", "tickets/all"), IAAction("WRITE"))).async {
-      implicit request: AuthenticatedRequest[AnyContent, Unit] =>
-        ticketService.deleteTicket(ticketId)
-          .map {
-            case DeskproTicketUpdateSuccess  => Ok
-            case DeskproTicketUpdateNotFound => NotFound
-            case DeskproTicketUpdateFailure  => InternalServerError
-          } recover recovery
-    }
-
   private def recovery: PartialFunction[Throwable, Result] = {
     case e: Throwable =>
       logger.error(s"Error occurred: ${e.getMessage}", e)
