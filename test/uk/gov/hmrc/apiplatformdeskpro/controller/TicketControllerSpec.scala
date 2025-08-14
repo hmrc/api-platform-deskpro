@@ -47,8 +47,6 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
 
     val objToTest = new TicketController(mockService, cc, BackendAuthComponentsStub(mockStubBehaviour))
 
-    val expectedPredicate = Permission(Resource(ResourceType("api-platform-deskpro"), ResourceLocation("tickets/all")), IAAction("READ"))
-
     val email         = "bob@example.com"
     val personId: Int = 16
     val subject       = "Subject of the ticket"
@@ -83,6 +81,8 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
   }
 
   "getTicketsForPerson" should {
+    val expectedPredicate = Permission(Resource(ResourceType("api-platform-deskpro"), ResourceLocation("tickets/all")), IAAction("READ"))
+
     "return 200 with a list of tickets" in new Setup {
 
       when(mockService.getTicketsForPerson(*[LaxEmailAddress], *)(*)).thenReturn(Future.successful(listOfTickets))
@@ -147,6 +147,7 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
   }
 
   "fetchTicket" should {
+    val expectedPredicate = Permission(Resource(ResourceType("api-platform-deskpro"), ResourceLocation("tickets/all")), IAAction("READ"))
     "return 200 with a ticket" in new Setup {
 
       when(mockService.batchFetchTicket(*)(*)).thenReturn(Future.successful(Some(ticket)))
@@ -187,6 +188,7 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
   }
 
   "createResponse" should {
+    val expectedPredicate = Permission(Resource(ResourceType("api-platform-deskpro"), ResourceLocation("tickets/all")), IAAction("WRITE"))
     "return 200 when response created successfully" in new Setup {
 
       when(mockService.createResponse(*, *, *, *)(*)).thenReturn(Future.successful(DeskproTicketResponseSuccess))

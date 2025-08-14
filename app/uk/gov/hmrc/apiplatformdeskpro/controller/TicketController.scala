@@ -56,7 +56,7 @@ class TicketController @Inject() (ticketService: TicketService, cc: ControllerCo
     }
 
   def createResponse(ticketId: Int): Action[AnyContent] =
-    auth.authorizedAction(predicate = Predicate.Permission(Resource.from("api-platform-deskpro", "tickets/all"), IAAction("READ"))).async {
+    auth.authorizedAction(predicate = Predicate.Permission(Resource.from("api-platform-deskpro", "tickets/all"), IAAction("WRITE"))).async {
       implicit request: AuthenticatedRequest[AnyContent, Unit] =>
         withJsonBodyFromAnyContent[CreateTicketResponseRequest] { parsedRequest =>
           ticketService.createResponse(ticketId, parsedRequest.userEmail.text, parsedRequest.message, parsedRequest.status)

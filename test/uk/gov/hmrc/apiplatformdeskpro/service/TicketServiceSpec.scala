@@ -323,4 +323,14 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       await(underTest.createResponse(ticketId, email, message, TicketStatus.AwaitingAgent)) shouldBe DeskproTicketResponseFailure
     }
   }
+
+  "deleteTicket" should {
+    "return a success result" in new Setup {
+      when(mockDeskproConnector.deleteTicket(*)(*)).thenReturn(Future.successful(DeskproTicketUpdateSuccess))
+
+      val result = await(underTest.deleteTicket(ticketId))
+
+      result shouldBe DeskproTicketUpdateSuccess
+    }
+  }
 }

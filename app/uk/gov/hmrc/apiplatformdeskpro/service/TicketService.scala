@@ -86,4 +86,8 @@ class TicketService @Inject() (
       _                    <- deskproConnector.updateTicketStatus(ticketId, status)
     } yield createResponseResult
   }
+
+  def deleteTicket(ticketId: Int)(implicit hc: HeaderCarrier): Future[DeskproTicketUpdateResult] = {
+    deskproConnector.deleteTicket(ticketId)
+  }
 }

@@ -574,4 +574,36 @@ class DeskproConnectorISpec
       result shouldBe expectedResponse
     }
   }
+
+  "deleteTicket" should {
+    "return DeskproTicketUpdateSuccess when 200 returned from deskpro" in new Setup {
+      val ticketId: Int = 3432
+
+      DeleteTicket.stubSuccess(ticketId)
+
+      val result = await(objInTest.deleteTicket(ticketId))
+
+      result shouldBe DeskproTicketUpdateSuccess
+    }
+
+    "return DeskproTicketCloseNotFound if ticket not found" in new Setup {
+      val ticketId: Int = 3432
+
+      DeleteTicket.stubNotFound(ticketId)
+
+      val result = await(objInTest.deleteTicket(ticketId))
+
+      result shouldBe DeskproTicketUpdateNotFound
+    }
+
+    "return DeskproTicketUpdateFailure if error" in new Setup {
+      val ticketId: Int = 3432
+
+      DeleteTicket.stubFailure(ticketId)
+
+      val result = await(objInTest.deleteTicket(ticketId))
+
+      result shouldBe DeskproTicketUpdateFailure
+    }
+  }
 }
