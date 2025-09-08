@@ -40,9 +40,18 @@ class TicketController @Inject() (ticketService: TicketService, cc: ControllerCo
           ticketService.getTicketsForPerson(parsedRequest.email, parsedRequest.status)
             .map { tickets =>
               Ok(Json.toJson(tickets))
-            } recover recovery
+            } recover personNotFoundRecovery
         }
     }
+
+  private def personNotFoundRecovery: PartialFunction[Throwable, Result] = {
+    case pnf: DeskproPersonNotFound =>
+      val tickets: List[DeskproTicket] = List.empty
+      Ok(Json.toJson(tickets)) // Return empty list if person not found
+    case e: Throwable               =>
+      logger.error(s"Error occurred: ${e.getMessage}", e)
+      handleException(e)
+  }
 
   def fetchTicket(ticketId: Int): Action[AnyContent] =
     auth.authorizedAction(predicate = Predicate.Permission(Resource.from("api-platform-deskpro", "tickets/all"), IAAction("READ"))).async {

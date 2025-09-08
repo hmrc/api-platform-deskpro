@@ -120,9 +120,26 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
       status(result) shouldBe BAD_REQUEST
     }
 
-    "return 500 when the call to deskpro fails" in new Setup {
+    "return empty list of tickets when the person was not found" in new Setup {
+
+      val emptyList: List[DeskproTicket] = List.empty
 
       when(mockService.getTicketsForPerson(*[LaxEmailAddress], *)(*)).thenReturn(Future.failed(DeskproPersonNotFound("Person not found")))
+
+      val request = FakeRequest(POST, "/ticket")
+        .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
+        .withJsonBody(getTicketsByEmailRequestJson)
+      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
+
+      val result: Future[Result] = objToTest.getTicketsByPersonEmail()(request)
+
+      status(result) shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(emptyList)
+    }
+
+    "return 500 when the call to deskpro fails" in new Setup {
+
+      when(mockService.getTicketsForPerson(*[LaxEmailAddress], *)(*)).thenReturn(Future.failed(new Exception("error")))
 
       val request = FakeRequest(POST, "/ticket")
         .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
@@ -220,6 +237,20 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
     "return 500 when response failed" in new Setup {
 
       when(mockService.createResponse(*, *, *, *)(*)).thenReturn(Future.successful(DeskproTicketResponseFailure))
+      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
+
+      val request = FakeRequest(POST, s"/ticket/$ticketId/response")
+        .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
+        .withJsonBody(createTicketResponseRequestJson)
+
+      val result: Future[Result] = objToTest.createResponse(ticketId)(request)
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+
+    "return 500 when call to deskpro fails" in new Setup {
+
+      when(mockService.createResponse(*, *, *, *)(*)).thenReturn(Future.failed(new Exception("error")))
       when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
 
       val request = FakeRequest(POST, s"/ticket/$ticketId/response")
