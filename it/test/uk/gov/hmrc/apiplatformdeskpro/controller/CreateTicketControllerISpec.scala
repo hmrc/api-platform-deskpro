@@ -37,9 +37,9 @@ class CreateTicketControllerISpec extends AsyncHmrcSpec with WireMockSupport wit
 
   trait Setup extends DeskproStub with InternalAuthStub {
 
-    val token            = "123456"
-    val underTest        = app.injector.instanceOf[CreateTicketController]
-    implicit val appPort = port
+    val token                 = "123456"
+    val underTest             = app.injector.instanceOf[CreateTicketController]
+    implicit val appPort: Int = port
   }
 
   "createTicket" should {
@@ -50,6 +50,7 @@ class CreateTicketControllerISpec extends AsyncHmrcSpec with WireMockSupport wit
         "dave@example.com",
         "subject",
         "message",
+        None,
         None,
         None,
         None,

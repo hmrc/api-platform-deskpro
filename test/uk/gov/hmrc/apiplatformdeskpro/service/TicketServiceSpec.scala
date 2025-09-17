@@ -47,6 +47,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
     val applicationId   = ApplicationId.random.toString()
     val organisation    = "organisation"
     val supportReason   = "supportReason"
+    val reasonKey       = "reason-key"
     val teamMemberEmail = "frank@example.com"
     val ref             = "ref"
     val brand           = 1
@@ -77,10 +78,11 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
         Some(applicationId),
         Some(organisation),
         Some(supportReason),
+        Some(reasonKey),
         Some(teamMemberEmail)
       )
 
-      val fields                = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "6" -> teamMemberEmail)
+      val fields                = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "6" -> teamMemberEmail, "7" -> reasonKey)
       val expectedPerson        = DeskproPerson(fullName, email)
       val expectedDeskproTicket = CreateDeskproTicket(expectedPerson, subject, DeskproTicketMessage(message, expectedPerson), brand, fields)
 
@@ -91,6 +93,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       when(mockAppConfig.deskproApplicationId).thenReturn("3")
       when(mockAppConfig.deskproOrganisation).thenReturn("4")
       when(mockAppConfig.deskproSupportReason).thenReturn("5")
+      when(mockAppConfig.deskproReasonKey).thenReturn("7")
       when(mockAppConfig.deskproTeamMemberEmail).thenReturn("6")
 
       val result = await(underTest.submitTicket(createTicketRequest))
@@ -106,6 +109,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
         email,
         subject,
         message,
+        None,
         None,
         None,
         None,

@@ -38,9 +38,9 @@ class OrganisationControllerISpec extends AsyncHmrcSpec with WireMockSupport wit
 
   trait Setup extends DeskproStub with InternalAuthStub {
 
-    val token            = "123456"
-    val underTest        = app.injector.instanceOf[OrganisationController]
-    implicit val appPort = port
+    val token                 = "123456"
+    val underTest             = app.injector.instanceOf[OrganisationController]
+    implicit val appPort: Int = port
   }
 
   "getOrganisation" should {
