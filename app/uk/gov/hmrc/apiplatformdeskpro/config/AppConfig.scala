@@ -32,6 +32,7 @@ class AppConfig @Inject() (config: ServicesConfig) {
   val deskproOrganisation: String         = config.getString("deskpro.organisation")
   val deskproTeamMemberEmail: String      = config.getString("deskpro.team-member-email")
   val deskproSupportReason: String        = config.getString("deskpro.support-reason")
+  val deskproReasonKey: String            = config.getString("deskpro.reason-key")
   val deskproApplicationId: String        = config.getString("deskpro.application-id")
   val deskproApiName: String              = config.getString("deskpro.api-name")
   val deskproInactive: String             = config.getString("deskpro.inactive")

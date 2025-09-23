@@ -27,6 +27,7 @@ case class CreateTicketRequest(
     applicationId: Option[String],
     organisation: Option[String],
     supportReason: Option[String],
+    reasonKey: Option[String],
     teamMemberEmail: Option[String]
   )
 
