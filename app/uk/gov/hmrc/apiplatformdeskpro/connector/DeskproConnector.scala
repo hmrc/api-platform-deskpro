@@ -285,7 +285,8 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
       val batchRequest = BatchRequest(
         BatchTicketRequest(
           BatchRequestDetails(s"/api/v2/tickets/$ticketId"),
-          BatchRequestDetails(s"/api/v2/tickets/$ticketId/messages?order_by=$orderBy&order_dir=$orderDir&count=200&page=$pageWanted")
+          BatchRequestDetails(s"/api/v2/tickets/$ticketId/messages?order_by=$orderBy&order_dir=$orderDir&count=200&page=$pageWanted"),
+          BatchRequestDetails(s"/api/v2/tickets/$ticketId/attachments")
         )
       )
       metrics.record(api) {

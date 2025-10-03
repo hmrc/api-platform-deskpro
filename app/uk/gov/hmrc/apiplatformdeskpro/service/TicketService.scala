@@ -67,18 +67,11 @@ class TicketService @Inject() (
     for {
       personId       <- personService.getPersonIdForEmail(personEmail)
       ticketResponse <- deskproConnector.getTicketsForPersonId(personId, status)
-    } yield ticketResponse.data.map(response => DeskproTicket.build(response, List.empty))
-  }
-
-  def fetchTicket(ticketId: Int)(implicit hc: HeaderCarrier): Future[Option[DeskproTicket]] = {
-    for {
-      ticketResponse   <- deskproConnector.fetchTicket(ticketId)
-      messagesResponse <- deskproConnector.getTicketMessages(ticketId)
-    } yield ticketResponse map { response => DeskproTicket.build(response.data, messagesResponse.data) }
+    } yield ticketResponse.data.map(response => DeskproTicket.build(response, List.empty, List.empty))
   }
 
   def batchFetchTicket(ticketId: Int)(implicit hc: HeaderCarrier): Future[Option[DeskproTicket]] = {
-    deskproConnector.batchFetchTicket(ticketId) map { response => DeskproTicket.build(response.responses.ticket, response.responses.messages) }
+    deskproConnector.batchFetchTicket(ticketId) map { response => DeskproTicket.build(response.responses.ticket, response.responses.messages, response.responses.attachments) }
   }
 
   def createResponse(ticketId: Int, userEmail: String, message: String, status: TicketStatus)(implicit hc: HeaderCarrier): Future[DeskproTicketResponseResult] = {

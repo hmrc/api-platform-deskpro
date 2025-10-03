@@ -439,17 +439,21 @@ class DeskproConnectorISpec
 
       val result = await(objInTest.batchFetchTicket(ticketId))
 
-      val expectedTicket   =
+      val expectedTicket      =
         DeskproTicketResponse(ticketId, "SDST-2025XON927", 61, "bob@example.com", "awaiting_user", createdDate1, statusDate1, None, "HMRC Developer Hub: Support Enquiry")
-      val expectedMessages = List(
-        DeskproMessageResponse(3467, ticketId, 33, createdDate1, 0, "Hi. What API do I need to get next weeks lottery numbers?"),
-        DeskproMessageResponse(3698, ticketId, 61, createdDate2, 0, "<p>Reply message from agent. What else gets filled in?</p>")
+      val expectedMessages    = List(
+        DeskproMessageResponse(3467, ticketId, 33, createdDate1, 0, "Hi. What API do I need to get next weeks lottery numbers?", List.empty),
+        DeskproMessageResponse(3698, ticketId, 61, createdDate2, 0, "<p>Reply message from agent. What else gets filled in?</p>", List(60))
+      )
+      val expectedAttachments = List(
+        DeskproAttachmentResponse(60, DeskproBlobResponse("https://example.com", "file.name"))
       )
 
       val expectedResponse = BatchResponse(
         BatchTicketResponse(
           BatchTicketWrapperResponse(BatchHeadersResponse(200), Some(expectedTicket)),
-          BatchMessagesWrapperResponse(BatchHeadersResponse(200), Some(expectedMessages))
+          BatchMessagesWrapperResponse(BatchHeadersResponse(200), Some(expectedMessages)),
+          BatchAttachmentsWrapperResponse(BatchHeadersResponse(200), Some(expectedAttachments))
         )
       )
 
@@ -466,7 +470,8 @@ class DeskproConnectorISpec
       val expectedResponse = BatchResponse(
         BatchTicketResponse(
           BatchTicketWrapperResponse(BatchHeadersResponse(404), None),
-          BatchMessagesWrapperResponse(BatchHeadersResponse(404), None)
+          BatchMessagesWrapperResponse(BatchHeadersResponse(404), None),
+          BatchAttachmentsWrapperResponse(BatchHeadersResponse(404), None)
         )
       )
       result shouldBe expectedResponse
@@ -558,7 +563,8 @@ class DeskproConnectorISpec
             33,
             createdDate1,
             0,
-            "Hi. What API do I need to get next weeks lottery numbers?"
+            "Hi. What API do I need to get next weeks lottery numbers?",
+            List.empty
           ),
           DeskproMessageResponse(
             3698,
@@ -566,7 +572,8 @@ class DeskproConnectorISpec
             61,
             createdDate2,
             0,
-            "<p>Reply message from agent. What else gets filled in?</p>"
+            "<p>Reply message from agent. What else gets filled in?</p>",
+            List.empty
           )
         )
       )
