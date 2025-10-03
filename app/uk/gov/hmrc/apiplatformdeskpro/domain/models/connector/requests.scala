@@ -97,7 +97,8 @@ sealed trait BatchDetails
 
 case class BatchTicketRequest(
     ticket: BatchRequestDetails,
-    messages: BatchRequestDetails
+    messages: BatchRequestDetails,
+    attachments: BatchRequestDetails
   )
 
 object BatchTicketRequest extends BatchDetails {

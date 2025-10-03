@@ -19,9 +19,19 @@ package uk.gov.hmrc.apiplatformdeskpro.domain.models
 import java.time.Instant
 
 import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{BatchMessagesWrapperResponse, BatchTicketWrapperResponse, DeskproMessageResponse, DeskproTicketResponse}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+
+case class DeskproAttachment(id: Int, filename: String, url: String)
+
+object DeskproAttachment {
+
+  def build(response: DeskproAttachmentResponse): DeskproAttachment = {
+    DeskproAttachment(response.id, response.blob.filename, response.blob.download_url)
+  }
+  implicit val format: OFormat[DeskproAttachment]                   = Json.format[DeskproAttachment]
+}
 
 case class DeskproMessage(
     id: Int,
@@ -29,19 +39,21 @@ case class DeskproMessage(
     person: Int,
     dateCreated: Instant,
     isAgentNote: Boolean,
-    message: String
+    message: String,
+    attachments: List[DeskproAttachment]
   )
 
 object DeskproMessage {
 
-  def build(response: DeskproMessageResponse): DeskproMessage = {
+  def build(response: DeskproMessageResponse, attachments: List[DeskproAttachmentResponse]): DeskproMessage = {
     DeskproMessage(
       response.id,
       response.ticket,
       response.person,
       response.date_created,
       (response.is_agent_note > 0),
-      response.message
+      response.message,
+      response.attachments.flatMap(attachmentId => attachments.find(attachment => attachment.id == attachmentId).map(DeskproAttachment.build))
     )
   }
 
@@ -63,14 +75,15 @@ case class DeskproTicket(
 
 object DeskproTicket {
 
-  def build(ticketResponse: BatchTicketWrapperResponse, messagesResponse: BatchMessagesWrapperResponse): Option[DeskproTicket] = {
+  def build(ticketResponse: BatchTicketWrapperResponse, messagesResponse: BatchMessagesWrapperResponse, attachmentResponse: BatchAttachmentsWrapperResponse)
+      : Option[DeskproTicket] = {
     ticketResponse.data match {
-      case Some(data) => Some(build(data, messagesResponse.data.getOrElse(List.empty)))
+      case Some(data) => Some(build(data, messagesResponse.data.getOrElse(List.empty), attachmentResponse.data.getOrElse(List.empty)))
       case _          => None
     }
   }
 
-  def build(response: DeskproTicketResponse, messagesResponse: List[DeskproMessageResponse]): DeskproTicket = {
+  def build(response: DeskproTicketResponse, messagesResponse: List[DeskproMessageResponse], attachmentResponse: List[DeskproAttachmentResponse]): DeskproTicket = {
     DeskproTicket(
       response.id,
       response.ref,
@@ -81,7 +94,7 @@ object DeskproTicket {
       response.date_status,
       response.date_resolved,
       response.subject,
-      messagesResponse.map(msg => DeskproMessage.build(msg))
+      messagesResponse.map(msg => DeskproMessage.build(msg, attachmentResponse))
     )
   }
 

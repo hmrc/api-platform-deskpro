@@ -107,8 +107,19 @@ case class DeskproTicketWrapperResponse(data: DeskproTicketResponse)
 object DeskproTicketWrapperResponse {
   implicit val reads: Reads[DeskproTicketWrapperResponse] = Json.reads[DeskproTicketWrapperResponse]
 }
+case class DeskproBlobResponse(download_url: String, filename: String)
 
-case class DeskproMessageResponse(id: Int, ticket: Int, person: Int, date_created: Instant, is_agent_note: Int, message: String)
+object DeskproBlobResponse {
+  implicit val reads: Reads[DeskproBlobResponse] = Json.reads[DeskproBlobResponse]
+
+}
+case class DeskproAttachmentResponse(id: Int, blob: DeskproBlobResponse)
+
+object DeskproAttachmentResponse {
+  implicit val reads: Reads[DeskproAttachmentResponse] = Json.reads[DeskproAttachmentResponse]
+}
+
+case class DeskproMessageResponse(id: Int, ticket: Int, person: Int, date_created: Instant, is_agent_note: Int, message: String, attachments: List[Int])
 
 object DeskproMessageResponse {
   implicit val instantFormatter: Reads[Instant] = InstantJsonFormatter.lenientInstantReads
@@ -152,9 +163,19 @@ object BatchMessagesWrapperResponse {
   implicit val reads: Reads[BatchMessagesWrapperResponse] = Json.reads[BatchMessagesWrapperResponse]
 }
 
+case class BatchAttachmentsWrapperResponse(
+    headers: BatchHeadersResponse,
+    data: Option[List[DeskproAttachmentResponse]]
+  )
+
+object BatchAttachmentsWrapperResponse {
+  implicit val reads: Reads[BatchAttachmentsWrapperResponse] = Json.reads[BatchAttachmentsWrapperResponse]
+}
+
 case class BatchTicketResponse(
     ticket: BatchTicketWrapperResponse,
-    messages: BatchMessagesWrapperResponse
+    messages: BatchMessagesWrapperResponse,
+    attachments: BatchAttachmentsWrapperResponse
   )
 
 object BatchTicketResponse {

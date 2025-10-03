@@ -1329,6 +1329,10 @@ trait DeskproStub {
                |    "messages": {
                |      "method": "GET",
                |      "url": "/api/v2/tickets/$ticketId/messages?order_by=date_created&order_dir=desc&count=200&page=1"
+               |    },
+               |    "attachments": {
+               |      "method": "GET",
+               |      "url": "/api/v2/tickets/$ticketId/attachments"
                |    }
                |  }    
                |}
@@ -1336,214 +1340,255 @@ trait DeskproStub {
           ))
           .willReturn(
             aResponse()
-              .withBody("""{
-                          |  "responses": {
-                          |    "ticket": {
-                          |      "headers": {
-                          |        "status-code": 200,
-                          |        "cache-control": "no-cache",
-                          |        "content-type": "application/json",
-                          |        "date": "Wed, 04 Jun 2025 13:39:40 GMT"
-                          |      },
-                          |      "data": { 
-                          |        "id": 3432,
-                          |        "ref": "SDST-2025XON927",
-                          |        "auth": "WTKK9AWM9ZY6SJK",
-                          |        "parent": null,
-                          |        "language": null,
-                          |        "brand": 3,
-                          |        "department": 37,
-                          |        "category": null,
-                          |        "priority": null,
-                          |        "workflow": null,
-                          |        "product": null,
-                          |        "person": 61,
-                          |        "person_email": "bob@example.com",
-                          |        "agent": 61,
-                          |        "agent_team": 8,
-                          |        "organization": 13,
-                          |        "linked_chat": null,
-                          |        "sent_to_address": [],
-                          |        "email_account": null,
-                          |        "email_account_address": "",
-                          |        "creation_system": "web.api",
-                          |        "creation_system_option": "",
-                          |        "ticket_hash": "be1a60543910a4a33911df10cd5a5ccd5c49d3d6",
-                          |        "status": "awaiting_user",
-                          |        "ticket_status": "awaiting_user",
-                          |        "is_hold": false,
-                          |        "labels": null,
-                          |        "urgency": 1,
-                          |        "feedback_rating": null,
-                          |        "date_feedback_rating": null,
-                          |        "date_created": "2025-05-01T08:02:02+0000",
-                          |        "date_resolved": null,
-                          |        "date_archived": null,
-                          |        "date_first_agent_assign": "2025-05-19T11:51:18+0000",
-                          |        "date_first_agent_reply": "2025-05-01T08:02:02+0000",
-                          |        "date_last_agent_reply": "2025-05-20T07:24:41+0000",
-                          |        "date_last_user_reply": "2025-05-20T07:24:41+0000",
-                          |        "date_agent_waiting": "2025-05-20T07:24:40+0000",
-                          |        "date_user_waiting": null,
-                          |        "date_status": "2025-05-20T07:24:41+0000",
-                          |        "total_user_waiting": 1639358,
-                          |        "total_to_first_reply": 0,
-                          |        "total_user_waiting_wh": 421187,
-                          |        "total_to_first_reply_wh": 0,
-                          |        "locked_by_agent": null,
-                          |        "date_locked": null,
-                          |        "date_on_hold": null,
-                          |        "has_attachments": true,
-                          |        "subject": "HMRC Developer Hub: Support Enquiry",
-                          |        "original_subject": "HMRC Developer Hub: Support Enquiry",
-                          |        "properties": null,
-                          |        "problems": [],
-                          |        "count_agent_replies": 3,
-                          |        "count_user_replies": 0,
-                          |        "worst_sla_status": null,
-                          |        "waiting_times": [
-                          |          {
-                          |            "start": 1746086523,
-                          |            "end": 1747655693,
-                          |            "length": 1569170,
-                          |            "ticket_status": "awaiting_agent"
-                          |          },
-                          |          {
-                          |            "start": 1747655694,
-                          |            "end": 1747656009,
-                          |            "length": 315,
-                          |            "ticket_status": "pending"
-                          |          },
-                          |          {
-                          |            "start": 1747656009,
-                          |            "end": 1747725880,
-                          |            "length": 69871,
-                          |            "ticket_status": "pending"
-                          |          }
-                          |        ],
-                          |        "ticket_slas": [
-                          |          3404
-                          |        ],
-                          |       "fields": {
-                          |          "7": {
-                          |            "aliases": [],
-                          |            "value": "Finding the API needed to build my software"
-                          |          },
-                          |          "8": {
-                          |            "aliases": [],
-                          |            "value": "Bob's burgers"
-                          |          }
-                          |        },
-                          |        "contextual_fields": {},
-                          |        "children": [],
-                          |        "siblings": [],
-                          |        "cc": [],
-                          |        "star": null,
-                          |        "ticket_layout": null,
-                          |        "ticket_excerpt": null,
-                          |        "ticket_agent_errors": null,
-                          |        "ticket_user_errors": null,
-                          |        "ticket_permissions": null,
-                          |        "access_code": "FCAWTKK9AWM9ZY6SJK",
-                          |        "followers": ""
-                          |      },
-                          |      "meta": [],
-                          |      "linked": []
-                          |    },
-                          |    "messages": {
-                          |      "headers": {
-                          |        "status-code": 200,
-                          |        "cache-control": "no-cache",
-                          |        "content-type": "application/json",
-                          |        "date": "Wed, 04 Jun 2025 13:39:40 GMT"
-                          |      },
-                          |      "data": [ 
-                          |        {
-                          |          "id": 3467,
-                          |          "ticket": 3432,
-                          |          "person": 33,
-                          |          "email_source": null,
-                          |          "attributes": [
-                          |            {
-                          |              "name": "agent_type",
-                          |              "value": "agent",
-                          |              "date_created": "2025-05-01T08:02:02+0000",
-                          |              "type": "value"
-                          |            },
-                          |            {
-                          |              "name": "email_recipients",
-                          |              "value": "[{\"type\":\"to\",\"address\":\"pete.kirby@digital.hmrc.gov.uk\"}]",
-                          |              "date_created": "2025-05-01T08:02:02+0000",
-                          |              "type": "value"
-                          |            }
-                          |          ],
-                          |          "attachments": [],
-                          |          "date_created": "2025-05-01T08:02:02+0000",
-                          |          "is_agent_note": 0,
-                          |          "creation_system": "web.api",
-                          |          "ip_address": "",
-                          |          "visitor_id": null,
-                          |          "hostname": "",
-                          |          "email": "",
-                          |          "message_hash": "7fe219f88a4ed6bd2b7b8f6c6bc1712e6d0d5a70",
-                          |          "primary_translation": null,
-                          |          "message": "Hi. What API do I need to get next weeks lottery numbers?",
-                          |          "message_full": "",
-                          |          "message_raw": null,
-                          |          "message_preview_text": "Hi. What API do I need to get next weeks lottery numbers?",
-                          |          "show_full_hint": false,
-                          |          "lang_code": null
-                          |        },
-                          |        {
-                          |          "id": 3698,
-                          |          "ticket": 3432,
-                          |          "person": 61,
-                          |          "email_source": null,
-                          |          "attributes": [
-                          |            {
-                          |              "name": "agent_type",
-                          |              "value": "agent",
-                          |              "date_created": "2025-05-19T11:54:53+0000",
-                          |              "type": "value"
-                          |            },
-                          |            {
-                          |              "name": "email_recipients",
-                          |              "value": "[{\"type\":\"to\",\"address\":\"pete.kirby@digital.hmrc.gov.uk\"}]",
-                          |              "date_created": "2025-05-19T11:54:53+0000",
-                          |              "type": "value"
-                          |            }
-                          |          ],
-                          |          "attachments": [],
-                          |          "date_created": "2025-05-19T11:54:53+0000",
-                          |          "is_agent_note": 0,
-                          |          "creation_system": "web",
-                          |          "ip_address": "",
-                          |          "visitor_id": null,
-                          |          "hostname": "",
-                          |          "email": "",
-                          |          "message_hash": "72d080ba0552fdf024c843a20fff3831f8f76387",
-                          |          "primary_translation": null,
-                          |          "message": "<p>Reply message from agent. What else gets filled in?</p>",
-                          |          "message_full": "",
-                          |          "message_raw": null,
-                          |          "message_preview_text": "Reply message from agent. What else gets filled in?",
-                          |          "show_full_hint": false,
-                          |          "lang_code": null
-                          |        }
-                          |      ],
-                          |      "meta": {
-                          |        "pagination": {
-                          |          "total": 4,
-                          |          "count": 4,
-                          |          "per_page": 10,
-                          |          "current_page": 1,
-                          |          "total_pages": 1
-                          |        }
-                          |      },
-                          |      "linked": []
-                          |    }
-                          |  }
-                          |}""".stripMargin)
+              .withBody(
+                """{
+                  |  "responses": {
+                  |    "ticket": {
+                  |      "headers": {
+                  |        "status-code": 200,
+                  |        "cache-control": "no-cache",
+                  |        "content-type": "application/json",
+                  |        "date": "Wed, 04 Jun 2025 13:39:40 GMT"
+                  |      },
+                  |      "data": { 
+                  |        "id": 3432,
+                  |        "ref": "SDST-2025XON927",
+                  |        "auth": "WTKK9AWM9ZY6SJK",
+                  |        "parent": null,
+                  |        "language": null,
+                  |        "brand": 3,
+                  |        "department": 37,
+                  |        "category": null,
+                  |        "priority": null,
+                  |        "workflow": null,
+                  |        "product": null,
+                  |        "person": 61,
+                  |        "person_email": "bob@example.com",
+                  |        "agent": 61,
+                  |        "agent_team": 8,
+                  |        "organization": 13,
+                  |        "linked_chat": null,
+                  |        "sent_to_address": [],
+                  |        "email_account": null,
+                  |        "email_account_address": "",
+                  |        "creation_system": "web.api",
+                  |        "creation_system_option": "",
+                  |        "ticket_hash": "be1a60543910a4a33911df10cd5a5ccd5c49d3d6",
+                  |        "status": "awaiting_user",
+                  |        "ticket_status": "awaiting_user",
+                  |        "is_hold": false,
+                  |        "labels": null,
+                  |        "urgency": 1,
+                  |        "feedback_rating": null,
+                  |        "date_feedback_rating": null,
+                  |        "date_created": "2025-05-01T08:02:02+0000",
+                  |        "date_resolved": null,
+                  |        "date_archived": null,
+                  |        "date_first_agent_assign": "2025-05-19T11:51:18+0000",
+                  |        "date_first_agent_reply": "2025-05-01T08:02:02+0000",
+                  |        "date_last_agent_reply": "2025-05-20T07:24:41+0000",
+                  |        "date_last_user_reply": "2025-05-20T07:24:41+0000",
+                  |        "date_agent_waiting": "2025-05-20T07:24:40+0000",
+                  |        "date_user_waiting": null,
+                  |        "date_status": "2025-05-20T07:24:41+0000",
+                  |        "total_user_waiting": 1639358,
+                  |        "total_to_first_reply": 0,
+                  |        "total_user_waiting_wh": 421187,
+                  |        "total_to_first_reply_wh": 0,
+                  |        "locked_by_agent": null,
+                  |        "date_locked": null,
+                  |        "date_on_hold": null,
+                  |        "has_attachments": true,
+                  |        "subject": "HMRC Developer Hub: Support Enquiry",
+                  |        "original_subject": "HMRC Developer Hub: Support Enquiry",
+                  |        "properties": null,
+                  |        "problems": [],
+                  |        "count_agent_replies": 3,
+                  |        "count_user_replies": 0,
+                  |        "worst_sla_status": null,
+                  |        "waiting_times": [
+                  |          {
+                  |            "start": 1746086523,
+                  |            "end": 1747655693,
+                  |            "length": 1569170,
+                  |            "ticket_status": "awaiting_agent"
+                  |          },
+                  |          {
+                  |            "start": 1747655694,
+                  |            "end": 1747656009,
+                  |            "length": 315,
+                  |            "ticket_status": "pending"
+                  |          },
+                  |          {
+                  |            "start": 1747656009,
+                  |            "end": 1747725880,
+                  |            "length": 69871,
+                  |            "ticket_status": "pending"
+                  |          }
+                  |        ],
+                  |        "ticket_slas": [
+                  |          3404
+                  |        ],
+                  |       "fields": {
+                  |          "7": {
+                  |            "aliases": [],
+                  |            "value": "Finding the API needed to build my software"
+                  |          },
+                  |          "8": {
+                  |            "aliases": [],
+                  |            "value": "Bob's burgers"
+                  |          }
+                  |        },
+                  |        "contextual_fields": {},
+                  |        "children": [],
+                  |        "siblings": [],
+                  |        "cc": [],
+                  |        "star": null,
+                  |        "ticket_layout": null,
+                  |        "ticket_excerpt": null,
+                  |        "ticket_agent_errors": null,
+                  |        "ticket_user_errors": null,
+                  |        "ticket_permissions": null,
+                  |        "access_code": "FCAWTKK9AWM9ZY6SJK",
+                  |        "followers": ""
+                  |      },
+                  |      "meta": [],
+                  |      "linked": []
+                  |    },
+                  |    "messages": {
+                  |      "headers": {
+                  |        "status-code": 200,
+                  |        "cache-control": "no-cache",
+                  |        "content-type": "application/json",
+                  |        "date": "Wed, 04 Jun 2025 13:39:40 GMT"
+                  |      },
+                  |      "data": [ 
+                  |        {
+                  |          "id": 3467,
+                  |          "ticket": 3432,
+                  |          "person": 33,
+                  |          "email_source": null,
+                  |          "attributes": [
+                  |            {
+                  |              "name": "agent_type",
+                  |              "value": "agent",
+                  |              "date_created": "2025-05-01T08:02:02+0000",
+                  |              "type": "value"
+                  |            },
+                  |            {
+                  |              "name": "email_recipients",
+                  |              "value": "[{\"type\":\"to\",\"address\":\"pete.kirby@digital.hmrc.gov.uk\"}]",
+                  |              "date_created": "2025-05-01T08:02:02+0000",
+                  |              "type": "value"
+                  |            }
+                  |          ],
+                  |          "attachments": [],
+                  |          "date_created": "2025-05-01T08:02:02+0000",
+                  |          "is_agent_note": 0,
+                  |          "creation_system": "web.api",
+                  |          "ip_address": "",
+                  |          "visitor_id": null,
+                  |          "hostname": "",
+                  |          "email": "",
+                  |          "message_hash": "7fe219f88a4ed6bd2b7b8f6c6bc1712e6d0d5a70",
+                  |          "primary_translation": null,
+                  |          "message": "Hi. What API do I need to get next weeks lottery numbers?",
+                  |          "message_full": "",
+                  |          "message_raw": null,
+                  |          "message_preview_text": "Hi. What API do I need to get next weeks lottery numbers?",
+                  |          "show_full_hint": false,
+                  |          "lang_code": null
+                  |        },
+                  |        {
+                  |          "id": 3698,
+                  |          "ticket": 3432,
+                  |          "person": 61,
+                  |          "email_source": null,
+                  |          "attributes": [
+                  |            {
+                  |              "name": "agent_type",
+                  |              "value": "agent",
+                  |              "date_created": "2025-05-19T11:54:53+0000",
+                  |              "type": "value"
+                  |            },
+                  |            {
+                  |              "name": "email_recipients",
+                  |              "value": "[{\"type\":\"to\",\"address\":\"pete.kirby@digital.hmrc.gov.uk\"}]",
+                  |              "date_created": "2025-05-19T11:54:53+0000",
+                  |              "type": "value"
+                  |            }
+                  |          ],
+                  |          "attachments": [60],
+                  |          "date_created": "2025-05-19T11:54:53+0000",
+                  |          "is_agent_note": 0,
+                  |          "creation_system": "web",
+                  |          "ip_address": "",
+                  |          "visitor_id": null,
+                  |          "hostname": "",
+                  |          "email": "",
+                  |          "message_hash": "72d080ba0552fdf024c843a20fff3831f8f76387",
+                  |          "primary_translation": null,
+                  |          "message": "<p>Reply message from agent. What else gets filled in?</p>",
+                  |          "message_full": "",
+                  |          "message_raw": null,
+                  |          "message_preview_text": "Reply message from agent. What else gets filled in?",
+                  |          "show_full_hint": false,
+                  |          "lang_code": null
+                  |        }
+                  |      ],
+                  |      "meta": {
+                  |        "pagination": {
+                  |          "total": 4,
+                  |          "count": 4,
+                  |          "per_page": 10,
+                  |          "current_page": 1,
+                  |          "total_pages": 1
+                  |        }
+                  |      },
+                  |      "linked": []
+                  |    },
+                  |    "attachments": {
+                  |      "headers": {
+                  |        "status-code": 200,
+                  |        "cache-control": "no-cache",
+                  |        "content-type": "application/json",
+                  |        "date": "Wed, 04 Jun 2025 13:39:40 GMT"
+                  |      },
+                  |      "data": [
+                  |      {
+                  |      "id": 60,
+                  |      "ticket": 6216,
+                  |      "person": 50,
+                  |      "blob": {
+                  |        "content_type": "application\/pdf",
+                  |        "is_image": false,
+                  |        "blob_id": 26417,
+                  |        "blob_auth": "26417TKZAGNMDGQXPBDH0T",
+                  |        "blob_auth_id": "26417-26417TKZAGNMDGQXPBDH0T",
+                  |        "download_url": "https:\/\/example.com",
+                  |        "filename": "file.name",
+                  |        "filesize_readable": "1.83 MB",
+                  |        "is_temp": false
+                  |      },
+                  |      "message": 6504,
+                  |      "is_agent_note": false,
+                  |      "is_inline": false
+                  |    }
+                  |      ],
+                  |      "meta": {
+                  |        "pagination": {
+                  |          "total": 4,
+                  |          "count": 4,
+                  |          "per_page": 10,
+                  |          "current_page": 1,
+                  |          "total_pages": 1
+                  |        }
+                  |      },
+                  |      "linked": []
+                  |    }
+                  |  }
+                  |}""".stripMargin
+              )
               .withStatus(OK)
           )
       )
@@ -1563,6 +1608,10 @@ trait DeskproStub {
                |    "messages": {
                |      "method": "GET",
                |      "url": "/api/v2/tickets/$ticketId/messages?order_by=date_created&order_dir=desc&count=200&page=1"
+               |          },
+               |    "attachments": {
+               |      "method": "GET",
+               |      "url": "/api/v2/tickets/$ticketId/attachments"
                |    }
                |  }    
                |}
@@ -1570,34 +1619,48 @@ trait DeskproStub {
           ))
           .willReturn(
             aResponse()
-              .withBody("""{
-                          |  "responses": {
-                          |    "ticket": {
-                          |      "headers": {
-                          |        "status-code": 404,
-                          |        "cache-control": "no-cache",
-                          |        "content-type": "application/json",
-                          |        "date": "Wed, 04 Jun 2025 13:39:40 GMT"
-                          |      },
-                          |      "status": 404,
-                          |      "code": "#3432 Not Found",
-                          |      "message": "#3432 Not Found",
-                          |      "errors": null
-                          |    },
-                          |    "messages": {
-                          |      "headers": {
-                          |        "status-code": 404,
-                          |        "cache-control": "no-cache",
-                          |        "content-type": "application/json",
-                          |        "date": "Wed, 04 Jun 2025 13:39:40 GMT"
-                          |      },
-                          |      "status": 404,
-                          |      "code": "#3432 Not Found",
-                          |      "message": "#3432 Not Found",
-                          |      "errors": null
-                          |    }
-                          |  }
-                          |}""".stripMargin)
+              .withBody(
+                """{
+                  |  "responses": {
+                  |    "ticket": {
+                  |      "headers": {
+                  |        "status-code": 404,
+                  |        "cache-control": "no-cache",
+                  |        "content-type": "application/json",
+                  |        "date": "Wed, 04 Jun 2025 13:39:40 GMT"
+                  |      },
+                  |      "status": 404,
+                  |      "code": "#3432 Not Found",
+                  |      "message": "#3432 Not Found",
+                  |      "errors": null
+                  |    },
+                  |    "messages": {
+                  |      "headers": {
+                  |        "status-code": 404,
+                  |        "cache-control": "no-cache",
+                  |        "content-type": "application/json",
+                  |        "date": "Wed, 04 Jun 2025 13:39:40 GMT"
+                  |      },
+                  |      "status": 404,
+                  |      "code": "#3432 Not Found",
+                  |      "message": "#3432 Not Found",
+                  |      "errors": null
+                  |    },
+                  |    "attachments": {
+                  |      "headers": {
+                  |        "status-code": 404,
+                  |        "cache-control": "no-cache",
+                  |        "content-type": "application/json",
+                  |        "date": "Wed, 04 Jun 2025 13:39:40 GMT"
+                  |      },
+                  |      "status": 404,
+                  |      "code": "#3432 Not Found",
+                  |      "message": "#3432 Not Found",
+                  |      "errors": null
+                  |   }
+                  |  }
+                  |}""".stripMargin
+              )
               .withStatus(OK)
           )
       )
