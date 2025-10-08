@@ -21,9 +21,13 @@ import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
+
 import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.http.Status._
 import play.api.libs.json.{JsValue, Json}
+import play.api.mvc.MultipartFormData
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.domain.models._
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector._
@@ -297,6 +301,51 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
           .withBody(Json.toJson(batchRequest))
           .execute[BatchResponse]
       }
+    }
+
+  def createBlob(fileName: String, fileType: String, src: Source[ByteString, _])(implicit hc: HeaderCarrier): Future[DeskproCreateBlobWrapperResponse] = metrics.record(api) {
+
+    val filePart: MultipartFormData.Part[Source[ByteString, _]] = MultipartFormData.FilePart(
+      "file",
+      fileName,
+      Some(fileType),
+      src
+    )
+
+    metrics.record(api) {
+      http
+        .post(url"${requestUrl("/api/v2/blobs/temp")}")
+        .withProxy
+        .setHeader(AUTHORIZATION -> config.deskproApiKey)
+        .withBody(Source(Seq(filePart)))
+        .execute[DeskproCreateBlobWrapperResponse]
+    }
+  }
+
+  def createMessageWithAttachment(ticketId: Int, userEmail: String, message: String, blobId: Int, blobAuth: String)(implicit hc: HeaderCarrier): Future[DeskproTicketResponseResult] =
+    metrics.record(api) {
+      val attachment     = AttachmentRequest(blobAuth)
+      val messageRequest = CreateMessageRequest(message, userEmail, Map(blobId.toString() -> attachment))
+
+      http
+        .post(url"${requestUrl(s"/api/v2/tickets/$ticketId/messages")}")
+        .withProxy
+        .withBody(Json.toJson(messageRequest))
+        .setHeader(AUTHORIZATION -> config.deskproApiKey)
+        .execute[HttpResponse]
+        .map(response =>
+          response.status match {
+            case CREATED   =>
+              logger.info(s"Created message for Deskpro ticket '$ticketId' successfully")
+              DeskproTicketResponseSuccess
+            case NOT_FOUND =>
+              logger.warn(s"Failed to create message for Deskpro ticket '$ticketId. Ticket not found")
+              DeskproTicketResponseNotFound
+            case _         =>
+              logger.error(s"Failed to create message for Deskpro ticket '$ticketId. Status: ${response.status}")
+              DeskproTicketResponseFailure
+          }
+        )
     }
 
   private def requestUrl[B, A](uri: String): String = s"$serviceBaseUrl$uri"

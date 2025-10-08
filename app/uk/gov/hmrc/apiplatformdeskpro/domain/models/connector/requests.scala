@@ -64,6 +64,24 @@ object CreateResponseRequest {
   implicit val createResponseRequestFormat: Format[CreateResponseRequest] = Json.format[CreateResponseRequest]
 }
 
+case class AttachmentRequest(
+    blob_auth: String
+  )
+
+object AttachmentRequest {
+  implicit val attachmentRequestFormat: Format[AttachmentRequest] = Json.format[AttachmentRequest]
+}
+
+case class CreateMessageRequest(
+    message: String,
+    person: String,
+    attachments: Map[String, AttachmentRequest]
+  )
+
+object CreateMessageRequest {
+  implicit val createMessageRequestFormat: Format[CreateMessageRequest] = Json.format[CreateMessageRequest]
+}
+
 sealed abstract class TicketStatus(val value: String) {
   override def toString: String = value
 }

@@ -16,9 +16,12 @@
 
 package uk.gov.hmrc.apiplatformdeskpro.connector
 
+import java.nio.file.Paths
 import java.time.format.DateTimeFormatter
 import java.time.{Clock, Instant, LocalDateTime, ZoneOffset}
 
+import org.apache.pekko.stream.scaladsl.{FileIO, Source}
+import org.apache.pekko.util.ByteString
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 
 import play.api.inject.bind
@@ -63,13 +66,13 @@ class DeskproConnectorISpec
     val supportReason   = "supportReason"
     val teamMemberEmail = "frank@example.com"
     val brand           = 1
+    val fileName        = "README.md"
 
     val fields: Map[String, String]                  = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "6" -> teamMemberEmail)
     val deskproPerson: DeskproPerson                 = DeskproPerson(name, email)
     val deskproPersonUpdate: DeskproPersonUpdate     = DeskproPersonUpdate(name)
     val deskproInactivePerson: DeskproInactivePerson = DeskproInactivePerson(Map("5" -> "1", "4" -> DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(now)))
     val deskproTicket: CreateDeskproTicket           = CreateDeskproTicket(deskproPerson, subject, DeskproTicketMessage(message, deskproPerson), brand, fields)
-
   }
 
   "deskproConnector" when {
@@ -611,6 +614,67 @@ class DeskproConnectorISpec
       val result = await(objInTest.deleteTicket(ticketId))
 
       result shouldBe DeskproTicketUpdateFailure
+    }
+  }
+
+  "createBlob" should {
+    "return DeskproCreateBlobWrapperResponse when 200 returned from deskpro with response body" in new Setup {
+      CreateBlob.stubSuccess()
+      val file: java.nio.file.Path   = Paths.get(fileName)
+      val src: Source[ByteString, _] = FileIO.fromPath(file)
+
+      val result = await(objInTest.createBlob(fileName, "text/plain", src))
+
+      val expectedResponse = DeskproCreateBlobWrapperResponse(
+        DeskproCreateBlobResponse(26854, "26854KPJHXXQWRNRQHBQ0")
+      )
+
+      result shouldBe expectedResponse
+    }
+
+    "throw UpstreamErrorResponse when error response returned from deskpro" in new Setup {
+      CreateBlob.stubFailure()
+      val file: java.nio.file.Path   = Paths.get(fileName)
+      val src: Source[ByteString, _] = FileIO.fromPath(file)
+
+      intercept[UpstreamErrorResponse] {
+        await(objInTest.createBlob(fileName, "text/plain", src))
+      }
+    }
+  }
+
+  "createMessageWithAttachment" should {
+    "return DeskproTicketResponseSuccess when 200 returned from deskpro" in new Setup {
+      val ticketId: Int = 3432
+      val response      = "response"
+
+      CreateMessageWithAttachment.stubSuccess(ticketId, email, response)
+
+      val result = await(objInTest.createMessageWithAttachment(ticketId, email, response, 26854, "26854KPJHXXQWRNRQHBQ0"))
+
+      result shouldBe DeskproTicketResponseSuccess
+    }
+
+    "return DeskproTicketResponseNotFound if ticket not found" in new Setup {
+      val ticketId: Int = 3432
+      val response      = "response"
+
+      CreateMessageWithAttachment.stubNotFound(ticketId, email, response)
+
+      val result = await(objInTest.createMessageWithAttachment(ticketId, email, response, 26854, "26854KPJHXXQWRNRQHBQ0"))
+
+      result shouldBe DeskproTicketResponseNotFound
+    }
+
+    "return DeskproTicketResponseFailure if ticket not found" in new Setup {
+      val ticketId: Int = 3432
+      val response      = "response"
+
+      CreateMessageWithAttachment.stubFailure(ticketId, email, response)
+
+      val result = await(objInTest.createMessageWithAttachment(ticketId, email, response, 26854, "26854KPJHXXQWRNRQHBQ0"))
+
+      result shouldBe DeskproTicketResponseFailure
     }
   }
 }
