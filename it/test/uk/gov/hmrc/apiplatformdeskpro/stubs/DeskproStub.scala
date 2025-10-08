@@ -1879,4 +1879,102 @@ trait DeskproStub {
       )
     }
   }
+
+  object CreateBlob {
+
+    def stubSuccess() = {
+      stubFor(
+        post(urlPathEqualTo("/api/v2/blobs/temp"))
+          .willReturn(
+            aResponse()
+              .withBody("""{
+                          |  "data": {
+                          |    "content_type": "text/plain",
+                          |    "is_image": false,
+                          |    "blob_id": 26854,
+                          |    "blob_auth": "26854KPJHXXQWRNRQHBQ0",
+                          |    "blob_auth_id": "26854-26854KPJHXXQWRNRQHBQ0",
+                          |    "download_url": "https://apiplatformsupporttest.deskpro.com/file.php/26854KPJHXXQWRNRQHBQ0/panic.txt?access_token=t3t6z6-osmhlzjorm-889e3110f491775b5786a754fb6b109baa2109bb",
+                          |    "filename": "panic.txt",
+                          |    "filesize_readable": "183.00 B",
+                          |    "is_temp": true
+                          |  },
+                          |  "meta": {},
+                          |  "linked": {}
+                          |}""".stripMargin)
+              .withStatus(CREATED)
+          )
+      )
+    }
+
+    def stubFailure() = {
+      stubFor(
+        post(urlPathEqualTo("/api/v2/blobs/temp"))
+          .willReturn(
+            aResponse()
+              .withStatus(INTERNAL_SERVER_ERROR)
+          )
+      )
+    }
+  }
+
+  object CreateMessageWithAttachment {
+
+    def stubSuccess(ticketId: Int, userEmail: String, message: String) = {
+      stubFor(
+        post(urlPathEqualTo(s"/api/v2/tickets/$ticketId/messages"))
+          .withRequestBody(equalToJson(s"""{
+                                          |  "person": "$userEmail",
+                                          |  "message": "$message",
+                                          |  "attachments": {
+                                          |    "26854": {
+                                          |      "blob_auth": "26854KPJHXXQWRNRQHBQ0"
+                                          |    }
+                                          |  }
+                                          |}""".stripMargin))
+          .willReturn(
+            aResponse()
+              .withStatus(CREATED)
+          )
+      )
+    }
+
+    def stubNotFound(ticketId: Int, userEmail: String, message: String) = {
+      stubFor(
+        post(urlPathEqualTo(s"/api/v2/tickets/$ticketId/messages"))
+          .withRequestBody(equalToJson(s"""{
+                                          |  "person": "$userEmail",
+                                          |  "message": "$message",
+                                          |  "attachments": {
+                                          |    "26854": {
+                                          |      "blob_auth": "26854KPJHXXQWRNRQHBQ0"
+                                          |    }
+                                          |  }
+                                          |}""".stripMargin))
+          .willReturn(
+            aResponse()
+              .withStatus(NOT_FOUND)
+          )
+      )
+    }
+
+    def stubFailure(ticketId: Int, userEmail: String, message: String) = {
+      stubFor(
+        post(urlPathEqualTo(s"/api/v2/tickets/$ticketId/messages"))
+          .withRequestBody(equalToJson(s"""{
+                                          |  "person": "$userEmail",
+                                          |  "message": "$message",
+                                          |  "attachments": {
+                                          |    "26854": {
+                                          |      "blob_auth": "26854KPJHXXQWRNRQHBQ0"
+                                          |    }
+                                          |  }
+                                          |}""".stripMargin))
+          .willReturn(
+            aResponse()
+              .withStatus(INTERNAL_SERVER_ERROR)
+          )
+      )
+    }
+  }
 }
