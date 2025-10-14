@@ -69,7 +69,7 @@ class TicketController @Inject() (ticketService: TicketService, cc: ControllerCo
     auth.authorizedAction(predicate = Predicate.Permission(Resource.from("api-platform-deskpro", "tickets/all"), IAAction("WRITE"))).async {
       implicit request: AuthenticatedRequest[AnyContent, Unit] =>
         withJsonBodyFromAnyContent[CreateTicketResponseRequest] { parsedRequest =>
-          ticketService.createResponse(ticketId, parsedRequest.userEmail.text, parsedRequest.message, parsedRequest.status)
+          ticketService.createResponse(ticketId, parsedRequest)
             .map {
               case DeskproTicketResponseSuccess  => Ok
               case DeskproTicketResponseNotFound => NotFound

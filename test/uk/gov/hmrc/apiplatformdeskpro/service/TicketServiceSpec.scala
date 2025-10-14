@@ -24,6 +24,9 @@ import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.connector.DeskproConnector
 import uk.gov.hmrc.apiplatformdeskpro.domain.models._
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector._
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.CreateTicketResponseRequest
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.DeskproResponse
+import uk.gov.hmrc.apiplatformdeskpro.repository.DeskproResponseRepository
 import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -35,14 +38,16 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
   trait Setup {
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val mockDeskproConnector = mock[DeskproConnector]
-    val mockPersonService    = mock[PersonService]
-    val mockAppConfig        = mock[AppConfig]
+    val mockDeskproConnector          = mock[DeskproConnector]
+    val mockPersonService             = mock[PersonService]
+    val mockAppConfig                 = mock[AppConfig]
+    val mockDeskproResponseRepository = mock[DeskproResponseRepository]
 
     val fullName        = "Bob Holness"
-    val email           = "bob@exmaple.com"
+    val email           = LaxEmailAddress("bob@example.com")
     val subject         = "Subject of the ticket"
     val message         = "This is where the message for the ticket goes"
+    val fileReference   = "fileRef"
     val apiName         = "apiName"
     val applicationId   = ApplicationId.random.toString()
     val organisation    = "organisation"
@@ -64,7 +69,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
     val attachmentId       = 1
     val deskproAttachment1 = DeskproAttachmentResponse(attachmentId, DeskproBlobResponse("https://example.com", "file.name"))
 
-    val underTest = new TicketService(mockDeskproConnector, mockPersonService, mockAppConfig)
+    val underTest = new TicketService(mockDeskproConnector, mockPersonService, mockDeskproResponseRepository, mockAppConfig)
   }
 
   "submitTicket" should {
@@ -72,7 +77,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
 
       val createTicketRequest = CreateTicketRequest(
         fullName,
-        email,
+        email.text,
         subject,
         message,
         Some(apiName),
@@ -84,7 +89,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       )
 
       val fields                = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "6" -> teamMemberEmail, "7" -> reasonKey)
-      val expectedPerson        = DeskproPerson(fullName, email)
+      val expectedPerson        = DeskproPerson(fullName, email.text)
       val expectedDeskproTicket = CreateDeskproTicket(expectedPerson, subject, DeskproTicketMessage(message, expectedPerson), brand, fields)
 
       when(mockDeskproConnector.createTicket(*)(*)).thenReturn(Future.successful(Right(DeskproTicketCreated(ref))))
@@ -107,7 +112,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
 
       val createTicketRequest = CreateTicketRequest(
         fullName,
-        email,
+        email.text,
         subject,
         message,
         None,
@@ -119,7 +124,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       )
 
       val fields: Map[String, String] = Map.empty
-      val expectedPerson              = DeskproPerson(fullName, email)
+      val expectedPerson              = DeskproPerson(fullName, email.text)
       val expectedDeskproTicket       = CreateDeskproTicket(expectedPerson, subject, DeskproTicketMessage(message, expectedPerson), brand, fields)
 
       when(mockDeskproConnector.createTicket(*)(*)).thenReturn(Future.successful(Right(DeskproTicketCreated(ref))))
@@ -297,33 +302,45 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       when(mockDeskproConnector.createResponse(*, *, *)(*)).thenReturn(Future.successful(DeskproTicketResponseSuccess))
       when(mockDeskproConnector.updateTicketStatus(*, *)(*)).thenReturn(Future.successful(DeskproTicketUpdateSuccess))
 
-      await(underTest.createResponse(ticketId, email, message, TicketStatus.AwaitingAgent)) shouldBe DeskproTicketResponseSuccess
+      await(underTest.createResponse(ticketId, CreateTicketResponseRequest(email, message, TicketStatus.AwaitingAgent))) shouldBe DeskproTicketResponseSuccess
 
-      verify(mockDeskproConnector).createResponse(eqTo(ticketId), eqTo(email), eqTo(message))(*)
+      verify(mockDeskproConnector).createResponse(eqTo(ticketId), eqTo(email.text), eqTo(message))(*)
       verify(mockDeskproConnector).updateTicketStatus(eqTo(ticketId), eqTo(TicketStatus.AwaitingAgent))(*)
+      verify(mockDeskproResponseRepository, never).create(*)
+    }
+
+    "return DeskproTicketResponseSuccess and save response when fileReference is present" in new Setup {
+      val response = DeskproResponse(fileReference, ticketId, email, message, TicketStatus.AwaitingAgent)
+      when(mockDeskproResponseRepository.create(*)).thenReturn(Future.successful(response))
+
+      await(underTest.createResponse(ticketId, CreateTicketResponseRequest(email, message, TicketStatus.AwaitingAgent, Some(fileReference)))) shouldBe DeskproTicketResponseSuccess
+
+      verify(mockDeskproResponseRepository).create(eqTo(response))
+      verify(mockDeskproConnector, never).createResponse(*, *, *)(*)
+      verify(mockDeskproConnector, never).updateTicketStatus(*, *)(*)
     }
 
     "return DeskproTicketResponseSuccess when response created, even if ticket status update failed" in new Setup {
       when(mockDeskproConnector.createResponse(*, *, *)(*)).thenReturn(Future.successful(DeskproTicketResponseSuccess))
       when(mockDeskproConnector.updateTicketStatus(*, *)(*)).thenReturn(Future.successful(DeskproTicketUpdateFailure))
 
-      await(underTest.createResponse(ticketId, email, message, TicketStatus.AwaitingAgent)) shouldBe DeskproTicketResponseSuccess
+      await(underTest.createResponse(ticketId, CreateTicketResponseRequest(email, message, TicketStatus.AwaitingAgent))) shouldBe DeskproTicketResponseSuccess
 
-      verify(mockDeskproConnector).createResponse(eqTo(ticketId), eqTo(email), eqTo(message))(*)
+      verify(mockDeskproConnector).createResponse(eqTo(ticketId), eqTo(email.text), eqTo(message))(*)
     }
 
     "return DeskproTicketResponseNotFound if ticket to respond not found" in new Setup {
       when(mockDeskproConnector.createResponse(*, *, *)(*)).thenReturn(Future.successful(DeskproTicketResponseNotFound))
       when(mockDeskproConnector.updateTicketStatus(*, *)(*)).thenReturn(Future.successful(DeskproTicketUpdateSuccess))
 
-      await(underTest.createResponse(ticketId, email, message, TicketStatus.AwaitingAgent)) shouldBe DeskproTicketResponseNotFound
+      await(underTest.createResponse(ticketId, CreateTicketResponseRequest(email, message, TicketStatus.AwaitingAgent))) shouldBe DeskproTicketResponseNotFound
     }
 
     "return DeskproTicketResponseFailure if create failed" in new Setup {
       when(mockDeskproConnector.createResponse(*, *, *)(*)).thenReturn(Future.successful(DeskproTicketResponseFailure))
       when(mockDeskproConnector.updateTicketStatus(*, *)(*)).thenReturn(Future.successful(DeskproTicketUpdateSuccess))
 
-      await(underTest.createResponse(ticketId, email, message, TicketStatus.AwaitingAgent)) shouldBe DeskproTicketResponseFailure
+      await(underTest.createResponse(ticketId, CreateTicketResponseRequest(email, message, TicketStatus.AwaitingAgent))) shouldBe DeskproTicketResponseFailure
     }
   }
 

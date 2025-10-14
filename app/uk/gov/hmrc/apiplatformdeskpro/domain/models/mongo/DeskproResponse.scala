@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apiplatformdeskpro.domain.models.controller
+package uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo
 
 import play.api.libs.json.{Json, OFormat}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.TicketStatus
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
-case class CreateTicketResponseRequest(userEmail: LaxEmailAddress, message: String, status: TicketStatus, fileReference: Option[String] = None)
+case class DeskproResponse(fileReference: String, ticketId: Int, userEmail: LaxEmailAddress, message: String, ticketStatus: TicketStatus)
 
-object CreateTicketResponseRequest {
-  implicit val createTicketResponseRequest: OFormat[CreateTicketResponseRequest] = Json.format[CreateTicketResponseRequest]
+object DeskproResponse {
+  implicit val format: OFormat[DeskproResponse] = Json.format[DeskproResponse]
 }

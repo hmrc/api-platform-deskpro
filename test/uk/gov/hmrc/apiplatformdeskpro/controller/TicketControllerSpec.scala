@@ -219,7 +219,7 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
     val expectedPredicate = Permission(Resource(ResourceType("api-platform-deskpro"), ResourceLocation("tickets/all")), IAAction("WRITE"))
     "return 200 when response created successfully" in new Setup {
 
-      when(mockService.createResponse(*, *, *, *)(*)).thenReturn(Future.successful(DeskproTicketResponseSuccess))
+      when(mockService.createResponse(*, *)(*)).thenReturn(Future.successful(DeskproTicketResponseSuccess))
       when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
 
       val request = FakeRequest(POST, s"/ticket/$ticketId/response")
@@ -233,7 +233,7 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
 
     "return 404 when ticket to respond not found" in new Setup {
 
-      when(mockService.createResponse(*, *, *, *)(*)).thenReturn(Future.successful(DeskproTicketResponseNotFound))
+      when(mockService.createResponse(*, *)(*)).thenReturn(Future.successful(DeskproTicketResponseNotFound))
       when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
 
       val request = FakeRequest(POST, s"/ticket/$ticketId/response")
@@ -247,7 +247,7 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
 
     "return 500 when response failed" in new Setup {
 
-      when(mockService.createResponse(*, *, *, *)(*)).thenReturn(Future.successful(DeskproTicketResponseFailure))
+      when(mockService.createResponse(*, *)(*)).thenReturn(Future.successful(DeskproTicketResponseFailure))
       when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
 
       val request = FakeRequest(POST, s"/ticket/$ticketId/response")
@@ -261,7 +261,7 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
 
     "return 500 when call to deskpro fails" in new Setup {
 
-      when(mockService.createResponse(*, *, *, *)(*)).thenReturn(Future.failed(new Exception("error")))
+      when(mockService.createResponse(*, *)(*)).thenReturn(Future.failed(new Exception("error")))
       when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
 
       val request = FakeRequest(POST, s"/ticket/$ticketId/response")
