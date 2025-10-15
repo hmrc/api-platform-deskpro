@@ -25,11 +25,11 @@ import org.apache.pekko.util.ByteString
 
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.connector.DeskproConnector
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{CreateDeskproTicket, DeskproTicketCreated, DeskproTicketMessage, TicketStatus}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{CreateDeskproTicket, DeskproMessageResponse, DeskproTicketCreated, DeskproTicketMessage}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.CreateTicketResponseRequest
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.DeskproResponse
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.DeskproMessageFileAttachment
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.{CreateTicketRequest, DeskproTicketCreationFailed, _}
-import uk.gov.hmrc.apiplatformdeskpro.repository.DeskproResponseRepository
+import uk.gov.hmrc.apiplatformdeskpro.repository.DeskproMessageFileAttachmentRepository
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -39,7 +39,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 class TicketService @Inject() (
     deskproConnector: DeskproConnector,
     personService: PersonService,
-    deskproResponseRepository: DeskproResponseRepository,
+    deskproMessageFileAttachmentRepository: DeskproMessageFileAttachmentRepository,
     config: AppConfig
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
@@ -82,21 +82,19 @@ class TicketService @Inject() (
     deskproConnector.batchFetchTicket(ticketId) map { response => DeskproTicket.build(response.responses.ticket, response.responses.messages, response.responses.attachments) }
   }
 
-  def createResponse(ticketId: Int, request: CreateTicketResponseRequest)(implicit hc: HeaderCarrier): Future[DeskproTicketResponseResult] = {
-    request.fileReference.fold(
-      createMessage(ticketId, request.userEmail, request.message, request.status)
-    )(fileRef => saveMessage(ticketId, request.userEmail, request.message, request.status, fileRef))
-  }
-
-  private def createMessage(ticketId: Int, userEmail: LaxEmailAddress, message: String, status: TicketStatus)(implicit hc: HeaderCarrier): Future[DeskproTicketResponseResult] = {
+  def createMessage(ticketId: Int, request: CreateTicketResponseRequest)(implicit hc: HeaderCarrier): Future[DeskproMessageResponse] = {
     for {
-      createResponseResult <- deskproConnector.createResponse(ticketId, userEmail.text, message)
-      _                    <- deskproConnector.updateTicketStatus(ticketId, status)
-    } yield createResponseResult
+      createResponseResult <- deskproConnector.createMessage(ticketId, request.userEmail.text, request.message)
+      _                    <- saveMessageFileDetails(ticketId, createResponseResult.data.id, request.fileReference)
+      _                    <- deskproConnector.updateTicketStatus(ticketId, request.status)
+    } yield createResponseResult.data
   }
 
-  private def saveMessage(ticketId: Int, userEmail: LaxEmailAddress, message: String, ticketStatus: TicketStatus, fileReference: String): Future[DeskproTicketResponseResult] = {
-    deskproResponseRepository.create(DeskproResponse(fileReference, ticketId, userEmail, message, ticketStatus)) map { result => DeskproTicketResponseSuccess }
+  private def saveMessageFileDetails(ticketId: Int, messageId: Int, fileReference: Option[String]): Future[Option[DeskproMessageFileAttachment]] = {
+    fileReference match {
+      case Some(fileRef) => deskproMessageFileAttachmentRepository.create(DeskproMessageFileAttachment(ticketId, messageId, fileRef)) map { resp => Some(resp) }
+      case _             => Future.successful(None)
+    }
   }
 
   def deleteTicket(ticketId: Int)(implicit hc: HeaderCarrier): Future[DeskproTicketUpdateResult] = {

@@ -56,23 +56,30 @@ class DeskproConnectorISpec
 
     val objInTest: DeskproConnector = app.injector.instanceOf[DeskproConnector]
 
-    val name            = "Bob Holness"
-    val email           = "bob@exmaple.com"
-    val subject         = "Subject of the ticket"
-    val message         = "This is where the message for the ticket goes"
-    val apiName         = "apiName"
-    val applicationId   = ApplicationId.random.toString()
-    val organisation    = "organisation"
-    val supportReason   = "supportReason"
-    val teamMemberEmail = "frank@example.com"
-    val brand           = 1
-    val fileName        = "README.md"
+    val name                 = "Bob Holness"
+    val email                = "bob@exmaple.com"
+    val subject              = "Subject of the ticket"
+    val message              = "This is where the message for the ticket goes"
+    val apiName              = "apiName"
+    val applicationId        = ApplicationId.random.toString()
+    val organisation         = "organisation"
+    val supportReason        = "supportReason"
+    val teamMemberEmail      = "frank@example.com"
+    val brand                = 1
+    val fileName             = "README.md"
+    val ticketId             = 3432
+    val messageId            = 789
+    val personId             = 1
+    val createdDate: Instant = LocalDateTime.parse("2020-01-02T03:04:05+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
 
     val fields: Map[String, String]                  = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "6" -> teamMemberEmail)
     val deskproPerson: DeskproPerson                 = DeskproPerson(name, email)
     val deskproPersonUpdate: DeskproPersonUpdate     = DeskproPersonUpdate(name)
     val deskproInactivePerson: DeskproInactivePerson = DeskproInactivePerson(Map("5" -> "1", "4" -> DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(now)))
     val deskproTicket: CreateDeskproTicket           = CreateDeskproTicket(deskproPerson, subject, DeskproTicketMessage(message, deskproPerson), brand, fields)
+
+    val messageResponse = DeskproMessageResponse(messageId, ticketId, personId, createdDate, 0, "message", List.empty)
+    val messageWrapper  = DeskproMessageWrapperResponse(messageResponse)
   }
 
   "deskproConnector" when {
@@ -133,7 +140,6 @@ class DeskproConnectorISpec
 
     "updatePerson" should {
       "return DeskproPersonUpdateSuccess when 204 returned from deskpro" in new Setup {
-        val personId: Int = 1
         UpdatePerson.stubSuccess(personId, deskproPersonUpdate)
 
         val result: DeskproPersonUpdateResult = await(objInTest.updatePerson(personId, deskproPerson.name))
@@ -141,7 +147,6 @@ class DeskproConnectorISpec
       }
 
       "return DeskproPersonUpdateFailure returned in response body when 400" in new Setup {
-        val personId: Int = 1
         UpdatePerson.stubBadRequest(personId)
 
         val result: DeskproPersonUpdateResult = await(objInTest.updatePerson(personId, deskproPerson.name))
@@ -149,7 +154,6 @@ class DeskproConnectorISpec
       }
 
       "return DeskproPersonUpdateFailure when 500 returned from deskpro" in new Setup {
-        val personId: Int = 1
         UpdatePerson.stubInternalServerError(personId)
 
         val error: DeskproPersonUpdateResult = await(objInTest.updatePerson(personId, deskproPerson.name))
@@ -159,7 +163,6 @@ class DeskproConnectorISpec
 
     "markPersonInactive" should {
       "return DeskproPersonUpdateSuccess when 204 returned from deskpro" in new Setup {
-        val personId: Int = 1
         MarkPersonInactive.stubSuccess(personId, deskproInactivePerson)
 
         val result: DeskproPersonUpdateResult = await(objInTest.markPersonInactive(personId))
@@ -167,7 +170,6 @@ class DeskproConnectorISpec
       }
 
       "return DeskproPersonUpdateFailure returned in response body when 400" in new Setup {
-        val personId: Int = 1
         MarkPersonInactive.stubBadRequest(personId)
 
         val result: DeskproPersonUpdateResult = await(objInTest.markPersonInactive(personId))
@@ -175,7 +177,6 @@ class DeskproConnectorISpec
       }
 
       "return DeskproPersonUpdateFailure when 500 returned from deskpro" in new Setup {
-        val personId: Int = 1
         MarkPersonInactive.stubInternalServerError(personId)
 
         val error: DeskproPersonUpdateResult = await(objInTest.markPersonInactive(personId))
@@ -309,7 +310,6 @@ class DeskproConnectorISpec
 
   "getTicketsForPersonId" should {
     "return DeskproTicketsWrapperResponse when 200 returned from deskpro with response body with status" in new Setup {
-      val personId: Int         = 61
       val status                = Some("resolved")
       val createdDate1: Instant = LocalDateTime.parse("2025-05-01T08:02:02+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
       val statusDate1: Instant  = LocalDateTime.parse("2025-05-20T07:24:41+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
@@ -351,7 +351,6 @@ class DeskproConnectorISpec
     }
 
     "return DeskproTicketsWrapperResponse when 200 returned from deskpro with response body with no status" in new Setup {
-      val personId: Int         = 61
       val status                = None
       val createdDate1: Instant = LocalDateTime.parse("2025-05-01T08:02:02+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
       val statusDate1: Instant  = LocalDateTime.parse("2025-05-20T07:24:41+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
@@ -395,7 +394,6 @@ class DeskproConnectorISpec
 
   "fetchTicket" should {
     "return DeskproTicketWrapperResponse when 200 returned from deskpro with response body" in new Setup {
-      val ticketId: Int         = 3432
       val createdDate1: Instant = LocalDateTime.parse("2025-05-01T08:02:02+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
       val statusDate1: Instant  = LocalDateTime.parse("2025-05-20T07:24:41+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
 
@@ -421,7 +419,6 @@ class DeskproConnectorISpec
     }
 
     "return None if not found" in new Setup {
-      val ticketId: Int = 3432
 
       FetchTicket.stubFailure(ticketId)
 
@@ -433,7 +430,6 @@ class DeskproConnectorISpec
 
   "batchFetchTicket" should {
     "return BatchResponse when 200 returned from deskpro with response body" in new Setup {
-      val ticketId: Int         = 3432
       val createdDate1: Instant = LocalDateTime.parse("2025-05-01T08:02:02+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
       val createdDate2: Instant = LocalDateTime.parse("2025-05-19T11:54:53+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
       val statusDate1: Instant  = LocalDateTime.parse("2025-05-20T07:24:41+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
@@ -464,8 +460,6 @@ class DeskproConnectorISpec
     }
 
     "return empty response if not found" in new Setup {
-      val ticketId: Int = 3432
-
       BatchFetchTicket.stubFailure(ticketId)
 
       val result = await(objInTest.batchFetchTicket(ticketId))
@@ -483,8 +477,6 @@ class DeskproConnectorISpec
 
   "closeTicket" should {
     "return DeskproTicketCloseSuccess when 200 returned from deskpro" in new Setup {
-      val ticketId: Int = 3432
-
       CloseTicket.stubSuccess(ticketId)
 
       val result = await(objInTest.updateTicketStatus(ticketId, TicketStatus.Resolved))
@@ -493,8 +485,6 @@ class DeskproConnectorISpec
     }
 
     "return DeskproTicketCloseNotFound if ticket not found" in new Setup {
-      val ticketId: Int = 3432
-
       CloseTicket.stubNotFound(ticketId)
 
       val result = await(objInTest.updateTicketStatus(ticketId, TicketStatus.Resolved))
@@ -503,8 +493,6 @@ class DeskproConnectorISpec
     }
 
     "return DeskproTicketCloseFailure if ticket not found" in new Setup {
-      val ticketId: Int = 3432
-
       CloseTicket.stubFailure(ticketId)
 
       val result = await(objInTest.updateTicketStatus(ticketId, TicketStatus.Resolved))
@@ -513,44 +501,35 @@ class DeskproConnectorISpec
     }
   }
 
-  "createResponse" should {
-    "return DeskproTicketResponseSuccess when 200 returned from deskpro" in new Setup {
-      val ticketId: Int = 3432
-      val response      = "response"
+  "createMessage" should {
+    "return DeskproMessageWrapperResponse when 200 returned from deskpro" in new Setup {
 
-      CreateResponse.stubSuccess(ticketId, email, response)
+      CreateMessage.stubSuccess(ticketId, email, "message")
 
-      val result = await(objInTest.createResponse(ticketId, email, response))
+      val result = await(objInTest.createMessage(ticketId, email, "message"))
 
-      result shouldBe DeskproTicketResponseSuccess
+      result shouldBe messageWrapper
     }
 
     "return DeskproTicketResponseNotFound if ticket not found" in new Setup {
-      val ticketId: Int = 3432
-      val response      = "response"
+      CreateMessage.stubNotFound(ticketId, email, "message")
 
-      CreateResponse.stubNotFound(ticketId, email, response)
-
-      val result = await(objInTest.createResponse(ticketId, email, response))
-
-      result shouldBe DeskproTicketResponseNotFound
+      intercept[UpstreamErrorResponse] {
+        await(objInTest.createMessage(ticketId, email, "message"))
+      }
     }
 
     "return DeskproTicketResponseFailure if ticket not found" in new Setup {
-      val ticketId: Int = 3432
-      val response      = "response"
+      CreateMessage.stubFailure(ticketId, email, "message")
 
-      CreateResponse.stubFailure(ticketId, email, response)
-
-      val result = await(objInTest.createResponse(ticketId, email, response))
-
-      result shouldBe DeskproTicketResponseFailure
+      intercept[UpstreamErrorResponse] {
+        await(objInTest.createMessage(ticketId, email, "message"))
+      }
     }
   }
 
   "getTicketMessages" should {
     "return DeskproMessagesWrapperResponse when 200 returned from deskpro with response body" in new Setup {
-      val ticketId: Int         = 3432
       val createdDate1: Instant = LocalDateTime.parse("2025-05-01T08:02:02+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
       val createdDate2: Instant = LocalDateTime.parse("2025-05-19T11:54:53+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
 
@@ -587,8 +566,6 @@ class DeskproConnectorISpec
 
   "deleteTicket" should {
     "return DeskproTicketUpdateSuccess when 200 returned from deskpro" in new Setup {
-      val ticketId: Int = 3432
-
       DeleteTicket.stubSuccess(ticketId)
 
       val result = await(objInTest.deleteTicket(ticketId))
@@ -597,8 +574,6 @@ class DeskproConnectorISpec
     }
 
     "return DeskproTicketCloseNotFound if ticket not found" in new Setup {
-      val ticketId: Int = 3432
-
       DeleteTicket.stubNotFound(ticketId)
 
       val result = await(objInTest.deleteTicket(ticketId))
@@ -607,8 +582,6 @@ class DeskproConnectorISpec
     }
 
     "return DeskproTicketUpdateFailure if error" in new Setup {
-      val ticketId: Int = 3432
-
       DeleteTicket.stubFailure(ticketId)
 
       val result = await(objInTest.deleteTicket(ticketId))
@@ -645,8 +618,7 @@ class DeskproConnectorISpec
 
   "createMessageWithAttachment" should {
     "return DeskproTicketResponseSuccess when 200 returned from deskpro" in new Setup {
-      val ticketId: Int = 3432
-      val response      = "response"
+      val response = "response"
 
       CreateMessageWithAttachment.stubSuccess(ticketId, email, response)
 
@@ -656,8 +628,7 @@ class DeskproConnectorISpec
     }
 
     "return DeskproTicketResponseNotFound if ticket not found" in new Setup {
-      val ticketId: Int = 3432
-      val response      = "response"
+      val response = "response"
 
       CreateMessageWithAttachment.stubNotFound(ticketId, email, response)
 
@@ -667,8 +638,7 @@ class DeskproConnectorISpec
     }
 
     "return DeskproTicketResponseFailure if ticket not found" in new Setup {
-      val ticketId: Int = 3432
-      val response      = "response"
+      val response = "response"
 
       CreateMessageWithAttachment.stubFailure(ticketId, email, response)
 

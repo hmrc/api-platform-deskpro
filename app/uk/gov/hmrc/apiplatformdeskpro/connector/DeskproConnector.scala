@@ -252,26 +252,13 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
       )
   }
 
-  def createResponse(ticketId: Int, userEmail: String, message: String)(implicit hc: HeaderCarrier): Future[DeskproTicketResponseResult] = metrics.record(api) {
+  def createMessage(ticketId: Int, userEmail: String, message: String)(implicit hc: HeaderCarrier): Future[DeskproMessageWrapperResponse] = metrics.record(api) {
     http
       .post(url"${requestUrl(s"/api/v2/tickets/$ticketId/messages")}")
       .withProxy
       .withBody(Json.toJson(CreateResponseRequest.fromRaw(userEmail, message)))
       .setHeader(AUTHORIZATION -> config.deskproApiKey)
-      .execute[HttpResponse]
-      .map(response =>
-        response.status match {
-          case CREATED   =>
-            logger.info(s"Created response for Deskpro ticket '$ticketId' successfully")
-            DeskproTicketResponseSuccess
-          case NOT_FOUND =>
-            logger.warn(s"Failed to created response for Deskpro ticket '$ticketId. Ticket not found")
-            DeskproTicketResponseNotFound
-          case _         =>
-            logger.error(s"Failed to created response for Deskpro ticket '$ticketId. Status: ${response.status}")
-            DeskproTicketResponseFailure
-        }
-      )
+      .execute[DeskproMessageWrapperResponse]
   }
 
   def getTicketMessages(ticketId: Int, orderBy: String = "date_created", orderDir: String = "desc", pageWanted: Int = 1)(implicit hc: HeaderCarrier)

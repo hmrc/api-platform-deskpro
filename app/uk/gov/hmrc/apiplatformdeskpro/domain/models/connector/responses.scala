@@ -127,6 +127,12 @@ object DeskproMessageResponse {
   implicit val reads: Reads[DeskproMessageResponse] = Json.reads[DeskproMessageResponse]
 }
 
+case class DeskproMessageWrapperResponse(data: DeskproMessageResponse)
+
+object DeskproMessageWrapperResponse {
+  implicit val reads: Reads[DeskproMessageWrapperResponse] = Json.reads[DeskproMessageWrapperResponse]
+}
+
 case class DeskproMessagesWrapperResponse(data: List[DeskproMessageResponse])
 
 object DeskproMessagesWrapperResponse {

@@ -3,7 +3,7 @@
 POST    /ticket                          uk.gov.hmrc.apiplatformdeskpro.controller.CreateTicketController.createTicket()
 POST    /ticket/query                    uk.gov.hmrc.apiplatformdeskpro.controller.TicketController.getTicketsByPersonEmail()
 GET     /ticket/:tid                     uk.gov.hmrc.apiplatformdeskpro.controller.TicketController.fetchTicket(tid: Int)
-POST    /ticket/:tid/response            uk.gov.hmrc.apiplatformdeskpro.controller.TicketController.createResponse(tid: Int)
+POST    /ticket/:tid/response            uk.gov.hmrc.apiplatformdeskpro.controller.TicketController.createMessage(tid: Int)
 POST    /ticket/:tid/attachment          uk.gov.hmrc.apiplatformdeskpro.controller.TicketController.addAttachment(tid: Int)
 
 GET     /organisation/:orgId             uk.gov.hmrc.apiplatformdeskpro.controller.OrganisationController.getOrganisation(orgId: uk.gov.hmrc.apiplatformdeskpro.domain.models.OrganisationId)

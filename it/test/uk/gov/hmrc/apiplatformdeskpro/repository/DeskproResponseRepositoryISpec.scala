@@ -23,42 +23,39 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.testkit.NoMaterializer
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.TicketStatus
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.DeskproResponse
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.DeskproMessageFileAttachment
 import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
 class DeskproResponseRepositoryISpec extends AsyncHmrcSpec
     with GuiceOneAppPerSuite
-    with DefaultPlayMongoRepositorySupport[DeskproResponse]
+    with DefaultPlayMongoRepositorySupport[DeskproMessageFileAttachment]
     with FixedClock {
 
   implicit val materializer: Materializer = NoMaterializer
 
-  private val deskproResponseRepository                                   = new DeskproResponseRepository(mongoComponent, FixedClock.clock)
-  override protected val repository: PlayMongoRepository[DeskproResponse] = deskproResponseRepository
+  private val deskproResponseRepository                                                = new DeskproMessageFileAttachmentRepository(mongoComponent, FixedClock.clock)
+  override protected val repository: PlayMongoRepository[DeskproMessageFileAttachment] = deskproResponseRepository
 
   trait Setup {
     val fileReference = "fileRef"
     val ticketId      = 3281
-    val email         = LaxEmailAddress("bob@example.com")
-    val message       = "message"
+    val messageId     = 789
   }
 
   "DeskproResponseRepository" when {
     "saveResponse" should {
       "save the response successfully" in new Setup {
-        val response = DeskproResponse(fileReference, ticketId, email, message, TicketStatus.AwaitingAgent)
+        val response = DeskproMessageFileAttachment(ticketId, messageId, fileReference)
         val result   = await(deskproResponseRepository.create(response))
         result shouldBe response
       }
 
       "not save duplicates" in new Setup {
-        val response = DeskproResponse(fileReference, ticketId, email, message, TicketStatus.AwaitingAgent)
+        val response = DeskproMessageFileAttachment(ticketId, messageId, fileReference)
         await(deskproResponseRepository.create(response))
 
         intercept[MongoWriteException] {
@@ -69,7 +66,7 @@ class DeskproResponseRepositoryISpec extends AsyncHmrcSpec
 
     "fetchByFileReference" should {
       "find response when exists in db" in new Setup {
-        val response = DeskproResponse(fileReference, ticketId, email, message, TicketStatus.AwaitingAgent)
+        val response = DeskproMessageFileAttachment(ticketId, messageId, fileReference)
         await(deskproResponseRepository.create(response))
 
         await(deskproResponseRepository.fetchByFileReference(fileReference)) shouldBe Some(response)

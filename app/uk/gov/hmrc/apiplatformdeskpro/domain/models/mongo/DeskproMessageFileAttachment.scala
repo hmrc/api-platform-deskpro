@@ -17,12 +17,9 @@
 package uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo
 
 import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.TicketStatus
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+case class DeskproMessageFileAttachment(ticketId: Int, messageId: Int, fileReference: String)
 
-case class DeskproResponse(fileReference: String, ticketId: Int, userEmail: LaxEmailAddress, message: String, ticketStatus: TicketStatus)
-
-object DeskproResponse {
-  implicit val format: OFormat[DeskproResponse] = Json.format[DeskproResponse]
+object DeskproMessageFileAttachment {
+  implicit val format: OFormat[DeskproMessageFileAttachment] = Json.format[DeskproMessageFileAttachment]
 }

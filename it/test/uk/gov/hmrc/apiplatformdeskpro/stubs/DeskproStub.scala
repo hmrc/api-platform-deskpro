@@ -969,7 +969,7 @@ trait DeskproStub {
                        |      "priority": null,
                        |      "workflow": null,
                        |      "product": null,
-                       |      "person": 61,
+                       |      "person": 1,
                        |      "person_email": "bob@example.com",
                        |      "agent": 61,
                        |      "agent_team": 8,
@@ -1071,7 +1071,7 @@ trait DeskproStub {
                        |      "priority": null,
                        |      "workflow": null,
                        |      "product": null,
-                       |      "person": 61,
+                       |      "person": 1,
                        |      "person_email": "bob@example.com",
                        |      "agent": null,
                        |      "agent_team": null,
@@ -1703,7 +1703,7 @@ trait DeskproStub {
     }
   }
 
-  object CreateResponse {
+  object CreateMessage {
 
     def stubSuccess(ticketId: Int, userEmail: String, message: String) = {
       stubFor(
@@ -1714,6 +1714,46 @@ trait DeskproStub {
                                           |}""".stripMargin))
           .willReturn(
             aResponse()
+              .withBody("""{
+                          |  "data": { 
+                          |    "id": 789,
+                          |    "ticket": 3432,
+                          |    "person": 1,
+                          |    "email_source": null,
+                          |    "attributes": [
+                          |      {
+                          |        "name": "agent_type",
+                          |        "value": "agent",
+                          |        "date_created": "2025-05-01T08:02:02+0000",
+                          |        "type": "value"
+                          |      },
+                          |      {
+                          |        "name": "email_recipients",
+                          |        "value": "[{\"type\":\"to\",\"address\":\"pete.kirby@digital.hmrc.gov.uk\"}]",
+                          |        "date_created": "2025-05-01T08:02:02+0000",
+                          |        "type": "value"
+                          |      }
+                          |    ],
+                          |    "attachments": [],
+                          |    "date_created": "2020-01-02T03:04:05+0000",
+                          |    "is_agent_note": 0,
+                          |    "creation_system": "web.api",
+                          |    "ip_address": "",
+                          |    "visitor_id": null,
+                          |    "hostname": "",
+                          |    "email": "",
+                          |    "message_hash": "7fe219f88a4ed6bd2b7b8f6c6bc1712e6d0d5a70",
+                          |    "primary_translation": null,
+                          |    "message": "message",
+                          |    "message_full": "",
+                          |    "message_raw": null,
+                          |    "message_preview_text": "Hi. What API do I need to get next weeks lottery numbers?",
+                          |    "show_full_hint": false,
+                          |    "lang_code": null
+                          |  },
+                          |  "meta": {},
+                          |  "linked": {}
+                          |}""".stripMargin)
               .withStatus(CREATED)
           )
       )
