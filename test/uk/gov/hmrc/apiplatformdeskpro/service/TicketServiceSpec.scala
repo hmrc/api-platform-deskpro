@@ -73,7 +73,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
     val messageResponse = DeskproMessageResponse(messageId, ticketId, personId, instant, 0, "message", List.empty)
     val messageWrapper  = DeskproMessageWrapperResponse(messageResponse)
 
-    val underTest = new TicketService(mockDeskproConnector, mockPersonService, mockMessageFileAttachmentRepo, mockAppConfig)
+    val underTest = new TicketService(mockDeskproConnector, mockPersonService, mockMessageFileAttachmentRepo, mockAppConfig, clock)
   }
 
   "submitTicket" should {
@@ -318,7 +318,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
     "return DeskproTicketResponseSuccess and save response when fileReference is present" in new Setup {
       when(mockDeskproConnector.createMessage(*, *, *)(*)).thenReturn(Future.successful(messageWrapper))
       when(mockDeskproConnector.updateTicketStatus(*, *)(*)).thenReturn(Future.successful(DeskproTicketUpdateSuccess))
-      val response = DeskproMessageFileAttachment(ticketId, messageId, fileReference)
+      val response = DeskproMessageFileAttachment(ticketId, messageId, fileReference, instant)
       when(mockMessageFileAttachmentRepo.create(*)).thenReturn(Future.successful(response))
 
       val result = await(underTest.createMessage(ticketId, CreateTicketResponseRequest(email, message, TicketStatus.AwaitingAgent, Some(fileReference))))

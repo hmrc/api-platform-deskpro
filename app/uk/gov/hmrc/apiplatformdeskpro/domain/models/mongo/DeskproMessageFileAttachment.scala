@@ -16,10 +16,14 @@
 
 package uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo
 
-import play.api.libs.json.{Json, OFormat}
+import java.time.Instant
 
-case class DeskproMessageFileAttachment(ticketId: Int, messageId: Int, fileReference: String)
+import play.api.libs.json.{Format, Json, OFormat}
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+
+case class DeskproMessageFileAttachment(ticketId: Int, messageId: Int, fileReference: String, createdAt: Instant)
 
 object DeskproMessageFileAttachment {
+  implicit val formatInstant: Format[Instant]                = MongoJavatimeFormats.instantFormat
   implicit val format: OFormat[DeskproMessageFileAttachment] = Json.format[DeskproMessageFileAttachment]
 }

@@ -30,15 +30,15 @@ import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
-class DeskproResponseRepositoryISpec extends AsyncHmrcSpec
+class DeskproMessageFileAttachmentRepositoryISpec extends AsyncHmrcSpec
     with GuiceOneAppPerSuite
     with DefaultPlayMongoRepositorySupport[DeskproMessageFileAttachment]
     with FixedClock {
 
   implicit val materializer: Materializer = NoMaterializer
 
-  private val deskproResponseRepository                                                = new DeskproMessageFileAttachmentRepository(mongoComponent, FixedClock.clock)
-  override protected val repository: PlayMongoRepository[DeskproMessageFileAttachment] = deskproResponseRepository
+  private val messageFileAttachmentRepo                                                = new DeskproMessageFileAttachmentRepository(mongoComponent, FixedClock.clock)
+  override protected val repository: PlayMongoRepository[DeskproMessageFileAttachment] = messageFileAttachmentRepo
 
   trait Setup {
     val fileReference = "fileRef"
@@ -46,34 +46,34 @@ class DeskproResponseRepositoryISpec extends AsyncHmrcSpec
     val messageId     = 789
   }
 
-  "DeskproResponseRepository" when {
-    "saveResponse" should {
-      "save the response successfully" in new Setup {
-        val response = DeskproMessageFileAttachment(ticketId, messageId, fileReference)
-        val result   = await(deskproResponseRepository.create(response))
+  "DeskproMessageFileAttachmentRepository" when {
+    "create" should {
+      "save the DeskproMessageFileAttachment successfully" in new Setup {
+        val response = DeskproMessageFileAttachment(ticketId, messageId, fileReference, instant)
+        val result   = await(messageFileAttachmentRepo.create(response))
         result shouldBe response
       }
 
       "not save duplicates" in new Setup {
-        val response = DeskproMessageFileAttachment(ticketId, messageId, fileReference)
-        await(deskproResponseRepository.create(response))
+        val response = DeskproMessageFileAttachment(ticketId, messageId, fileReference, instant)
+        await(messageFileAttachmentRepo.create(response))
 
         intercept[MongoWriteException] {
-          await(deskproResponseRepository.create(response))
+          await(messageFileAttachmentRepo.create(response))
         }
       }
     }
 
     "fetchByFileReference" should {
-      "find response when exists in db" in new Setup {
-        val response = DeskproMessageFileAttachment(ticketId, messageId, fileReference)
-        await(deskproResponseRepository.create(response))
+      "find DeskproMessageFileAttachment when exists in db" in new Setup {
+        val response = DeskproMessageFileAttachment(ticketId, messageId, fileReference, instant)
+        await(messageFileAttachmentRepo.create(response))
 
-        await(deskproResponseRepository.fetchByFileReference(fileReference)) shouldBe Some(response)
+        await(messageFileAttachmentRepo.fetchByFileReference(fileReference)) shouldBe Some(response)
       }
 
-      "not find response not in db" in new Setup {
-        await(deskproResponseRepository.fetchByFileReference(fileReference)) shouldBe None
+      "not find DeskproMessageFileAttachment not in db" in new Setup {
+        await(messageFileAttachmentRepo.fetchByFileReference(fileReference)) shouldBe None
       }
     }
   }

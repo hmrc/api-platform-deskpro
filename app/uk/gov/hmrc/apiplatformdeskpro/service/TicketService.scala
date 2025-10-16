@@ -17,6 +17,7 @@
 package uk.gov.hmrc.apiplatformdeskpro.service
 
 import java.nio.file.Paths
+import java.time.Clock
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -34,15 +35,17 @@ import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 
 @Singleton
 class TicketService @Inject() (
     deskproConnector: DeskproConnector,
     personService: PersonService,
     deskproMessageFileAttachmentRepository: DeskproMessageFileAttachmentRepository,
-    config: AppConfig
+    config: AppConfig,
+    val clock: Clock
   )(implicit val ec: ExecutionContext
-  ) extends ApplicationLogger {
+  ) extends ApplicationLogger with ClockNow {
 
   def submitTicket(createTicketRequest: CreateTicketRequest)(implicit hc: HeaderCarrier): Future[Either[DeskproTicketCreationFailed, DeskproTicketCreated]] = {
 
@@ -92,7 +95,7 @@ class TicketService @Inject() (
 
   private def saveMessageFileDetails(ticketId: Int, messageId: Int, fileReference: Option[String]): Future[Option[DeskproMessageFileAttachment]] = {
     fileReference match {
-      case Some(fileRef) => deskproMessageFileAttachmentRepository.create(DeskproMessageFileAttachment(ticketId, messageId, fileRef)) map { resp => Some(resp) }
+      case Some(fileRef) => deskproMessageFileAttachmentRepository.create(DeskproMessageFileAttachment(ticketId, messageId, fileRef, instant())) map { resp => Some(resp) }
       case _             => Future.successful(None)
     }
   }

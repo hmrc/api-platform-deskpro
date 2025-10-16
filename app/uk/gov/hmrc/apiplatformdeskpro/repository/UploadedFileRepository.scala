@@ -25,7 +25,7 @@ import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
 
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.DeskproMessageFileAttachment
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.UploadedFile
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
@@ -34,31 +34,17 @@ import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 
 @Singleton
-class DeskproMessageFileAttachmentRepository @Inject() (mongo: MongoComponent, val clock: Clock)(implicit val ec: ExecutionContext)
-    extends PlayMongoRepository[DeskproMessageFileAttachment](
-      collectionName = "deskproMessageFileAttachment",
+class UploadedFileRepository @Inject() (mongo: MongoComponent, val clock: Clock)(implicit val ec: ExecutionContext)
+    extends PlayMongoRepository[UploadedFile](
+      collectionName = "uploadedFile",
       mongoComponent = mongo,
-      domainFormat = DeskproMessageFileAttachment.format,
+      domainFormat = UploadedFile.format,
       indexes = Seq(
         IndexModel(
           ascending("fileReference"),
           IndexOptions()
             .name("fileReferenceIndex")
             .unique(true)
-            .background(true)
-        ),
-        IndexModel(
-          ascending("ticketId"),
-          IndexOptions()
-            .name("ticketIdIndex")
-            .unique(false)
-            .background(true)
-        ),
-        IndexModel(
-          ascending("messageId"),
-          IndexOptions()
-            .name("messageIdIndex")
-            .unique(false)
             .background(true)
         ),
         IndexModel(
@@ -76,11 +62,11 @@ class DeskproMessageFileAttachmentRepository @Inject() (mongo: MongoComponent, v
 
   override lazy val requiresTtlIndex: Boolean = true
 
-  def create(response: DeskproMessageFileAttachment): Future[DeskproMessageFileAttachment] = {
+  def create(response: UploadedFile): Future[UploadedFile] = {
     collection.insertOne(response).toFuture().map(_ => response)
   }
 
-  def fetchByFileReference(fileReference: String): Future[Option[DeskproMessageFileAttachment]] = {
+  def fetchByFileReference(fileReference: String): Future[Option[UploadedFile]] = {
     collection.find(equal("fileReference", fileReference)).headOption()
   }
 }

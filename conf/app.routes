@@ -11,3 +11,5 @@ POST    /organisation/query              uk.gov.hmrc.apiplatformdeskpro.controll
 
 PUT     /person                          uk.gov.hmrc.apiplatformdeskpro.controller.PersonController.updatePersonByEmail()
 POST    /person/mark-inactive            uk.gov.hmrc.apiplatformdeskpro.controller.PersonController.markPersonInactive()
+
+POST    /upscan-callback                 uk.gov.hmrc.apiplatformdeskpro.controller.UpscanCallbackController.callback()
