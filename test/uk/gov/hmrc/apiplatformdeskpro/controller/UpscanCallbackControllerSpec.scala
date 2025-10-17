@@ -45,7 +45,7 @@ class UpscanCallbackControllerSpec extends AsyncHmrcSpec with StubControllerComp
 
     val fileReference = "507e60b3-0ee1-411f-9c6e-7261455056c3"
     val url           = new URL("https://example.com/file1")
-    val uploadStatus  = UploadStatus.UploadedSuccessfully("filename.txt", "text/plain", url, 1000, Some(BlobDetails(1234, "auth")))
+    val uploadStatus  = UploadStatus.UploadedSuccessfully("filename.txt", "text/plain", url, 1000, BlobDetails(1234, "auth"))
     val uploadedFile  = UploadedFile(fileReference, uploadStatus, instant)
 
     val callbackReadyRequestJson = Json.parse(

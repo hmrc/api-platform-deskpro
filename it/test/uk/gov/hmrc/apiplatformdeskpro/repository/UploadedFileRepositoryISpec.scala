@@ -43,7 +43,7 @@ class UploadedFileRepositoryISpec extends AsyncHmrcSpec
 
   trait Setup {
     val fileReference = "fileRef"
-    val uploadStatus  = UploadStatus.UploadedSuccessfully("name", "text/plain", new URL("https://example/com/callback"), 100, Some(BlobDetails(1234, "auth")))
+    val uploadStatus  = UploadStatus.UploadedSuccessfully("name", "text/plain", new URL("https://example/com/callback"), 100, BlobDetails(1234, "auth"))
     val messageId     = 789
   }
 

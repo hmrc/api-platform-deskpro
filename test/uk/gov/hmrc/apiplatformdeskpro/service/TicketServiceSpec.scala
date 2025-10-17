@@ -78,7 +78,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
 
     val blobId       = 1234
     val blobAuth     = "auth"
-    val uploadStatus = UploadedSuccessfully("fileName", "text/plain", new URL("https://example.com/file1"), 1000, Some(BlobDetails(blobId, blobAuth)))
+    val uploadStatus = UploadedSuccessfully("fileName", "text/plain", new URL("https://example.com/file1"), 1000, BlobDetails(blobId, blobAuth))
     val uploadedFile = UploadedFile(fileReference, uploadStatus, instant)
 
     val underTest = new TicketService(mockDeskproConnector, mockPersonService, mockMessageFileAttachmentRepo, mockUploadedFileRepo, mockAppConfig, clock)

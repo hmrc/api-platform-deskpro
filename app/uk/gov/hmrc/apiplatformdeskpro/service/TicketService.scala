@@ -109,7 +109,7 @@ class TicketService @Inject() (
     maybeUploadedFile match {
       case Some(uploadedFile) =>
         uploadedFile.uploadStatus match {
-          case success: UploadedSuccessfully => success.blobDetails
+          case success: UploadedSuccessfully => Some(success.blobDetails)
           case _                             => None
         }
       case _                  => None

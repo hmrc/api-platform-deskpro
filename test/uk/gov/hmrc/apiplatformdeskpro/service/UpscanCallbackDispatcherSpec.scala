@@ -49,7 +49,7 @@ class UpscanCallbackDispatcherSpec extends AsyncHmrcSpec with FixedClock {
     val errorDetails   = ErrorDetails("failureReason", "message")
     val callbackFailed = FailedCallbackBody(fileReference, errorDetails)
 
-    val uploadSuccess   = UploadStatus.UploadedSuccessfully("filename", "text/plain", url, 1000, Some(BlobDetails(1234, "auth")))
+    val uploadSuccess   = UploadStatus.UploadedSuccessfully("filename", "text/plain", url, 1000, BlobDetails(1234, "auth"))
     val uploadedSuccess = UploadedFile(fileReference.value, uploadSuccess, instant)
     val uploadFailed    = UploadStatus.Failed("message", "failureReason")
     val uploadedFailed  = UploadedFile(fileReference.value, uploadFailed, instant)

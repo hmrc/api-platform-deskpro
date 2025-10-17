@@ -41,7 +41,7 @@ object UploadStatus {
       mimeType: String,
       downloadUrl: URL,
       size: Long,
-      blobDetails: Option[BlobDetails]
+      blobDetails: BlobDetails
     ) extends UploadStatus
 
   import uk.gov.hmrc.play.json.Union
