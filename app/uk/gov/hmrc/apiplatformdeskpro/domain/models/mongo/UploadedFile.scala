@@ -40,7 +40,8 @@ object UploadStatus {
       name: String,
       mimeType: String,
       downloadUrl: URL,
-      size: Long
+      size: Long,
+      blobDetails: Option[BlobDetails]
     ) extends UploadStatus
 
   import uk.gov.hmrc.play.json.Union
@@ -56,6 +57,12 @@ object UploadStatus {
     .and[Failed]("Failed")
     .and[UploadedSuccessfully]("UploadedSuccessfully")
     .format
+}
+
+case class BlobDetails(blobId: Int, blobAuth: String)
+
+object BlobDetails {
+  implicit val format: OFormat[BlobDetails] = Json.format[BlobDetails]
 }
 
 case class UploadedFile(fileReference: String, uploadStatus: UploadStatus, createdAt: Instant)

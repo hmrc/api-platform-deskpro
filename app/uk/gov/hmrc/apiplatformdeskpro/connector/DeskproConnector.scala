@@ -252,15 +252,6 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
       )
   }
 
-  def createMessage(ticketId: Int, userEmail: String, message: String)(implicit hc: HeaderCarrier): Future[DeskproMessageWrapperResponse] = metrics.record(api) {
-    http
-      .post(url"${requestUrl(s"/api/v2/tickets/$ticketId/messages")}")
-      .withProxy
-      .withBody(Json.toJson(CreateResponseRequest.fromRaw(userEmail, message)))
-      .setHeader(AUTHORIZATION -> config.deskproApiKey)
-      .execute[DeskproMessageWrapperResponse]
-  }
-
   def getTicketMessages(ticketId: Int, orderBy: String = "date_created", orderDir: String = "desc", pageWanted: Int = 1)(implicit hc: HeaderCarrier)
       : Future[DeskproMessagesWrapperResponse] = metrics.record(api) {
     val queryParams = Seq("count" -> 200, "page" -> pageWanted, "order_by" -> orderBy, "order_dir" -> orderDir)
@@ -309,7 +300,17 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
     }
   }
 
-  def createMessageWithAttachment(ticketId: Int, userEmail: String, message: String, blobId: Int, blobAuth: String)(implicit hc: HeaderCarrier): Future[DeskproTicketResponseResult] =
+  def createMessage(ticketId: Int, userEmail: String, message: String)(implicit hc: HeaderCarrier): Future[DeskproCreateMessageWrapperResponse] = metrics.record(api) {
+    http
+      .post(url"${requestUrl(s"/api/v2/tickets/$ticketId/messages")}")
+      .withProxy
+      .withBody(Json.toJson(CreateResponseRequest.fromRaw(userEmail, message)))
+      .setHeader(AUTHORIZATION -> config.deskproApiKey)
+      .execute[DeskproCreateMessageWrapperResponse]
+  }
+
+  def createMessageWithAttachment(ticketId: Int, userEmail: String, message: String, blobId: Int, blobAuth: String)(implicit hc: HeaderCarrier)
+      : Future[DeskproCreateMessageWrapperResponse] =
     metrics.record(api) {
       val attachment     = AttachmentRequest(blobAuth)
       val messageRequest = CreateMessageRequest(message, userEmail, Map(blobId.toString() -> attachment))
@@ -319,20 +320,7 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
         .withProxy
         .withBody(Json.toJson(messageRequest))
         .setHeader(AUTHORIZATION -> config.deskproApiKey)
-        .execute[HttpResponse]
-        .map(response =>
-          response.status match {
-            case CREATED   =>
-              logger.info(s"Created message for Deskpro ticket '$ticketId' successfully")
-              DeskproTicketResponseSuccess
-            case NOT_FOUND =>
-              logger.warn(s"Failed to create message for Deskpro ticket '$ticketId. Ticket not found")
-              DeskproTicketResponseNotFound
-            case _         =>
-              logger.error(s"Failed to create message for Deskpro ticket '$ticketId. Status: ${response.status}")
-              DeskproTicketResponseFailure
-          }
-        )
+        .execute[DeskproCreateMessageWrapperResponse]
     }
 
   private def requestUrl[B, A](uri: String): String = s"$serviceBaseUrl$uri"

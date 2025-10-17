@@ -16,21 +16,24 @@
 
 package uk.gov.hmrc.apiplatformdeskpro.service
 
-import java.nio.file.Paths
 import java.time.Clock
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import org.apache.pekko.stream.scaladsl.{FileIO, Source}
-import org.apache.pekko.util.ByteString
-
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.connector.DeskproConnector
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{CreateDeskproTicket, DeskproMessageResponse, DeskproTicketCreated, DeskproTicketMessage}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{
+  CreateDeskproTicket,
+  DeskproCreateMessageResponse,
+  DeskproCreateMessageWrapperResponse,
+  DeskproTicketCreated,
+  DeskproTicketMessage
+}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.CreateTicketResponseRequest
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.DeskproMessageFileAttachment
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.UploadStatus.UploadedSuccessfully
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.{BlobDetails, DeskproMessageFileAttachment, UploadedFile}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.{CreateTicketRequest, DeskproTicketCreationFailed, _}
-import uk.gov.hmrc.apiplatformdeskpro.repository.DeskproMessageFileAttachmentRepository
+import uk.gov.hmrc.apiplatformdeskpro.repository.{DeskproMessageFileAttachmentRepository, UploadedFileRepository}
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -42,6 +45,7 @@ class TicketService @Inject() (
     deskproConnector: DeskproConnector,
     personService: PersonService,
     deskproMessageFileAttachmentRepository: DeskproMessageFileAttachmentRepository,
+    uploadedFileRepository: UploadedFileRepository,
     config: AppConfig,
     val clock: Clock
   )(implicit val ec: ExecutionContext
@@ -85,9 +89,10 @@ class TicketService @Inject() (
     deskproConnector.batchFetchTicket(ticketId) map { response => DeskproTicket.build(response.responses.ticket, response.responses.messages, response.responses.attachments) }
   }
 
-  def createMessage(ticketId: Int, request: CreateTicketResponseRequest)(implicit hc: HeaderCarrier): Future[DeskproMessageResponse] = {
+  def createMessage(ticketId: Int, request: CreateTicketResponseRequest)(implicit hc: HeaderCarrier): Future[DeskproCreateMessageResponse] = {
     for {
-      createResponseResult <- deskproConnector.createMessage(ticketId, request.userEmail.text, request.message)
+      maybeUploadedFile    <- getUploadedFileDetails(request.fileReference)
+      createResponseResult <- createDeskproMessage(ticketId, request.userEmail.text, request.message, maybeUploadedFile)
       _                    <- saveMessageFileDetails(ticketId, createResponseResult.data.id, request.fileReference)
       _                    <- deskproConnector.updateTicketStatus(ticketId, request.status)
     } yield createResponseResult.data
@@ -100,27 +105,53 @@ class TicketService @Inject() (
     }
   }
 
+  private def getBlobDetails(maybeUploadedFile: Option[UploadedFile]): Option[BlobDetails] = {
+    maybeUploadedFile match {
+      case Some(uploadedFile) =>
+        uploadedFile.uploadStatus match {
+          case success: UploadedSuccessfully => success.blobDetails
+          case _                             => None
+        }
+      case _                  => None
+    }
+  }
+
+  private def createDeskproMessage(ticketId: Int, userEmail: String, message: String, maybeUploadedFile: Option[UploadedFile])(implicit hc: HeaderCarrier)
+      : Future[DeskproCreateMessageWrapperResponse] = {
+    getBlobDetails(maybeUploadedFile) match {
+      case Some(blobDetails) => deskproConnector.createMessageWithAttachment(ticketId, userEmail, message, blobDetails.blobId, blobDetails.blobAuth)
+      case _                 => deskproConnector.createMessage(ticketId, userEmail, message)
+    }
+  }
+
+  private def getUploadedFileDetails(fileReference: Option[String]): Future[Option[UploadedFile]] = {
+    fileReference match {
+      case Some(fileRef) => uploadedFileRepository.fetchByFileReference(fileRef)
+      case _             => Future.successful(None)
+    }
+  }
+
   def deleteTicket(ticketId: Int)(implicit hc: HeaderCarrier): Future[DeskproTicketUpdateResult] = {
     deskproConnector.deleteTicket(ticketId)
   }
 
-  def addAttachment(fileName: String, fileType: String, ticketId: Int, message: String, userEmail: String)(implicit hc: HeaderCarrier) = {
-    val file: java.nio.file.Path   = Paths.get(fileName)
-    val src: Source[ByteString, _] = FileIO.fromPath(file)
+  // def addAttachment(fileName: String, fileType: String, ticketId: Int, message: String, userEmail: String)(implicit hc: HeaderCarrier) = {
+  //   val file: java.nio.file.Path   = Paths.get(fileName)
+  //   val src: Source[ByteString, _] = FileIO.fromPath(file)
 
-    for {
-      blobResponse <- deskproConnector.createBlob(
-                        fileName,
-                        fileType,
-                        src
-                      )
-      msgResponse  <- deskproConnector.createMessageWithAttachment(
-                        ticketId,
-                        userEmail,
-                        message,
-                        blobResponse.data.blob_id,
-                        blobResponse.data.blob_auth
-                      )
-    } yield (blobResponse, msgResponse)
-  }
+  //   for {
+  //     blobResponse <- deskproConnector.createBlob(
+  //                       fileName,
+  //                       fileType,
+  //                       src
+  //                     )
+  //     msgResponse  <- deskproConnector.createMessageWithAttachment(
+  //                       ticketId,
+  //                       userEmail,
+  //                       message,
+  //                       blobResponse.data.blob_id,
+  //                       blobResponse.data.blob_auth
+  //                     )
+  //   } yield (blobResponse, msgResponse)
+  // }
 }

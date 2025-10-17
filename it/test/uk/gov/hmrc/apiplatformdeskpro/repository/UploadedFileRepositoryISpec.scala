@@ -24,7 +24,7 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.testkit.NoMaterializer
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.{UploadStatus, UploadedFile}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.{BlobDetails, UploadStatus, UploadedFile}
 import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
@@ -43,7 +43,7 @@ class UploadedFileRepositoryISpec extends AsyncHmrcSpec
 
   trait Setup {
     val fileReference = "fileRef"
-    val uploadStatus  = UploadStatus.UploadedSuccessfully("name", "text/plain", new URL("https://example/com/callback"), 100)
+    val uploadStatus  = UploadStatus.UploadedSuccessfully("name", "text/plain", new URL("https://example/com/callback"), 100, Some(BlobDetails(1234, "auth")))
     val messageId     = 789
   }
 

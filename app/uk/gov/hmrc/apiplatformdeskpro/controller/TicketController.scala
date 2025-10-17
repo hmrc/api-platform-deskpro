@@ -22,8 +22,7 @@ import scala.concurrent.ExecutionContext
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result, Results}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models._
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.DeskproCreateBlobWrapperResponse
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.{AddAttachmentRequest, CreateTicketResponseRequest, GetTicketsByEmailRequest}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.{CreateTicketResponseRequest, GetTicketsByEmailRequest}
 import uk.gov.hmrc.apiplatformdeskpro.service.TicketService
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.UpstreamErrorResponse
@@ -76,15 +75,6 @@ class TicketController @Inject() (ticketService: TicketService, cc: ControllerCo
             } recover recovery
         }
     }
-
-  def addAttachment(ticketId: Int): Action[AnyContent] = Action.async { implicit request =>
-    withJsonBodyFromAnyContent[AddAttachmentRequest] { parsedRequest =>
-      ticketService.addAttachment(parsedRequest.fileName, parsedRequest.fileType, ticketId, parsedRequest.message, parsedRequest.userEmail).map {
-        case (DeskproCreateBlobWrapperResponse(data), DeskproTicketResponseSuccess) => Ok(s"File id: ${data.blob_id}, auth: ${data.blob_auth}")
-        case _                                                                      => InternalServerError
-      }
-    }
-  }
 
   private def recovery: PartialFunction[Throwable, Result] = {
     case UpstreamErrorResponse(message, 404, _, _) => handleNotFound(message)

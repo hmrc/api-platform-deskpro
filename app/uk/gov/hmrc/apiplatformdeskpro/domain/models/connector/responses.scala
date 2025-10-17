@@ -139,6 +139,20 @@ object DeskproMessagesWrapperResponse {
   implicit val reads: Reads[DeskproMessagesWrapperResponse] = Json.reads[DeskproMessagesWrapperResponse]
 }
 
+case class DeskproCreateMessageResponse(id: Int, ticket: Int, person: Int, date_created: Instant, is_agent_note: Int, message: String, attachments: List[String])
+
+object DeskproCreateMessageResponse {
+  implicit val instantFormatter: Reads[Instant] = InstantJsonFormatter.lenientInstantReads
+
+  implicit val reads: Reads[DeskproCreateMessageResponse] = Json.reads[DeskproCreateMessageResponse]
+}
+
+case class DeskproCreateMessageWrapperResponse(data: DeskproCreateMessageResponse)
+
+object DeskproCreateMessageWrapperResponse {
+  implicit val reads: Reads[DeskproCreateMessageWrapperResponse] = Json.reads[DeskproCreateMessageWrapperResponse]
+}
+
 case class DeskproCreateBlobResponse(
     blob_id: Int,
     blob_auth: String

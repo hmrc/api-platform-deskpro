@@ -25,7 +25,7 @@ import play.api.mvc.{AnyContentAsText, ControllerComponents, Result}
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers, StubControllerComponentsFactory, StubPlayBodyParsersFactory}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models._
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproCreateBlobResponse, DeskproCreateBlobWrapperResponse, DeskproMessageResponse, TicketStatus}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproCreateMessageResponse, TicketStatus}
 import uk.gov.hmrc.apiplatformdeskpro.service.TicketService
 import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
@@ -89,7 +89,7 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
       ticket,
       DeskproTicket(456, "ref2", personId, LaxEmailAddress("bob@example.com"), "awaiting_agent", instant, instant, None, "subject 2", List.empty)
     )
-    val messageResponse = DeskproMessageResponse(789, ticketId, personId, instant, 0, "message", List.empty)
+    val messageResponse = DeskproCreateMessageResponse(789, ticketId, personId, instant, 0, "message", List.empty)
   }
 
   "getTicketsForPerson" should {
@@ -283,26 +283,6 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
       intercept[UpstreamErrorResponse] {
         await(objToTest.createMessage(ticketId)(request))
       }
-    }
-  }
-
-  "addAttachment" should {
-    val expectedPredicate = Permission(Resource(ResourceType("api-platform-deskpro"), ResourceLocation("tickets/all")), IAAction("WRITE"))
-    "return 200 when response created successfully" in new Setup {
-
-      when(mockService.addAttachment(*, *, *, *, *)(*)).thenReturn(Future.successful((
-        DeskproCreateBlobWrapperResponse(DeskproCreateBlobResponse(1234, "FHDHGXGFCKBN")),
-        DeskproTicketResponseSuccess
-      )))
-      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
-
-      val request = FakeRequest(POST, s"/ticket/$ticketId/attachment")
-        .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
-        .withJsonBody(addAttachmentRequestJson)
-
-      val result: Future[Result] = objToTest.addAttachment(ticketId)(request)
-
-      status(result) shouldBe OK
     }
   }
 }

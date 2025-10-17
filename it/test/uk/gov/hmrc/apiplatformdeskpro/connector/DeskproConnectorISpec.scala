@@ -78,8 +78,8 @@ class DeskproConnectorISpec
     val deskproInactivePerson: DeskproInactivePerson = DeskproInactivePerson(Map("5" -> "1", "4" -> DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(now)))
     val deskproTicket: CreateDeskproTicket           = CreateDeskproTicket(deskproPerson, subject, DeskproTicketMessage(message, deskproPerson), brand, fields)
 
-    val messageResponse = DeskproMessageResponse(messageId, ticketId, personId, createdDate, 0, "message", List.empty)
-    val messageWrapper  = DeskproMessageWrapperResponse(messageResponse)
+    val messageResponse = DeskproCreateMessageResponse(messageId, ticketId, personId, createdDate, 0, "message", List.empty)
+    val messageWrapper  = DeskproCreateMessageWrapperResponse(messageResponse)
   }
 
   "deskproConnector" when {
@@ -501,33 +501,6 @@ class DeskproConnectorISpec
     }
   }
 
-  "createMessage" should {
-    "return DeskproMessageWrapperResponse when 200 returned from deskpro" in new Setup {
-
-      CreateMessage.stubSuccess(ticketId, email, "message")
-
-      val result = await(objInTest.createMessage(ticketId, email, "message"))
-
-      result shouldBe messageWrapper
-    }
-
-    "return DeskproTicketResponseNotFound if ticket not found" in new Setup {
-      CreateMessage.stubNotFound(ticketId, email, "message")
-
-      intercept[UpstreamErrorResponse] {
-        await(objInTest.createMessage(ticketId, email, "message"))
-      }
-    }
-
-    "return DeskproTicketResponseFailure if ticket not found" in new Setup {
-      CreateMessage.stubFailure(ticketId, email, "message")
-
-      intercept[UpstreamErrorResponse] {
-        await(objInTest.createMessage(ticketId, email, "message"))
-      }
-    }
-  }
-
   "getTicketMessages" should {
     "return DeskproMessagesWrapperResponse when 200 returned from deskpro with response body" in new Setup {
       val createdDate1: Instant = LocalDateTime.parse("2025-05-01T08:02:02+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
@@ -616,6 +589,33 @@ class DeskproConnectorISpec
     }
   }
 
+  "createMessage" should {
+    "return DeskproMessageWrapperResponse when 200 returned from deskpro" in new Setup {
+
+      CreateMessage.stubSuccess(ticketId, email, "message")
+
+      val result = await(objInTest.createMessage(ticketId, email, "message"))
+
+      result shouldBe messageWrapper
+    }
+
+    "throw UpstreamErrorResponse if ticket not found" in new Setup {
+      CreateMessage.stubNotFound(ticketId, email, "message")
+
+      intercept[UpstreamErrorResponse] {
+        await(objInTest.createMessage(ticketId, email, "message"))
+      }
+    }
+
+    "throw UpstreamErrorResponse if error" in new Setup {
+      CreateMessage.stubFailure(ticketId, email, "message")
+
+      intercept[UpstreamErrorResponse] {
+        await(objInTest.createMessage(ticketId, email, "message"))
+      }
+    }
+  }
+
   "createMessageWithAttachment" should {
     "return DeskproTicketResponseSuccess when 200 returned from deskpro" in new Setup {
       val response = "response"
@@ -624,27 +624,27 @@ class DeskproConnectorISpec
 
       val result = await(objInTest.createMessageWithAttachment(ticketId, email, response, 26854, "26854KPJHXXQWRNRQHBQ0"))
 
-      result shouldBe DeskproTicketResponseSuccess
+      result shouldBe messageWrapper
     }
 
-    "return DeskproTicketResponseNotFound if ticket not found" in new Setup {
+    "throw UpstreamErrorResponse if ticket not found" in new Setup {
       val response = "response"
 
       CreateMessageWithAttachment.stubNotFound(ticketId, email, response)
 
-      val result = await(objInTest.createMessageWithAttachment(ticketId, email, response, 26854, "26854KPJHXXQWRNRQHBQ0"))
-
-      result shouldBe DeskproTicketResponseNotFound
+      intercept[UpstreamErrorResponse] {
+        await(objInTest.createMessageWithAttachment(ticketId, email, response, 26854, "26854KPJHXXQWRNRQHBQ0"))
+      }
     }
 
-    "return DeskproTicketResponseFailure if ticket not found" in new Setup {
+    "throw UpstreamErrorResponse if error" in new Setup {
       val response = "response"
 
       CreateMessageWithAttachment.stubFailure(ticketId, email, response)
 
-      val result = await(objInTest.createMessageWithAttachment(ticketId, email, response, 26854, "26854KPJHXXQWRNRQHBQ0"))
-
-      result shouldBe DeskproTicketResponseFailure
+      intercept[UpstreamErrorResponse] {
+        await(objInTest.createMessageWithAttachment(ticketId, email, response, 26854, "26854KPJHXXQWRNRQHBQ0"))
+      }
     }
   }
 }

@@ -24,7 +24,7 @@ import play.api.libs.json.Json
 import play.api.mvc.{AnyContentAsText, ControllerComponents, Result}
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers, StubControllerComponentsFactory, StubPlayBodyParsersFactory}
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.{UploadStatus, UploadedFile}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.{BlobDetails, UploadStatus, UploadedFile}
 import uk.gov.hmrc.apiplatformdeskpro.service.UpscanCallbackDispatcher
 import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
 import uk.gov.hmrc.http.HeaderCarrier
@@ -45,7 +45,7 @@ class UpscanCallbackControllerSpec extends AsyncHmrcSpec with StubControllerComp
 
     val fileReference = "507e60b3-0ee1-411f-9c6e-7261455056c3"
     val url           = new URL("https://example.com/file1")
-    val uploadStatus  = UploadStatus.UploadedSuccessfully("filename.txt", "text/plain", url, 1000)
+    val uploadStatus  = UploadStatus.UploadedSuccessfully("filename.txt", "text/plain", url, 1000, Some(BlobDetails(1234, "auth")))
     val uploadedFile  = UploadedFile(fileReference, uploadStatus, instant)
 
     val callbackReadyRequestJson = Json.parse(
@@ -90,7 +90,7 @@ class UpscanCallbackControllerSpec extends AsyncHmrcSpec with StubControllerComp
 
   "callback" should {
     "return 200 with a ready callback" in new Setup {
-      when(mockService.handleCallback(*)).thenReturn(Future.successful(uploadedFile))
+      when(mockService.handleCallback(*)(*)).thenReturn(Future.successful(uploadedFile))
 
       val request = FakeRequest(POST, "/upscan-callback")
         .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json")
@@ -102,7 +102,7 @@ class UpscanCallbackControllerSpec extends AsyncHmrcSpec with StubControllerComp
     }
 
     "return 200 with a failure callback" in new Setup {
-      when(mockService.handleCallback(*)).thenReturn(Future.successful(uploadedFile))
+      when(mockService.handleCallback(*)(*)).thenReturn(Future.successful(uploadedFile))
 
       val request = FakeRequest(POST, "/upscan-callback")
         .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json")
