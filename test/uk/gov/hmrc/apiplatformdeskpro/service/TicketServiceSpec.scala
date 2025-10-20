@@ -26,7 +26,7 @@ import uk.gov.hmrc.apiplatformdeskpro.connector.DeskproConnector
 import uk.gov.hmrc.apiplatformdeskpro.domain.models._
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector._
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.CreateTicketResponseRequest
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.UploadStatus.UploadedSuccessfully
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.UploadStatus.{Failed, UploadedSuccessfully}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.{BlobDetails, DeskproMessageFileAttachment, UploadedFile}
 import uk.gov.hmrc.apiplatformdeskpro.repository.{DeskproMessageFileAttachmentRepository, UploadedFileRepository}
 import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
@@ -320,6 +320,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       result shouldBe messageResponse
 
       verify(mockDeskproConnector).createMessage(eqTo(ticketId), eqTo(email.text), eqTo(message))(*)
+      verify(mockDeskproConnector, never).createMessageWithAttachment(*, *, *, *, *)(*)
       verify(mockDeskproConnector).updateTicketStatus(eqTo(ticketId), eqTo(TicketStatus.AwaitingAgent))(*)
       verify(mockMessageFileAttachmentRepo, never).create(*)
     }
@@ -336,6 +337,27 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       result shouldBe messageResponse
 
       verify(mockDeskproConnector).createMessageWithAttachment(eqTo(ticketId), eqTo(email.text), eqTo(message), eqTo(blobId), eqTo(blobAuth))(*)
+      verify(mockDeskproConnector, never).createMessage(*, *, *)(*)
+      verify(mockDeskproConnector).updateTicketStatus(eqTo(ticketId), eqTo(TicketStatus.AwaitingAgent))(*)
+      verify(mockMessageFileAttachmentRepo).create(eqTo(response))
+    }
+
+    "return DeskproTicketResponseSuccess and save response when fileReference is present and the file has failed to upload" in new Setup {
+      val failedUploadStatus = Failed("message", "reason")
+      val failedUploadedFile = UploadedFile(fileReference, failedUploadStatus, instant)
+
+      when(mockUploadedFileRepo.fetchByFileReference(*)).thenReturn(Future.successful(Some(failedUploadedFile)))
+      when(mockDeskproConnector.createMessage(*, *, *)(*)).thenReturn(Future.successful(messageWrapper))
+      when(mockDeskproConnector.updateTicketStatus(*, *)(*)).thenReturn(Future.successful(DeskproTicketUpdateSuccess))
+      val response = DeskproMessageFileAttachment(ticketId, messageId, fileReference, instant)
+      when(mockMessageFileAttachmentRepo.create(*)).thenReturn(Future.successful(response))
+
+      val result = await(underTest.createMessage(ticketId, CreateTicketResponseRequest(email, message, TicketStatus.AwaitingAgent, Some(fileReference))))
+
+      result shouldBe messageResponse
+
+      verify(mockDeskproConnector).createMessage(eqTo(ticketId), eqTo(email.text), eqTo(message))(*)
+      verify(mockDeskproConnector, never).createMessageWithAttachment(*, *, *, *, *)(*)
       verify(mockDeskproConnector).updateTicketStatus(eqTo(ticketId), eqTo(TicketStatus.AwaitingAgent))(*)
       verify(mockMessageFileAttachmentRepo).create(eqTo(response))
     }
@@ -352,6 +374,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       result shouldBe messageResponse
 
       verify(mockDeskproConnector).createMessage(eqTo(ticketId), eqTo(email.text), eqTo(message))(*)
+      verify(mockDeskproConnector, never).createMessageWithAttachment(*, *, *, *, *)(*)
       verify(mockDeskproConnector).updateTicketStatus(eqTo(ticketId), eqTo(TicketStatus.AwaitingAgent))(*)
       verify(mockMessageFileAttachmentRepo).create(eqTo(response))
     }
@@ -365,6 +388,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       result shouldBe messageResponse
 
       verify(mockDeskproConnector).createMessage(eqTo(ticketId), eqTo(email.text), eqTo(message))(*)
+      verify(mockDeskproConnector, never).createMessageWithAttachment(*, *, *, *, *)(*)
     }
 
     "return DeskproTicketResponseFailure if create failed" in new Setup {
