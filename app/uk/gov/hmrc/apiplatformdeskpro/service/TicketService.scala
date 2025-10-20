@@ -22,13 +22,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.connector.DeskproConnector
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{
-  CreateDeskproTicket,
-  DeskproCreateMessageResponse,
-  DeskproCreateMessageWrapperResponse,
-  DeskproTicketCreated,
-  DeskproTicketMessage
-}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector._
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.CreateTicketResponseRequest
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.UploadStatus.UploadedSuccessfully
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.{BlobDetails, DeskproMessageFileAttachment, UploadedFile}
@@ -131,27 +125,49 @@ class TicketService @Inject() (
     }
   }
 
+  def updateMessageAddAttachmentIfRequired(fileReference: String, blobDetails: BlobDetails)(implicit hc: HeaderCarrier): Future[DeskproTicketUpdateResult] = {
+    for {
+      maybeMessage <- deskproMessageFileAttachmentRepository.fetchByFileReference(fileReference)
+      result       <- updateMessageIfAlreadyCreated(fileReference, maybeMessage, blobDetails)
+    } yield result
+  }
+
+  private def updateMessageIfAlreadyCreated(fileReference: String, maybeMessage: Option[DeskproMessageFileAttachment], blobDetails: BlobDetails)(implicit hc: HeaderCarrier)
+      : Future[DeskproTicketUpdateResult] = {
+    maybeMessage match {
+      case Some(message) => updateMessageAttachments(fileReference, message.ticketId, message.messageId, blobDetails)
+      case _             => Future.successful(DeskproTicketUpdateSuccess)
+    }
+  }
+
+  private def updateMessageAttachments(fileReference: String, ticketId: Int, messageId: Int, blobDetails: BlobDetails)(implicit hc: HeaderCarrier): Future[DeskproTicketUpdateResult] = {
+    def checkAttachmentsContains(attachments: DeskproAttachmentsWrapperResponse, blobDetails: BlobDetails) = {
+      attachments.data.exists(attachment => (attachment.blob.blob_id == blobDetails.blobId && attachment.blob.blob_auth == blobDetails.blobAuth))
+    }
+    def addNewAttachmentIfNotPresent(
+        ticketId: Int,
+        messageId: Int,
+        existingAttachments: DeskproAttachmentsWrapperResponse,
+        blobDetails: BlobDetails
+      )(implicit hc: HeaderCarrier
+      ) = {
+      if (!checkAttachmentsContains(existingAttachments, blobDetails)) {
+        logger.debug(s"Updating message attachments for ticketId: $ticketId, messageId: $messageId - adding file ref: $fileReference")
+        deskproConnector.updateMessageAttachments(ticketId, messageId, existingAttachments.data, blobDetails.blobId, blobDetails.blobAuth)
+      } else {
+        Future.successful(DeskproTicketUpdateSuccess)
+      }
+    }
+
+    logger.debug(s"Checking message attachments for ticketId: $ticketId, messageId: $messageId")
+
+    for {
+      attachments <- deskproConnector.getMessageAttachments(ticketId, messageId)
+      result      <- addNewAttachmentIfNotPresent(ticketId, messageId, attachments, blobDetails)
+    } yield result
+  }
+
   def deleteTicket(ticketId: Int)(implicit hc: HeaderCarrier): Future[DeskproTicketUpdateResult] = {
     deskproConnector.deleteTicket(ticketId)
   }
-
-  // def addAttachment(fileName: String, fileType: String, ticketId: Int, message: String, userEmail: String)(implicit hc: HeaderCarrier) = {
-  //   val file: java.nio.file.Path   = Paths.get(fileName)
-  //   val src: Source[ByteString, _] = FileIO.fromPath(file)
-
-  //   for {
-  //     blobResponse <- deskproConnector.createBlob(
-  //                       fileName,
-  //                       fileType,
-  //                       src
-  //                     )
-  //     msgResponse  <- deskproConnector.createMessageWithAttachment(
-  //                       ticketId,
-  //                       userEmail,
-  //                       message,
-  //                       blobResponse.data.blob_id,
-  //                       blobResponse.data.blob_auth
-  //                     )
-  //   } yield (blobResponse, msgResponse)
-  // }
 }

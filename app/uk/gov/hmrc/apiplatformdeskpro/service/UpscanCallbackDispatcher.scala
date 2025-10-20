@@ -32,6 +32,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 @Singleton
 class UpscanCallbackDispatcher @Inject() (
     uploadedFileRepository: UploadedFileRepository,
+    ticketService: TicketService,
     deskproConnector: DeskproConnector,
     upscanDownloadConnector: UpscanDownloadConnector,
     val clock: Clock
@@ -58,6 +59,7 @@ class UpscanCallbackDispatcher @Inject() (
                         blobDetails = BlobDetails(blobResponse.data.blob_id, blobResponse.data.blob_auth)
                       )
       uploadedFile <- uploadedFileRepository.create(UploadedFile(readyCallBack.reference.value, uploadStatus, instant()))
+      result       <- ticketService.updateMessageAddAttachmentIfRequired(readyCallBack.reference.value, uploadStatus.blobDetails)
     } yield uploadedFile
   }
 

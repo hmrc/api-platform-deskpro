@@ -2057,4 +2057,113 @@ trait DeskproStub {
       )
     }
   }
+
+  object GetMessageAttachments {
+
+    def stubSuccess(ticketId: Int, messageId: Int) = {
+      stubFor(
+        get(urlPathEqualTo(s"/api/v2/tickets/$ticketId/messages/$messageId/attachments"))
+          .willReturn(
+            aResponse()
+              .withBody(s"""{
+                           |  "data": [ 
+                           |    {
+                           |      "id": 83,
+                           |      "ticket": $ticketId,
+                           |      "person": 1,
+                           |      "blob": {
+                           |        "content_type": "text/plain",
+                           |        "is_image": false,
+                           |        "blob_id": 27604,
+                           |        "blob_auth": "27604SWTHHKQXHCZKCJY0T",
+                           |        "blob_auth_id": "27604-27604SWTHHKQXHCZKCJY0T",
+                           |        "download_url": "https://example.com/file.php/27604SWTHHKQXHCZKCJY0T",
+                           |        "filename": "panic.txt",
+                           |        "filesize_readable": "183.00 B",
+                           |        "is_temp": false
+                           |      },
+                           |      "message": $messageId,
+                           |      "is_agent_note": false,
+                           |      "is_inline": false
+                           |    }
+                           |  ],
+                           |  "meta": {
+                           |    "pagination": {
+                           |      "total": 1,
+                           |      "count": 1,
+                           |      "per_page": 10,
+                           |      "current_page": 1,
+                           |      "total_pages": 1
+                           |    }
+                           |  },
+                           |  "linked": {}
+                           |}""".stripMargin)
+              .withStatus(OK)
+          )
+      )
+    }
+  }
+
+  object UpdateMessageAttachments {
+
+    def stubSuccess(ticketId: Int, messageId: Int) = {
+      stubFor(
+        put(urlPathEqualTo(s"/api/v2/tickets/$ticketId/messages/$messageId"))
+          .withRequestBody(equalToJson(s"""{
+                                          |  "attachments": {
+                                          |    "12345": {
+                                          |      "blob_auth": "26854KPJHXXQWRNRQHBQ0"
+                                          |    },
+                                          |    "67890": {
+                                          |      "blob_auth": "4476FHDGBJHJ55356BVN1"
+                                          |    }
+                                          |  }
+                                          |}""".stripMargin))
+          .willReturn(
+            aResponse()
+              .withStatus(NO_CONTENT)
+          )
+      )
+    }
+
+    def stubNotFound(ticketId: Int, messageId: Int) = {
+      stubFor(
+        put(urlPathEqualTo(s"/api/v2/tickets/$ticketId/messages/$messageId"))
+          .withRequestBody(equalToJson(s"""{
+                                          |  "attachments": {
+                                          |    "12345": {
+                                          |      "blob_auth": "26854KPJHXXQWRNRQHBQ0"
+                                          |    },
+                                          |    "67890": {
+                                          |      "blob_auth": "4476FHDGBJHJ55356BVN1"
+                                          |    }
+                                          |  }
+                                          |}""".stripMargin))
+          .willReturn(
+            aResponse()
+              .withStatus(NOT_FOUND)
+          )
+      )
+    }
+
+    def stubFailure(ticketId: Int, messageId: Int) = {
+      stubFor(
+        put(urlPathEqualTo(s"/api/v2/tickets/$ticketId/messages/$messageId"))
+          .withRequestBody(equalToJson(s"""{
+                                          |  "attachments": {
+                                          |    "12345": {
+                                          |      "blob_auth": "26854KPJHXXQWRNRQHBQ0"
+                                          |    },
+                                          |    "67890": {
+                                          |      "blob_auth": "4476FHDGBJHJ55356BVN1"
+                                          |    }
+                                          |  }
+                                          |}""".stripMargin))
+          .willReturn(
+            aResponse()
+              .withStatus(INTERNAL_SERVER_ERROR)
+          )
+      )
+    }
+  }
 }

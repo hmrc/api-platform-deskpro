@@ -107,16 +107,23 @@ case class DeskproTicketWrapperResponse(data: DeskproTicketResponse)
 object DeskproTicketWrapperResponse {
   implicit val reads: Reads[DeskproTicketWrapperResponse] = Json.reads[DeskproTicketWrapperResponse]
 }
-case class DeskproBlobResponse(download_url: String, filename: String)
+
+case class DeskproBlobResponse(blob_id: Int, blob_auth: String, download_url: String, filename: String)
 
 object DeskproBlobResponse {
   implicit val reads: Reads[DeskproBlobResponse] = Json.reads[DeskproBlobResponse]
-
 }
+
 case class DeskproAttachmentResponse(id: Int, blob: DeskproBlobResponse)
 
 object DeskproAttachmentResponse {
   implicit val reads: Reads[DeskproAttachmentResponse] = Json.reads[DeskproAttachmentResponse]
+}
+
+case class DeskproAttachmentsWrapperResponse(data: List[DeskproAttachmentResponse])
+
+object DeskproAttachmentsWrapperResponse {
+  implicit val reads: Reads[DeskproAttachmentsWrapperResponse] = Json.reads[DeskproAttachmentsWrapperResponse]
 }
 
 case class DeskproMessageResponse(id: Int, ticket: Int, person: Int, date_created: Instant, is_agent_note: Int, message: String, attachments: List[Int])
