@@ -19,8 +19,10 @@ package uk.gov.hmrc.apiplatformdeskpro.controller
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import play.api.libs.json.Json
+import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.UpscanCallbackBody
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproTicketMessageFailure, DeskproTicketMessageNotFound, DeskproTicketMessageSuccess}
 import uk.gov.hmrc.apiplatformdeskpro.service.UpscanCallbackDispatcher
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.internalauth.client._
@@ -37,7 +39,25 @@ class UpscanCallbackController @Inject() (
 
   def callback(): Action[AnyContent] = Action.async { implicit request =>
     withJsonBodyFromAnyContent[UpscanCallbackBody] { parsedRequest =>
-      upscanCallbackDispatcher.handleCallback(parsedRequest).map(_ => Ok)
+      upscanCallbackDispatcher.handleCallback(parsedRequest)
+        .map {
+          case DeskproTicketMessageSuccess  => Ok
+          case DeskproTicketMessageNotFound => InternalServerError
+          case DeskproTicketMessageFailure  => InternalServerError
+        } recover recovery
     }
   }
+
+  private def recovery: PartialFunction[Throwable, Result] = {
+    case e: Throwable => handleException(e)
+  }
+
+  private[controller] def handleException(e: Throwable): Result = {
+    logger.error(s"An unexpected error occurred: ${e.getMessage}", e)
+    InternalServerError(Json.obj(
+      "code"    -> "UNKNOWN_ERROR",
+      "message" -> "Unknown error occurred"
+    ))
+  }
+
 }

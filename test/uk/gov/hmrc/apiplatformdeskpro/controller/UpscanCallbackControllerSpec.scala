@@ -25,9 +25,10 @@ import play.api.mvc.{AnyContentAsText, ControllerComponents, Result}
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers, StubControllerComponentsFactory, StubPlayBodyParsersFactory}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.{BlobDetails, UploadStatus, UploadedFile}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproTicketMessageFailure, DeskproTicketMessageNotFound, DeskproTicketMessageSuccess}
 import uk.gov.hmrc.apiplatformdeskpro.service.UpscanCallbackDispatcher
 import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
 
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
@@ -90,7 +91,7 @@ class UpscanCallbackControllerSpec extends AsyncHmrcSpec with StubControllerComp
 
   "callback" should {
     "return 200 with a ready callback" in new Setup {
-      when(mockService.handleCallback(*)(*)).thenReturn(Future.successful(uploadedFile))
+      when(mockService.handleCallback(*)(*)).thenReturn(Future.successful(DeskproTicketMessageSuccess))
 
       val request = FakeRequest(POST, "/upscan-callback")
         .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json")
@@ -102,7 +103,7 @@ class UpscanCallbackControllerSpec extends AsyncHmrcSpec with StubControllerComp
     }
 
     "return 200 with a failure callback" in new Setup {
-      when(mockService.handleCallback(*)(*)).thenReturn(Future.successful(uploadedFile))
+      when(mockService.handleCallback(*)(*)).thenReturn(Future.successful(DeskproTicketMessageSuccess))
 
       val request = FakeRequest(POST, "/upscan-callback")
         .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json")
@@ -111,6 +112,42 @@ class UpscanCallbackControllerSpec extends AsyncHmrcSpec with StubControllerComp
       val result: Future[Result] = objToTest.callback()(request)
 
       status(result) shouldBe OK
+    }
+
+    "return 500 if the service fails" in new Setup {
+      when(mockService.handleCallback(*)(*)).thenReturn(Future.successful(DeskproTicketMessageFailure))
+
+      val request = FakeRequest(POST, "/upscan-callback")
+        .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json")
+        .withJsonBody(callbackReadyRequestJson)
+
+      val result: Future[Result] = objToTest.callback()(request)
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+
+    "return 500 if the returns not found" in new Setup {
+      when(mockService.handleCallback(*)(*)).thenReturn(Future.successful(DeskproTicketMessageNotFound))
+
+      val request = FakeRequest(POST, "/upscan-callback")
+        .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json")
+        .withJsonBody(callbackReadyRequestJson)
+
+      val result: Future[Result] = objToTest.callback()(request)
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+
+    "return 500 if the service throws an exception" in new Setup {
+      when(mockService.handleCallback(*)(*)).thenReturn(Future.failed(UpstreamErrorResponse("Unauthorized", 401)))
+
+      val request = FakeRequest(POST, "/upscan-callback")
+        .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json")
+        .withJsonBody(callbackReadyRequestJson)
+
+      val result: Future[Result] = objToTest.callback()(request)
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
     }
 
     "return 400 with an invalid failure callback" in new Setup {

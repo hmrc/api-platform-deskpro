@@ -355,7 +355,7 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
   }
 
   def updateMessageAttachments(ticketId: Int, messageId: Int, existingAttachments: List[DeskproAttachmentResponse], blobId: Int, blobAuth: String)(implicit hc: HeaderCarrier)
-      : Future[DeskproTicketUpdateResult] = {
+      : Future[DeskproTicketMessageResult] = {
     val existingAttachmentsMap = existingAttachments.map(attachment => (attachment.blob.blob_id.toString() -> AttachmentRequest(attachment.blob.blob_auth))).toMap
     val messageRequest         = UpdateMessageAttachmentsRequest(existingAttachmentsMap ++ Map(blobId.toString() -> AttachmentRequest(blobAuth)))
 
@@ -370,13 +370,13 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
           response.status match {
             case NO_CONTENT =>
               logger.info(s"Updated message attachments for ticket '$ticketId', message '$messageId' successfully")
-              DeskproTicketUpdateSuccess
+              DeskproTicketMessageSuccess
             case NOT_FOUND  =>
               logger.warn(s"Failed to update message attachments for ticket '$ticketId, message '$messageId'. Ticket not found")
-              DeskproTicketUpdateNotFound
+              DeskproTicketMessageNotFound
             case _          =>
               logger.error(s"Failed to update message attachments for ticket '$ticketId, message '$messageId'. Status: ${response.status}")
-              DeskproTicketUpdateFailure
+              DeskproTicketMessageFailure
           }
         )
     }

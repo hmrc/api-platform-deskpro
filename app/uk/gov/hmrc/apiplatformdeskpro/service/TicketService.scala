@@ -125,7 +125,7 @@ class TicketService @Inject() (
     }
   }
 
-  def updateMessageAddAttachmentIfRequired(fileReference: String, blobDetails: BlobDetails)(implicit hc: HeaderCarrier): Future[DeskproTicketUpdateResult] = {
+  def updateMessageAddAttachmentIfRequired(fileReference: String, blobDetails: BlobDetails)(implicit hc: HeaderCarrier): Future[DeskproTicketMessageResult] = {
     for {
       maybeMessage <- deskproMessageFileAttachmentRepository.fetchByFileReference(fileReference)
       result       <- updateMessageIfAlreadyCreated(fileReference, maybeMessage, blobDetails)
@@ -133,14 +133,15 @@ class TicketService @Inject() (
   }
 
   private def updateMessageIfAlreadyCreated(fileReference: String, maybeMessage: Option[DeskproMessageFileAttachment], blobDetails: BlobDetails)(implicit hc: HeaderCarrier)
-      : Future[DeskproTicketUpdateResult] = {
+      : Future[DeskproTicketMessageResult] = {
     maybeMessage match {
       case Some(message) => updateMessageAttachments(fileReference, message.ticketId, message.messageId, blobDetails)
-      case _             => Future.successful(DeskproTicketUpdateSuccess)
+      case _             => Future.successful(DeskproTicketMessageSuccess)
     }
   }
 
-  private def updateMessageAttachments(fileReference: String, ticketId: Int, messageId: Int, blobDetails: BlobDetails)(implicit hc: HeaderCarrier): Future[DeskproTicketUpdateResult] = {
+  private def updateMessageAttachments(fileReference: String, ticketId: Int, messageId: Int, blobDetails: BlobDetails)(implicit hc: HeaderCarrier)
+      : Future[DeskproTicketMessageResult] = {
     def checkAttachmentsContains(attachments: DeskproAttachmentsWrapperResponse, blobDetails: BlobDetails) = {
       attachments.data.exists(attachment => (attachment.blob.blob_id == blobDetails.blobId && attachment.blob.blob_auth == blobDetails.blobAuth))
     }
@@ -155,7 +156,7 @@ class TicketService @Inject() (
         logger.debug(s"Updating message attachments for ticketId: $ticketId, messageId: $messageId - adding file ref: $fileReference")
         deskproConnector.updateMessageAttachments(ticketId, messageId, existingAttachments.data, blobDetails.blobId, blobDetails.blobAuth)
       } else {
-        Future.successful(DeskproTicketUpdateSuccess)
+        Future.successful(DeskproTicketMessageSuccess)
       }
     }
 

@@ -23,7 +23,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.Indexes.ascending
-import org.mongodb.scala.model.{IndexModel, IndexOptions}
+import org.mongodb.scala.model.{IndexModel, IndexOptions, ReplaceOptions}
 
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.UploadedFile
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
@@ -62,8 +62,12 @@ class UploadedFileRepository @Inject() (mongo: MongoComponent, val clock: Clock)
 
   override lazy val requiresTtlIndex: Boolean = true
 
-  def create(response: UploadedFile): Future[UploadedFile] = {
-    collection.insertOne(response).toFuture().map(_ => response)
+  def create(uploadedFile: UploadedFile): Future[UploadedFile] = {
+    collection.replaceOne(
+      equal("fileReference", uploadedFile.fileReference),
+      uploadedFile,
+      options = new ReplaceOptions().upsert(true)
+    ).toFuture().map(_ => uploadedFile)
   }
 
   def fetchByFileReference(fileReference: String): Future[Option[UploadedFile]] = {

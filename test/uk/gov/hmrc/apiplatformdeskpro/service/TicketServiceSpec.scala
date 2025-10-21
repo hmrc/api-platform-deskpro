@@ -418,11 +418,11 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       val existingAttachments = List(DeskproAttachmentResponse(12, DeskproBlobResponse(12345, "FGFK6657HHJHJ7987", "https://example.com/file01", "example.txt")))
       val attachmantsWrapper  = DeskproAttachmentsWrapperResponse(existingAttachments)
       when(mockDeskproConnector.getMessageAttachments(*, *)(*)).thenReturn(Future.successful(attachmantsWrapper))
-      when(mockDeskproConnector.updateMessageAttachments(*, *, *, *, *)(*)).thenReturn(Future.successful(DeskproTicketUpdateSuccess))
+      when(mockDeskproConnector.updateMessageAttachments(*, *, *, *, *)(*)).thenReturn(Future.successful(DeskproTicketMessageSuccess))
 
       val result = await(underTest.updateMessageAddAttachmentIfRequired(fileReference, blobDetails))
 
-      result shouldBe DeskproTicketUpdateSuccess
+      result shouldBe DeskproTicketMessageSuccess
       verify(mockMessageFileAttachmentRepo).fetchByFileReference(eqTo(fileReference))
       verify(mockDeskproConnector).getMessageAttachments(eqTo(ticketId), eqTo(messageId))(*)
       verify(mockDeskproConnector).updateMessageAttachments(eqTo(ticketId), eqTo(messageId), eqTo(existingAttachments), eqTo(blobId), eqTo(blobAuth))(*)
@@ -437,7 +437,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
 
       val result = await(underTest.updateMessageAddAttachmentIfRequired(fileReference, blobDetails))
 
-      result shouldBe DeskproTicketUpdateSuccess
+      result shouldBe DeskproTicketMessageSuccess
       verify(mockMessageFileAttachmentRepo).fetchByFileReference(eqTo(fileReference))
       verify(mockDeskproConnector).getMessageAttachments(eqTo(ticketId), eqTo(messageId))(*)
       verify(mockDeskproConnector, never).updateMessageAttachments(*, *, *, *, *)(*)
@@ -448,7 +448,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
 
       val result = await(underTest.updateMessageAddAttachmentIfRequired(fileReference, blobDetails))
 
-      result shouldBe DeskproTicketUpdateSuccess
+      result shouldBe DeskproTicketMessageSuccess
       verify(mockMessageFileAttachmentRepo).fetchByFileReference(eqTo(fileReference))
       verify(mockDeskproConnector, never).getMessageAttachments(*, *)(*)
       verify(mockDeskproConnector, never).updateMessageAttachments(*, *, *, *, *)(*)

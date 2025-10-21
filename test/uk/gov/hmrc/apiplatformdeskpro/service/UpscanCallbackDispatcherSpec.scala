@@ -24,7 +24,7 @@ import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 
 import uk.gov.hmrc.apiplatformdeskpro.connector.{DeskproConnector, UpscanDownloadConnector}
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.DeskproTicketUpdateSuccess
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.DeskproTicketMessageSuccess
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproCreateBlobResponse, DeskproCreateBlobWrapperResponse}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.{ErrorDetails, FailedCallbackBody, ReadyCallbackBody, Reference, UploadDetails}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.{BlobDetails, UploadStatus, UploadedFile}
@@ -69,11 +69,11 @@ class UpscanCallbackDispatcherSpec extends AsyncHmrcSpec with FixedClock {
       when(mockUploadedFileRepository.create(*)).thenReturn(Future.successful(uploadedSuccess))
       when(mockUpscanDownloadConnector.stream(*)(*)).thenReturn(Future.successful(stream))
       when(mockDeskproConnector.createBlob(*, *, *)(*)).thenReturn(Future.successful(blobWrapperResp))
-      when(mockTicketService.updateMessageAddAttachmentIfRequired(*, *)(*)).thenReturn(Future.successful(DeskproTicketUpdateSuccess))
+      when(mockTicketService.updateMessageAddAttachmentIfRequired(*, *)(*)).thenReturn(Future.successful(DeskproTicketMessageSuccess))
 
       val result = await(underTest.handleCallback(callbackReady))
 
-      result shouldBe uploadedSuccess
+      result shouldBe DeskproTicketMessageSuccess
       verify(mockUploadedFileRepository).create(eqTo(uploadedSuccess))
       verify(mockUpscanDownloadConnector).stream(eqTo(url))(*)
       verify(mockDeskproConnector).createBlob(eqTo("filename"), eqTo("text/plain"), eqTo(stream))(*)
@@ -86,7 +86,7 @@ class UpscanCallbackDispatcherSpec extends AsyncHmrcSpec with FixedClock {
 
       val result = await(underTest.handleCallback(callbackFailed))
 
-      result shouldBe uploadedFailed
+      result shouldBe DeskproTicketMessageSuccess
       verify(mockUploadedFileRepository).create(eqTo(uploadedFailed))
       verify(mockUpscanDownloadConnector, never).stream(*)(*)
       verify(mockDeskproConnector, never).createBlob(*, *, *)(*)

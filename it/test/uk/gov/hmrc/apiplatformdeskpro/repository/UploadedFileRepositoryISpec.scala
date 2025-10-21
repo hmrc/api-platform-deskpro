@@ -19,7 +19,6 @@ package uk.gov.hmrc.apiplatformdeskpro.repository
 import java.net.URL
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import com.mongodb.MongoWriteException
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.testkit.NoMaterializer
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -55,13 +54,12 @@ class UploadedFileRepositoryISpec extends AsyncHmrcSpec
         result shouldBe uploadedFile
       }
 
-      "not save duplicates" in new Setup {
+      "replace existing in event of duplicates" in new Setup {
         val uploadedFile = UploadedFile(fileReference, uploadStatus, instant)
         await(uploadedFileRepo.create(uploadedFile))
 
-        intercept[MongoWriteException] {
-          await(uploadedFileRepo.create(uploadedFile))
-        }
+        val result = await(uploadedFileRepo.create(uploadedFile))
+        result shouldBe uploadedFile
       }
     }
 

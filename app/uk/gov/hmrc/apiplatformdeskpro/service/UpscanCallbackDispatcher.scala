@@ -23,6 +23,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.apiplatformdeskpro.connector.{DeskproConnector, UpscanDownloadConnector}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.{FailedCallbackBody, ReadyCallbackBody, UpscanCallbackBody}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.{BlobDetails, UploadStatus, UploadedFile}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproTicketMessageResult, DeskproTicketMessageSuccess}
 import uk.gov.hmrc.apiplatformdeskpro.repository.UploadedFileRepository
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HeaderCarrier
@@ -39,14 +40,14 @@ class UpscanCallbackDispatcher @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger with ClockNow {
 
-  def handleCallback(callback: UpscanCallbackBody)(implicit hc: HeaderCarrier): Future[UploadedFile] = {
+  def handleCallback(callback: UpscanCallbackBody)(implicit hc: HeaderCarrier): Future[DeskproTicketMessageResult] = {
     callback match {
       case r: ReadyCallbackBody  => handleSuccessfulCallback(r)
       case f: FailedCallbackBody => handleFailedCallback(f)
     }
   }
 
-  private def handleSuccessfulCallback(readyCallBack: ReadyCallbackBody)(implicit hc: HeaderCarrier): Future[UploadedFile] = {
+  private def handleSuccessfulCallback(readyCallBack: ReadyCallbackBody)(implicit hc: HeaderCarrier): Future[DeskproTicketMessageResult] = {
     logger.debug(s"Upscan callback upload ready: $readyCallBack")
     for {
       source       <- upscanDownloadConnector.stream(readyCallBack.downloadUrl)
@@ -58,17 +59,19 @@ class UpscanCallbackDispatcher @Inject() (
                         size = readyCallBack.uploadDetails.size,
                         blobDetails = BlobDetails(blobResponse.data.blob_id, blobResponse.data.blob_auth)
                       )
-      uploadedFile <- uploadedFileRepository.create(UploadedFile(readyCallBack.reference.value, uploadStatus, instant()))
       result       <- ticketService.updateMessageAddAttachmentIfRequired(readyCallBack.reference.value, uploadStatus.blobDetails)
-    } yield uploadedFile
+      uploadedFile <- uploadedFileRepository.create(UploadedFile(readyCallBack.reference.value, uploadStatus, instant()))
+    } yield result
   }
 
-  private def handleFailedCallback(failedCallBack: FailedCallbackBody): Future[UploadedFile] = {
+  private def handleFailedCallback(failedCallBack: FailedCallbackBody): Future[DeskproTicketMessageResult] = {
     logger.info(s"Upscan callback upload failed: $failedCallBack")
-    uploadedFileRepository.create(UploadedFile(
-      failedCallBack.reference.value,
-      UploadStatus.Failed(failedCallBack.failureDetails.message, failedCallBack.failureDetails.failureReason),
-      instant()
-    ))
+    for {
+      uploadedFile <- uploadedFileRepository.create(UploadedFile(
+                        failedCallBack.reference.value,
+                        UploadStatus.Failed(failedCallBack.failureDetails.message, failedCallBack.failureDetails.failureReason),
+                        instant()
+                      ))
+    } yield DeskproTicketMessageSuccess
   }
 }
