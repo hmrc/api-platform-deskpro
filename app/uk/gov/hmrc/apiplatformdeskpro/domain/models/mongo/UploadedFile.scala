@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,10 +27,6 @@ sealed trait UploadStatus
 
 object UploadStatus {
 
-  case class InProgress(
-      percent: Option[Int]
-    ) extends UploadStatus
-
   case class Failed(
       message: String,
       reason: String
@@ -48,12 +44,10 @@ object UploadStatus {
 
   implicit val urlFormat: Format[URL] = HttpUrlFormat.format
 
-  private implicit val formatInProgress: OFormat[InProgress]                     = Json.format[InProgress]
   private implicit val formatFailed: OFormat[Failed]                             = Json.format[Failed]
   private implicit val formatUploadedSuccessfully: OFormat[UploadedSuccessfully] = Json.format[UploadedSuccessfully]
 
   implicit val format: OFormat[UploadStatus] = Union.from[UploadStatus]("uploadStatus")
-    .and[InProgress]("InProgress")
     .and[Failed]("Failed")
     .and[UploadedSuccessfully]("UploadedSuccessfully")
     .format

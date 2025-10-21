@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ class UpscanCallbackDispatcher @Inject() (
     }
   }
 
-  private def handleSuccessfulCallback(readyCallBack: ReadyCallbackBody)(implicit hc: HeaderCarrier) = {
+  private def handleSuccessfulCallback(readyCallBack: ReadyCallbackBody)(implicit hc: HeaderCarrier): Future[UploadedFile] = {
     logger.debug(s"Upscan callback upload ready: $readyCallBack")
     for {
       source       <- upscanDownloadConnector.stream(readyCallBack.downloadUrl)
@@ -63,7 +63,7 @@ class UpscanCallbackDispatcher @Inject() (
     } yield uploadedFile
   }
 
-  private def handleFailedCallback(failedCallBack: FailedCallbackBody) = {
+  private def handleFailedCallback(failedCallBack: FailedCallbackBody): Future[UploadedFile] = {
     logger.info(s"Upscan callback upload failed: $failedCallBack")
     uploadedFileRepository.create(UploadedFile(
       failedCallBack.reference.value,
