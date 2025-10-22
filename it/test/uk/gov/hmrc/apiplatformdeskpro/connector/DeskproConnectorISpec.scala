@@ -28,6 +28,7 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.{Application, Mode}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector._
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.BlobDetails
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproTicketCreationFailed, _}
 import uk.gov.hmrc.apiplatformdeskpro.stubs.DeskproStub
 import uk.gov.hmrc.apiplatformdeskpro.utils.{AsyncHmrcSpec, ConfigBuilder, WireMockSupport}
@@ -57,7 +58,7 @@ class DeskproConnectorISpec
     val objInTest: DeskproConnector = app.injector.instanceOf[DeskproConnector]
 
     val name                 = "Bob Holness"
-    val email                = "bob@exmaple.com"
+    val email                = LaxEmailAddress("bob@exmaple.com")
     val subject              = "Subject of the ticket"
     val message              = "This is where the message for the ticket goes"
     val apiName              = "apiName"
@@ -76,7 +77,7 @@ class DeskproConnectorISpec
     val createdDate: Instant = LocalDateTime.parse("2020-01-02T03:04:05+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
 
     val fields: Map[String, String]                  = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "6" -> teamMemberEmail)
-    val deskproPerson: DeskproPerson                 = DeskproPerson(name, email)
+    val deskproPerson: DeskproPerson                 = DeskproPerson(name, email.text)
     val deskproPersonUpdate: DeskproPersonUpdate     = DeskproPersonUpdate(name)
     val deskproInactivePerson: DeskproInactivePerson = DeskproInactivePerson(Map("5" -> "1", "4" -> DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(now)))
     val deskproTicket: CreateDeskproTicket           = CreateDeskproTicket(deskproPerson, subject, DeskproTicketMessage(message, deskproPerson), brand, fields)
@@ -595,26 +596,26 @@ class DeskproConnectorISpec
   "createMessage" should {
     "return DeskproMessageWrapperResponse when 200 returned from deskpro" in new Setup {
 
-      CreateMessage.stubSuccess(ticketId, email, "message")
+      CreateMessage.stubSuccess(ticketId, email.text, "message")
 
-      val result = await(objInTest.createMessage(ticketId, email, "message"))
+      val result = await(objInTest.createMessage(ticketId, email.text, "message"))
 
       result shouldBe messageWrapper
     }
 
     "throw UpstreamErrorResponse if ticket not found" in new Setup {
-      CreateMessage.stubNotFound(ticketId, email, "message")
+      CreateMessage.stubNotFound(ticketId, email.text, "message")
 
       intercept[UpstreamErrorResponse] {
-        await(objInTest.createMessage(ticketId, email, "message"))
+        await(objInTest.createMessage(ticketId, email.text, "message"))
       }
     }
 
     "throw UpstreamErrorResponse if error" in new Setup {
-      CreateMessage.stubFailure(ticketId, email, "message")
+      CreateMessage.stubFailure(ticketId, email.text, "message")
 
       intercept[UpstreamErrorResponse] {
-        await(objInTest.createMessage(ticketId, email, "message"))
+        await(objInTest.createMessage(ticketId, email.text, "message"))
       }
     }
   }
@@ -623,9 +624,9 @@ class DeskproConnectorISpec
     "return DeskproTicketResponseSuccess when 200 returned from deskpro" in new Setup {
       val response = "response"
 
-      CreateMessageWithAttachment.stubSuccess(ticketId, email, response)
+      CreateMessageWithAttachments.stubSuccess(ticketId, email, response)
 
-      val result = await(objInTest.createMessageWithAttachment(ticketId, email, response, 26854, "26854KPJHXXQWRNRQHBQ0"))
+      val result = await(objInTest.createMessageWithAttachments(ticketId, email, response, List(BlobDetails(26854, "26854KPJHXXQWRNRQHBQ0"))))
 
       result shouldBe messageWrapper
     }
@@ -633,20 +634,20 @@ class DeskproConnectorISpec
     "throw UpstreamErrorResponse if ticket not found" in new Setup {
       val response = "response"
 
-      CreateMessageWithAttachment.stubNotFound(ticketId, email, response)
+      CreateMessageWithAttachments.stubNotFound(ticketId, email, response)
 
       intercept[UpstreamErrorResponse] {
-        await(objInTest.createMessageWithAttachment(ticketId, email, response, 26854, "26854KPJHXXQWRNRQHBQ0"))
+        await(objInTest.createMessageWithAttachments(ticketId, email, response, List(BlobDetails(26854, "26854KPJHXXQWRNRQHBQ0"))))
       }
     }
 
     "throw UpstreamErrorResponse if error" in new Setup {
       val response = "response"
 
-      CreateMessageWithAttachment.stubFailure(ticketId, email, response)
+      CreateMessageWithAttachments.stubFailure(ticketId, email, response)
 
       intercept[UpstreamErrorResponse] {
-        await(objInTest.createMessageWithAttachment(ticketId, email, response, 26854, "26854KPJHXXQWRNRQHBQ0"))
+        await(objInTest.createMessageWithAttachments(ticketId, email, response, List(BlobDetails(26854, "26854KPJHXXQWRNRQHBQ0"))))
       }
     }
   }

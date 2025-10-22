@@ -65,18 +65,8 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
         {
           "userEmail": "$email",
           "message": "$response",
-          "status": "${TicketStatus.AwaitingAgent}"
-        }
-      """
-    )
-
-    val addAttachmentRequestJson = Json.parse(
-      s"""
-        {
-          "fileName": "test.txt",
-          "fileType": "text/plain",
-          "message": "Test message",
-          "userEmail": "$email"
+          "status": "${TicketStatus.AwaitingAgent}",
+          "fileReference": []
         }
       """
     )
