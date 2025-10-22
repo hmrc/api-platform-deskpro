@@ -41,21 +41,22 @@ class DeskproMessageFileAttachmentRepositoryISpec extends AsyncHmrcSpec
   override protected val repository: PlayMongoRepository[DeskproMessageFileAttachment] = messageFileAttachmentRepo
 
   trait Setup {
-    val fileReference = "fileRef"
-    val ticketId      = 3281
-    val messageId     = 789
+    val fileReference1 = "fileRef1"
+    val fileReference2 = "fileRef2"
+    val ticketId       = 3281
+    val messageId      = 789
   }
 
   "DeskproMessageFileAttachmentRepository" when {
     "create" should {
       "save the DeskproMessageFileAttachment successfully" in new Setup {
-        val response = DeskproMessageFileAttachment(ticketId, messageId, fileReference, instant)
+        val response = DeskproMessageFileAttachment(ticketId, messageId, List(fileReference1, fileReference2), instant)
         val result   = await(messageFileAttachmentRepo.create(response))
         result shouldBe response
       }
 
       "not save duplicates" in new Setup {
-        val response = DeskproMessageFileAttachment(ticketId, messageId, fileReference, instant)
+        val response = DeskproMessageFileAttachment(ticketId, messageId, List(fileReference1, fileReference2), instant)
         await(messageFileAttachmentRepo.create(response))
 
         intercept[MongoWriteException] {
@@ -64,16 +65,18 @@ class DeskproMessageFileAttachmentRepositoryISpec extends AsyncHmrcSpec
       }
     }
 
-    "fetchByFileReference" should {
+    "fetchByfileReference" should {
       "find DeskproMessageFileAttachment when exists in db" in new Setup {
-        val response = DeskproMessageFileAttachment(ticketId, messageId, fileReference, instant)
+        val response = DeskproMessageFileAttachment(ticketId, messageId, List(fileReference1, fileReference2), instant)
         await(messageFileAttachmentRepo.create(response))
 
-        await(messageFileAttachmentRepo.fetchByFileReference(fileReference)) shouldBe Some(response)
+        // Should be able to fetch by either file reference
+        await(messageFileAttachmentRepo.fetchByFileReference(fileReference1)) shouldBe Some(response)
+        await(messageFileAttachmentRepo.fetchByFileReference(fileReference2)) shouldBe Some(response)
       }
 
       "not find DeskproMessageFileAttachment not in db" in new Setup {
-        await(messageFileAttachmentRepo.fetchByFileReference(fileReference)) shouldBe None
+        await(messageFileAttachmentRepo.fetchByFileReference(fileReference1)) shouldBe None
       }
     }
   }

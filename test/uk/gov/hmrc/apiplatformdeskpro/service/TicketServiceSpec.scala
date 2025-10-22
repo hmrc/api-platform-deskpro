@@ -329,7 +329,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       when(mockUploadedFileRepo.fetchByFileReference(*)).thenReturn(Future.successful(Some(uploadedFile)))
       when(mockDeskproConnector.createMessageWithAttachment(*, *, *, *, *)(*)).thenReturn(Future.successful(messageWrapper))
       when(mockDeskproConnector.updateTicketStatus(*, *)(*)).thenReturn(Future.successful(DeskproTicketUpdateSuccess))
-      val response = DeskproMessageFileAttachment(ticketId, messageId, fileReference, instant)
+      val response = DeskproMessageFileAttachment(ticketId, messageId, List(fileReference), instant)
       when(mockMessageFileAttachmentRepo.create(*)).thenReturn(Future.successful(response))
 
       val result = await(underTest.createMessage(ticketId, CreateTicketResponseRequest(email, message, TicketStatus.AwaitingAgent, Some(fileReference))))
@@ -349,7 +349,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       when(mockUploadedFileRepo.fetchByFileReference(*)).thenReturn(Future.successful(Some(failedUploadedFile)))
       when(mockDeskproConnector.createMessage(*, *, *)(*)).thenReturn(Future.successful(messageWrapper))
       when(mockDeskproConnector.updateTicketStatus(*, *)(*)).thenReturn(Future.successful(DeskproTicketUpdateSuccess))
-      val response = DeskproMessageFileAttachment(ticketId, messageId, fileReference, instant)
+      val response = DeskproMessageFileAttachment(ticketId, messageId, List(fileReference), instant)
       when(mockMessageFileAttachmentRepo.create(*)).thenReturn(Future.successful(response))
 
       val result = await(underTest.createMessage(ticketId, CreateTicketResponseRequest(email, message, TicketStatus.AwaitingAgent, Some(fileReference))))
@@ -366,7 +366,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       when(mockUploadedFileRepo.fetchByFileReference(*)).thenReturn(Future.successful(None))
       when(mockDeskproConnector.createMessage(*, *, *)(*)).thenReturn(Future.successful(messageWrapper))
       when(mockDeskproConnector.updateTicketStatus(*, *)(*)).thenReturn(Future.successful(DeskproTicketUpdateSuccess))
-      val response = DeskproMessageFileAttachment(ticketId, messageId, fileReference, instant)
+      val response = DeskproMessageFileAttachment(ticketId, messageId, List(fileReference), instant)
       when(mockMessageFileAttachmentRepo.create(*)).thenReturn(Future.successful(response))
 
       val result = await(underTest.createMessage(ticketId, CreateTicketResponseRequest(email, message, TicketStatus.AwaitingAgent, Some(fileReference))))
@@ -413,7 +413,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
 
   "updateMessageAddAttachmentIfRequired" should {
     "return a success result when adding a new attachment to the message" in new Setup {
-      val fileAttachment      = DeskproMessageFileAttachment(ticketId, messageId, fileReference, instant)
+      val fileAttachment      = DeskproMessageFileAttachment(ticketId, messageId, List(fileReference), instant)
       when(mockMessageFileAttachmentRepo.fetchByFileReference(*)).thenReturn(Future.successful(Some(fileAttachment)))
       val existingAttachments = List(DeskproAttachmentResponse(12, DeskproBlobResponse(12345, "FGFK6657HHJHJ7987", "https://example.com/file01", "example.txt")))
       val attachmantsWrapper  = DeskproAttachmentsWrapperResponse(existingAttachments)
@@ -429,7 +429,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
     }
 
     "return a success result when message already has attachment" in new Setup {
-      val fileAttachment     = DeskproMessageFileAttachment(ticketId, messageId, fileReference, instant)
+      val fileAttachment     = DeskproMessageFileAttachment(ticketId, messageId, List(fileReference), instant)
       when(mockMessageFileAttachmentRepo.fetchByFileReference(*)).thenReturn(Future.successful(Some(fileAttachment)))
       val attachmantsWrapper =
         DeskproAttachmentsWrapperResponse(List(DeskproAttachmentResponse(12, DeskproBlobResponse(blobId, blobAuth, "https://example.com/file01", "example.txt"))))

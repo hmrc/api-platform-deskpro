@@ -94,7 +94,7 @@ class TicketService @Inject() (
 
   private def saveMessageFileDetails(ticketId: Int, messageId: Int, fileReference: Option[String]): Future[Option[DeskproMessageFileAttachment]] = {
     fileReference match {
-      case Some(fileRef) => deskproMessageFileAttachmentRepository.create(DeskproMessageFileAttachment(ticketId, messageId, fileRef, instant())) map { resp => Some(resp) }
+      case Some(fileRef) => deskproMessageFileAttachmentRepository.create(DeskproMessageFileAttachment(ticketId, messageId, List(fileRef), instant())) map { resp => Some(resp) }
       case _             => Future.successful(None)
     }
   }
