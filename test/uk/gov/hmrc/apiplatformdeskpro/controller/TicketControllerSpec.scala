@@ -66,7 +66,7 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
           "userEmail": "$email",
           "message": "$response",
           "status": "${TicketStatus.AwaitingAgent}",
-          "fileReference": []
+          "fileReferences": []
         }
       """
     )

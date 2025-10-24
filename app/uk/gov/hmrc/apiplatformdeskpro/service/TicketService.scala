@@ -85,9 +85,9 @@ class TicketService @Inject() (
 
   def createMessage(ticketId: Int, request: CreateTicketResponseRequest)(implicit hc: HeaderCarrier): Future[DeskproCreateMessageResponse] = {
     for {
-      uploadedFiles        <- getUploadedFileDetails(request.fileReference)
+      uploadedFiles        <- getUploadedFileDetails(request.fileReferences)
       createResponseResult <- deskproConnector.createMessageWithAttachments(ticketId, request.userEmail, request.message, getBlobDetails(uploadedFiles))
-      _                    <- saveMessageFileDetails(ticketId, createResponseResult.data.id, request.fileReference)
+      _                    <- saveMessageFileDetails(ticketId, createResponseResult.data.id, request.fileReferences)
       _                    <- deskproConnector.updateTicketStatus(ticketId, request.status)
     } yield createResponseResult.data
   }
