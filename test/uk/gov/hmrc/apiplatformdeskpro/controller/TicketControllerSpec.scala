@@ -25,7 +25,7 @@ import play.api.mvc.{AnyContentAsText, ControllerComponents, Result}
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers, StubControllerComponentsFactory, StubPlayBodyParsersFactory}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models._
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.TicketStatus
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproCreateMessageResponse, TicketStatus}
 import uk.gov.hmrc.apiplatformdeskpro.service.TicketService
 import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
@@ -70,14 +70,26 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
       """
     )
 
+    val addAttachmentRequestJson = Json.parse(
+      s"""
+        {
+          "fileName": "test.txt",
+          "fileType": "text/plain",
+          "message": "Test message",
+          "userEmail": "$email"
+        }
+      """
+    )
+
     val ticketId: Int = 123
     val message       = DeskproMessage(789, ticketId, personId, instant, false, "message", List.empty)
     val ticket        = DeskproTicket(ticketId, "ref1", personId, LaxEmailAddress("bob@example.com"), "awaiting_user", instant, instant, Some(instant), "subject 1", List(message))
 
-    val listOfTickets = List(
+    val listOfTickets   = List(
       ticket,
       DeskproTicket(456, "ref2", personId, LaxEmailAddress("bob@example.com"), "awaiting_agent", instant, instant, None, "subject 2", List.empty)
     )
+    val messageResponse = DeskproCreateMessageResponse(789, ticketId, personId, instant, 0, "message", List.empty)
   }
 
   "getTicketsForPerson" should {
@@ -204,60 +216,60 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
     }
   }
 
-  "createResponse" should {
+  "createMessage" should {
     val expectedPredicate = Permission(Resource(ResourceType("api-platform-deskpro"), ResourceLocation("tickets/all")), IAAction("WRITE"))
     "return 200 when response created successfully" in new Setup {
 
-      when(mockService.createResponse(*, *, *, *)(*)).thenReturn(Future.successful(DeskproTicketResponseSuccess))
+      when(mockService.createMessage(*, *)(*)).thenReturn(Future.successful(messageResponse))
       when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
 
       val request = FakeRequest(POST, s"/ticket/$ticketId/response")
         .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
         .withJsonBody(createTicketResponseRequestJson)
 
-      val result: Future[Result] = objToTest.createResponse(ticketId)(request)
+      val result: Future[Result] = objToTest.createMessage(ticketId)(request)
 
       status(result) shouldBe OK
     }
 
     "return 404 when ticket to respond not found" in new Setup {
 
-      when(mockService.createResponse(*, *, *, *)(*)).thenReturn(Future.successful(DeskproTicketResponseNotFound))
+      when(mockService.createMessage(*, *)(*)).thenReturn(Future.failed(UpstreamErrorResponse("Not found", 404)))
       when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
 
       val request = FakeRequest(POST, s"/ticket/$ticketId/response")
         .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
         .withJsonBody(createTicketResponseRequestJson)
 
-      val result: Future[Result] = objToTest.createResponse(ticketId)(request)
+      val result: Future[Result] = objToTest.createMessage(ticketId)(request)
 
       status(result) shouldBe NOT_FOUND
     }
 
     "return 500 when response failed" in new Setup {
 
-      when(mockService.createResponse(*, *, *, *)(*)).thenReturn(Future.successful(DeskproTicketResponseFailure))
+      when(mockService.createMessage(*, *)(*)).thenReturn(Future.failed(UpstreamErrorResponse("Error", 500)))
       when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
 
       val request = FakeRequest(POST, s"/ticket/$ticketId/response")
         .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
         .withJsonBody(createTicketResponseRequestJson)
 
-      val result: Future[Result] = objToTest.createResponse(ticketId)(request)
+      val result: Future[Result] = objToTest.createMessage(ticketId)(request)
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
 
     "return 500 when call to deskpro fails" in new Setup {
 
-      when(mockService.createResponse(*, *, *, *)(*)).thenReturn(Future.failed(new Exception("error")))
+      when(mockService.createMessage(*, *)(*)).thenReturn(Future.failed(new Exception("error")))
       when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
 
       val request = FakeRequest(POST, s"/ticket/$ticketId/response")
         .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
         .withJsonBody(createTicketResponseRequestJson)
 
-      val result: Future[Result] = objToTest.createResponse(ticketId)(request)
+      val result: Future[Result] = objToTest.createMessage(ticketId)(request)
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
@@ -269,7 +281,7 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
       when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.failed(UpstreamErrorResponse("Unauthorized", UNAUTHORIZED)))
 
       intercept[UpstreamErrorResponse] {
-        await(objToTest.createResponse(ticketId)(request))
+        await(objToTest.createMessage(ticketId)(request))
       }
     }
   }

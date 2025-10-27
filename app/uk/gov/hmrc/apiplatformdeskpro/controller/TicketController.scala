@@ -25,6 +25,7 @@ import uk.gov.hmrc.apiplatformdeskpro.domain.models._
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.{CreateTicketResponseRequest, GetTicketsByEmailRequest}
 import uk.gov.hmrc.apiplatformdeskpro.service.TicketService
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
+import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.internalauth.client._
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -64,23 +65,29 @@ class TicketController @Inject() (ticketService: TicketService, cc: ControllerCo
         }
     }
 
-  def createResponse(ticketId: Int): Action[AnyContent] =
+  def createMessage(ticketId: Int): Action[AnyContent] =
     auth.authorizedAction(predicate = Predicate.Permission(Resource.from("api-platform-deskpro", "tickets/all"), IAAction("WRITE"))).async {
       implicit request: AuthenticatedRequest[AnyContent, Unit] =>
         withJsonBodyFromAnyContent[CreateTicketResponseRequest] { parsedRequest =>
-          ticketService.createResponse(ticketId, parsedRequest.userEmail.text, parsedRequest.message, parsedRequest.status)
-            .map {
-              case DeskproTicketResponseSuccess  => Ok
-              case DeskproTicketResponseNotFound => NotFound
-              case DeskproTicketResponseFailure  => InternalServerError
+          ticketService.createMessage(ticketId, parsedRequest)
+            .map { msg =>
+              Ok
             } recover recovery
         }
     }
 
   private def recovery: PartialFunction[Throwable, Result] = {
-    case e: Throwable =>
+    case UpstreamErrorResponse(message, 404, _, _) => handleNotFound(message)
+    case e: Throwable                              =>
       logger.error(s"Error occurred: ${e.getMessage}", e)
       handleException(e)
+  }
+
+  private[controller] def handleNotFound(message: String): Result = {
+    NotFound(Json.obj(
+      "code"    -> "TICKET_NOT_FOUND",
+      "message" -> message
+    ))
   }
 
   private[controller] def handleException(e: Throwable) = {

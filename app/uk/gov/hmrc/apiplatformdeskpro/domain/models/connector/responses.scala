@@ -107,16 +107,23 @@ case class DeskproTicketWrapperResponse(data: DeskproTicketResponse)
 object DeskproTicketWrapperResponse {
   implicit val reads: Reads[DeskproTicketWrapperResponse] = Json.reads[DeskproTicketWrapperResponse]
 }
-case class DeskproBlobResponse(download_url: String, filename: String)
+
+case class DeskproBlobResponse(blob_id: Int, blob_auth: String, download_url: String, filename: String)
 
 object DeskproBlobResponse {
   implicit val reads: Reads[DeskproBlobResponse] = Json.reads[DeskproBlobResponse]
-
 }
+
 case class DeskproAttachmentResponse(id: Int, blob: DeskproBlobResponse)
 
 object DeskproAttachmentResponse {
   implicit val reads: Reads[DeskproAttachmentResponse] = Json.reads[DeskproAttachmentResponse]
+}
+
+case class DeskproAttachmentsWrapperResponse(data: List[DeskproAttachmentResponse])
+
+object DeskproAttachmentsWrapperResponse {
+  implicit val reads: Reads[DeskproAttachmentsWrapperResponse] = Json.reads[DeskproAttachmentsWrapperResponse]
 }
 
 case class DeskproMessageResponse(id: Int, ticket: Int, person: Int, date_created: Instant, is_agent_note: Int, message: String, attachments: List[Int])
@@ -127,10 +134,45 @@ object DeskproMessageResponse {
   implicit val reads: Reads[DeskproMessageResponse] = Json.reads[DeskproMessageResponse]
 }
 
+case class DeskproMessageWrapperResponse(data: DeskproMessageResponse)
+
+object DeskproMessageWrapperResponse {
+  implicit val reads: Reads[DeskproMessageWrapperResponse] = Json.reads[DeskproMessageWrapperResponse]
+}
+
 case class DeskproMessagesWrapperResponse(data: List[DeskproMessageResponse])
 
 object DeskproMessagesWrapperResponse {
   implicit val reads: Reads[DeskproMessagesWrapperResponse] = Json.reads[DeskproMessagesWrapperResponse]
+}
+
+case class DeskproCreateMessageResponse(id: Int, ticket: Int, person: Int, date_created: Instant, is_agent_note: Int, message: String, attachments: List[String])
+
+object DeskproCreateMessageResponse {
+  implicit val instantFormatter: Reads[Instant] = InstantJsonFormatter.lenientInstantReads
+
+  implicit val reads: Reads[DeskproCreateMessageResponse] = Json.reads[DeskproCreateMessageResponse]
+}
+
+case class DeskproCreateMessageWrapperResponse(data: DeskproCreateMessageResponse)
+
+object DeskproCreateMessageWrapperResponse {
+  implicit val reads: Reads[DeskproCreateMessageWrapperResponse] = Json.reads[DeskproCreateMessageWrapperResponse]
+}
+
+case class DeskproCreateBlobResponse(
+    blob_id: Int,
+    blob_auth: String
+  )
+
+object DeskproCreateBlobResponse {
+  implicit val reads: Reads[DeskproCreateBlobResponse] = Json.reads[DeskproCreateBlobResponse]
+}
+
+case class DeskproCreateBlobWrapperResponse(data: DeskproCreateBlobResponse)
+
+object DeskproCreateBlobWrapperResponse {
+  implicit val reads: Reads[DeskproCreateBlobWrapperResponse] = Json.reads[DeskproCreateBlobWrapperResponse]
 }
 
 /*

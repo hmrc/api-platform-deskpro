@@ -969,7 +969,7 @@ trait DeskproStub {
                        |      "priority": null,
                        |      "workflow": null,
                        |      "product": null,
-                       |      "person": 61,
+                       |      "person": 1,
                        |      "person_email": "bob@example.com",
                        |      "agent": 61,
                        |      "agent_team": 8,
@@ -1071,7 +1071,7 @@ trait DeskproStub {
                        |      "priority": null,
                        |      "workflow": null,
                        |      "product": null,
-                       |      "person": 61,
+                       |      "person": 1,
                        |      "person_email": "bob@example.com",
                        |      "agent": null,
                        |      "agent_team": null,
@@ -1703,7 +1703,7 @@ trait DeskproStub {
     }
   }
 
-  object CreateResponse {
+  object CreateMessage {
 
     def stubSuccess(ticketId: Int, userEmail: String, message: String) = {
       stubFor(
@@ -1714,6 +1714,46 @@ trait DeskproStub {
                                           |}""".stripMargin))
           .willReturn(
             aResponse()
+              .withBody("""{
+                          |  "data": { 
+                          |    "id": 789,
+                          |    "ticket": 3432,
+                          |    "person": 1,
+                          |    "email_source": null,
+                          |    "attributes": [
+                          |      {
+                          |        "name": "agent_type",
+                          |        "value": "agent",
+                          |        "date_created": "2025-05-01T08:02:02+0000",
+                          |        "type": "value"
+                          |      },
+                          |      {
+                          |        "name": "email_recipients",
+                          |        "value": "[{\"type\":\"to\",\"address\":\"pete.kirby@digital.hmrc.gov.uk\"}]",
+                          |        "date_created": "2025-05-01T08:02:02+0000",
+                          |        "type": "value"
+                          |      }
+                          |    ],
+                          |    "attachments": [],
+                          |    "date_created": "2020-01-02T03:04:05+0000",
+                          |    "is_agent_note": 0,
+                          |    "creation_system": "web.api",
+                          |    "ip_address": "",
+                          |    "visitor_id": null,
+                          |    "hostname": "",
+                          |    "email": "",
+                          |    "message_hash": "7fe219f88a4ed6bd2b7b8f6c6bc1712e6d0d5a70",
+                          |    "primary_translation": null,
+                          |    "message": "message",
+                          |    "message_full": "",
+                          |    "message_raw": null,
+                          |    "message_preview_text": "Hi. What API do I need to get next weeks lottery numbers?",
+                          |    "show_full_hint": false,
+                          |    "lang_code": null
+                          |  },
+                          |  "meta": {},
+                          |  "linked": {}
+                          |}""".stripMargin)
               .withStatus(CREATED)
           )
       )
@@ -1872,6 +1912,253 @@ trait DeskproStub {
     def stubFailure(ticketId: Int) = {
       stubFor(
         delete(urlPathEqualTo(s"/api/v2/tickets/$ticketId"))
+          .willReturn(
+            aResponse()
+              .withStatus(INTERNAL_SERVER_ERROR)
+          )
+      )
+    }
+  }
+
+  object CreateBlob {
+
+    def stubSuccess() = {
+      stubFor(
+        post(urlPathEqualTo("/api/v2/blobs/temp"))
+          .willReturn(
+            aResponse()
+              .withBody("""{
+                          |  "data": {
+                          |    "content_type": "text/plain",
+                          |    "is_image": false,
+                          |    "blob_id": 26854,
+                          |    "blob_auth": "26854KPJHXXQWRNRQHBQ0",
+                          |    "blob_auth_id": "26854-26854KPJHXXQWRNRQHBQ0",
+                          |    "download_url": "https://apiplatformsupporttest.deskpro.com/file.php/26854KPJHXXQWRNRQHBQ0/panic.txt?access_token=t3t6z6-osmhlzjorm-889e3110f491775b5786a754fb6b109baa2109bb",
+                          |    "filename": "panic.txt",
+                          |    "filesize_readable": "183.00 B",
+                          |    "is_temp": true
+                          |  },
+                          |  "meta": {},
+                          |  "linked": {}
+                          |}""".stripMargin)
+              .withStatus(CREATED)
+          )
+      )
+    }
+
+    def stubFailure() = {
+      stubFor(
+        post(urlPathEqualTo("/api/v2/blobs/temp"))
+          .willReturn(
+            aResponse()
+              .withStatus(INTERNAL_SERVER_ERROR)
+          )
+      )
+    }
+  }
+
+  object CreateMessageWithAttachment {
+
+    def stubSuccess(ticketId: Int, userEmail: String, message: String) = {
+      stubFor(
+        post(urlPathEqualTo(s"/api/v2/tickets/$ticketId/messages"))
+          .withRequestBody(equalToJson(s"""{
+                                          |  "person": "$userEmail",
+                                          |  "message": "$message",
+                                          |  "attachments": {
+                                          |    "26854": {
+                                          |      "blob_auth": "26854KPJHXXQWRNRQHBQ0"
+                                          |    }
+                                          |  }
+                                          |}""".stripMargin))
+          .willReturn(
+            aResponse()
+              .withBody("""{
+                          |  "data": { 
+                          |    "id": 789,
+                          |    "ticket": 3432,
+                          |    "person": 1,
+                          |    "email_source": null,
+                          |    "attributes": [
+                          |      {
+                          |        "name": "agent_type",
+                          |        "value": "agent",
+                          |        "date_created": "2025-05-01T08:02:02+0000",
+                          |        "type": "value"
+                          |      },
+                          |      {
+                          |        "name": "email_recipients",
+                          |        "value": "[{\"type\":\"to\",\"address\":\"pete.kirby@digital.hmrc.gov.uk\"}]",
+                          |        "date_created": "2025-05-01T08:02:02+0000",
+                          |        "type": "value"
+                          |      }
+                          |    ],
+                          |    "attachments": [],
+                          |    "date_created": "2020-01-02T03:04:05+0000",
+                          |    "is_agent_note": 0,
+                          |    "creation_system": "web.api",
+                          |    "ip_address": "",
+                          |    "visitor_id": null,
+                          |    "hostname": "",
+                          |    "email": "",
+                          |    "message_hash": "7fe219f88a4ed6bd2b7b8f6c6bc1712e6d0d5a70",
+                          |    "primary_translation": null,
+                          |    "message": "message",
+                          |    "message_full": "",
+                          |    "message_raw": null,
+                          |    "message_preview_text": "Hi. What API do I need to get next weeks lottery numbers?",
+                          |    "show_full_hint": false,
+                          |    "lang_code": null
+                          |  },
+                          |  "meta": {},
+                          |  "linked": {}
+                          |}""".stripMargin)
+              .withStatus(CREATED)
+          )
+      )
+    }
+
+    def stubNotFound(ticketId: Int, userEmail: String, message: String) = {
+      stubFor(
+        post(urlPathEqualTo(s"/api/v2/tickets/$ticketId/messages"))
+          .withRequestBody(equalToJson(s"""{
+                                          |  "person": "$userEmail",
+                                          |  "message": "$message",
+                                          |  "attachments": {
+                                          |    "26854": {
+                                          |      "blob_auth": "26854KPJHXXQWRNRQHBQ0"
+                                          |    }
+                                          |  }
+                                          |}""".stripMargin))
+          .willReturn(
+            aResponse()
+              .withStatus(NOT_FOUND)
+          )
+      )
+    }
+
+    def stubFailure(ticketId: Int, userEmail: String, message: String) = {
+      stubFor(
+        post(urlPathEqualTo(s"/api/v2/tickets/$ticketId/messages"))
+          .withRequestBody(equalToJson(s"""{
+                                          |  "person": "$userEmail",
+                                          |  "message": "$message",
+                                          |  "attachments": {
+                                          |    "26854": {
+                                          |      "blob_auth": "26854KPJHXXQWRNRQHBQ0"
+                                          |    }
+                                          |  }
+                                          |}""".stripMargin))
+          .willReturn(
+            aResponse()
+              .withStatus(INTERNAL_SERVER_ERROR)
+          )
+      )
+    }
+  }
+
+  object GetMessageAttachments {
+
+    def stubSuccess(ticketId: Int, messageId: Int) = {
+      stubFor(
+        get(urlPathEqualTo(s"/api/v2/tickets/$ticketId/messages/$messageId/attachments"))
+          .willReturn(
+            aResponse()
+              .withBody(s"""{
+                           |  "data": [ 
+                           |    {
+                           |      "id": 83,
+                           |      "ticket": $ticketId,
+                           |      "person": 1,
+                           |      "blob": {
+                           |        "content_type": "text/plain",
+                           |        "is_image": false,
+                           |        "blob_id": 27604,
+                           |        "blob_auth": "27604SWTHHKQXHCZKCJY0T",
+                           |        "blob_auth_id": "27604-27604SWTHHKQXHCZKCJY0T",
+                           |        "download_url": "https://example.com/file.php/27604SWTHHKQXHCZKCJY0T",
+                           |        "filename": "panic.txt",
+                           |        "filesize_readable": "183.00 B",
+                           |        "is_temp": false
+                           |      },
+                           |      "message": $messageId,
+                           |      "is_agent_note": false,
+                           |      "is_inline": false
+                           |    }
+                           |  ],
+                           |  "meta": {
+                           |    "pagination": {
+                           |      "total": 1,
+                           |      "count": 1,
+                           |      "per_page": 10,
+                           |      "current_page": 1,
+                           |      "total_pages": 1
+                           |    }
+                           |  },
+                           |  "linked": {}
+                           |}""".stripMargin)
+              .withStatus(OK)
+          )
+      )
+    }
+  }
+
+  object UpdateMessageAttachments {
+
+    def stubSuccess(ticketId: Int, messageId: Int) = {
+      stubFor(
+        put(urlPathEqualTo(s"/api/v2/tickets/$ticketId/messages/$messageId"))
+          .withRequestBody(equalToJson(s"""{
+                                          |  "attachments": {
+                                          |    "12345": {
+                                          |      "blob_auth": "26854KPJHXXQWRNRQHBQ0"
+                                          |    },
+                                          |    "67890": {
+                                          |      "blob_auth": "4476FHDGBJHJ55356BVN1"
+                                          |    }
+                                          |  }
+                                          |}""".stripMargin))
+          .willReturn(
+            aResponse()
+              .withStatus(NO_CONTENT)
+          )
+      )
+    }
+
+    def stubNotFound(ticketId: Int, messageId: Int) = {
+      stubFor(
+        put(urlPathEqualTo(s"/api/v2/tickets/$ticketId/messages/$messageId"))
+          .withRequestBody(equalToJson(s"""{
+                                          |  "attachments": {
+                                          |    "12345": {
+                                          |      "blob_auth": "26854KPJHXXQWRNRQHBQ0"
+                                          |    },
+                                          |    "67890": {
+                                          |      "blob_auth": "4476FHDGBJHJ55356BVN1"
+                                          |    }
+                                          |  }
+                                          |}""".stripMargin))
+          .willReturn(
+            aResponse()
+              .withStatus(NOT_FOUND)
+          )
+      )
+    }
+
+    def stubFailure(ticketId: Int, messageId: Int) = {
+      stubFor(
+        put(urlPathEqualTo(s"/api/v2/tickets/$ticketId/messages/$messageId"))
+          .withRequestBody(equalToJson(s"""{
+                                          |  "attachments": {
+                                          |    "12345": {
+                                          |      "blob_auth": "26854KPJHXXQWRNRQHBQ0"
+                                          |    },
+                                          |    "67890": {
+                                          |      "blob_auth": "4476FHDGBJHJ55356BVN1"
+                                          |    }
+                                          |  }
+                                          |}""".stripMargin))
           .willReturn(
             aResponse()
               .withStatus(INTERNAL_SERVER_ERROR)

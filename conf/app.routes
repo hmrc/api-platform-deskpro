@@ -3,10 +3,12 @@
 POST    /ticket                          uk.gov.hmrc.apiplatformdeskpro.controller.CreateTicketController.createTicket()
 POST    /ticket/query                    uk.gov.hmrc.apiplatformdeskpro.controller.TicketController.getTicketsByPersonEmail()
 GET     /ticket/:tid                     uk.gov.hmrc.apiplatformdeskpro.controller.TicketController.fetchTicket(tid: Int)
-POST    /ticket/:tid/response            uk.gov.hmrc.apiplatformdeskpro.controller.TicketController.createResponse(tid: Int)
+POST    /ticket/:tid/response            uk.gov.hmrc.apiplatformdeskpro.controller.TicketController.createMessage(tid: Int)
 
 GET     /organisation/:orgId             uk.gov.hmrc.apiplatformdeskpro.controller.OrganisationController.getOrganisation(orgId: uk.gov.hmrc.apiplatformdeskpro.domain.models.OrganisationId)
 POST    /organisation/query              uk.gov.hmrc.apiplatformdeskpro.controller.OrganisationController.getOrganisationsByPersonEmail()
 
 PUT     /person                          uk.gov.hmrc.apiplatformdeskpro.controller.PersonController.updatePersonByEmail()
 POST    /person/mark-inactive            uk.gov.hmrc.apiplatformdeskpro.controller.PersonController.markPersonInactive()
+
+POST    /upscan-callback                 uk.gov.hmrc.apiplatformdeskpro.controller.UpscanCallbackController.callback()
