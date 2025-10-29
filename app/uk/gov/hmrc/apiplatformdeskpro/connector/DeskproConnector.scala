@@ -288,7 +288,7 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
         BatchTicketRequest(
           BatchRequestDetails(s"/api/v2/tickets/$ticketId"),
           BatchRequestDetails(s"/api/v2/tickets/$ticketId/messages?order_by=$orderBy&order_dir=$orderDir&count=200&page=$pageWanted"),
-          BatchRequestDetails(s"/api/v2/tickets/$ticketId/attachments")
+          BatchRequestDetails(s"/api/v2/tickets/$ticketId/attachments?count=200")
         )
       )
       http
