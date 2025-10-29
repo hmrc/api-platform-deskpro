@@ -1332,7 +1332,7 @@ trait DeskproStub {
                |    },
                |    "attachments": {
                |      "method": "GET",
-               |      "url": "/api/v2/tickets/$ticketId/attachments"
+               |      "url": "/api/v2/tickets/$ticketId/attachments?count=200"
                |    }
                |  }    
                |}
@@ -1611,7 +1611,7 @@ trait DeskproStub {
                |          },
                |    "attachments": {
                |      "method": "GET",
-               |      "url": "/api/v2/tickets/$ticketId/attachments"
+               |      "url": "/api/v2/tickets/$ticketId/attachments?count=200"
                |    }
                |  }    
                |}
