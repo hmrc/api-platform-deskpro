@@ -85,44 +85,34 @@ class TicketService @Inject() (
 
   def createMessage(ticketId: Int, request: CreateTicketResponseRequest)(implicit hc: HeaderCarrier): Future[DeskproCreateMessageResponse] = {
     for {
-      maybeUploadedFile    <- getUploadedFileDetails(request.fileReference)
-      createResponseResult <- createDeskproMessage(ticketId, request.userEmail.text, request.message, maybeUploadedFile)
-      _                    <- saveMessageFileDetails(ticketId, createResponseResult.data.id, request.fileReference)
+      uploadedFiles        <- getUploadedFileDetails(request.fileReferences)
+      createResponseResult <- deskproConnector.createMessageWithAttachments(ticketId, request.userEmail, request.message, getBlobDetails(uploadedFiles))
+      _                    <- saveMessageFileDetails(ticketId, createResponseResult.data.id, request.fileReferences)
       _                    <- deskproConnector.updateTicketStatus(ticketId, request.status)
     } yield createResponseResult.data
   }
 
-  private def saveMessageFileDetails(ticketId: Int, messageId: Int, fileReference: Option[String]): Future[Option[DeskproMessageFileAttachment]] = {
-    fileReference match {
-      case Some(fileRef) => deskproMessageFileAttachmentRepository.create(DeskproMessageFileAttachment(ticketId, messageId, fileRef, instant())) map { resp => Some(resp) }
-      case _             => Future.successful(None)
+  private def saveMessageFileDetails(ticketId: Int, messageId: Int, fileReferences: List[String]): Future[Option[DeskproMessageFileAttachment]] = {
+    if (!fileReferences.isEmpty) {
+      deskproMessageFileAttachmentRepository.create(DeskproMessageFileAttachment(ticketId, messageId, fileReferences, instant())) map { resp => Some(resp) }
+    } else {
+      Future.successful(None)
     }
   }
 
-  private def getBlobDetails(maybeUploadedFile: Option[UploadedFile]): Option[BlobDetails] = {
-    maybeUploadedFile match {
-      case Some(uploadedFile) =>
-        uploadedFile.uploadStatus match {
-          case success: UploadedSuccessfully => Some(success.blobDetails)
-          case _                             => None
-        }
-      case _                  => None
-    }
+  private def getBlobDetails(uploadedFiles: List[UploadedFile]): List[BlobDetails] = {
+    uploadedFiles.map(uploadedFile =>
+      uploadedFile.uploadStatus match {
+        case success: UploadedSuccessfully => Some(success.blobDetails)
+        case _                             => None
+      }
+    ).flatten
   }
 
-  private def createDeskproMessage(ticketId: Int, userEmail: String, message: String, maybeUploadedFile: Option[UploadedFile])(implicit hc: HeaderCarrier)
-      : Future[DeskproCreateMessageWrapperResponse] = {
-    getBlobDetails(maybeUploadedFile) match {
-      case Some(blobDetails) => deskproConnector.createMessageWithAttachment(ticketId, userEmail, message, blobDetails.blobId, blobDetails.blobAuth)
-      case _                 => deskproConnector.createMessage(ticketId, userEmail, message)
-    }
-  }
-
-  private def getUploadedFileDetails(fileReference: Option[String]): Future[Option[UploadedFile]] = {
-    fileReference match {
-      case Some(fileRef) => uploadedFileRepository.fetchByFileReference(fileRef)
-      case _             => Future.successful(None)
-    }
+  private def getUploadedFileDetails(fileReferences: List[String]): Future[List[UploadedFile]] = {
+    for {
+      uploadFiles <- Future.sequence(fileReferences.map(fileRef => uploadedFileRepository.fetchByFileReference(fileRef)))
+    } yield uploadFiles.flatten
   }
 
   def updateMessageAddAttachmentIfRequired(fileReference: String, blobDetails: BlobDetails)(implicit hc: HeaderCarrier): Future[DeskproTicketMessageResult] = {

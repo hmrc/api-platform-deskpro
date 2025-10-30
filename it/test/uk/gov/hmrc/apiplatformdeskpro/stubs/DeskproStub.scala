@@ -1958,9 +1958,9 @@ trait DeskproStub {
     }
   }
 
-  object CreateMessageWithAttachment {
+  object CreateMessageWithAttachments {
 
-    def stubSuccess(ticketId: Int, userEmail: String, message: String) = {
+    def stubSuccess(ticketId: Int, userEmail: LaxEmailAddress, message: String) = {
       stubFor(
         post(urlPathEqualTo(s"/api/v2/tickets/$ticketId/messages"))
           .withRequestBody(equalToJson(s"""{
@@ -2019,7 +2019,7 @@ trait DeskproStub {
       )
     }
 
-    def stubNotFound(ticketId: Int, userEmail: String, message: String) = {
+    def stubNotFound(ticketId: Int, userEmail: LaxEmailAddress, message: String) = {
       stubFor(
         post(urlPathEqualTo(s"/api/v2/tickets/$ticketId/messages"))
           .withRequestBody(equalToJson(s"""{
@@ -2038,7 +2038,7 @@ trait DeskproStub {
       )
     }
 
-    def stubFailure(ticketId: Int, userEmail: String, message: String) = {
+    def stubFailure(ticketId: Int, userEmail: LaxEmailAddress, message: String) = {
       stubFor(
         post(urlPathEqualTo(s"/api/v2/tickets/$ticketId/messages"))
           .withRequestBody(equalToJson(s"""{

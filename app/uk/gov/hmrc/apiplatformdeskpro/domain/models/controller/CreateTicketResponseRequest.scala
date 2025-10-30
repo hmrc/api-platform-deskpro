@@ -21,7 +21,7 @@ import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.TicketStatus
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
-case class CreateTicketResponseRequest(userEmail: LaxEmailAddress, message: String, status: TicketStatus, fileReference: Option[String] = None)
+case class CreateTicketResponseRequest(userEmail: LaxEmailAddress, message: String, status: TicketStatus, fileReferences: List[String] = List.empty)
 
 object CreateTicketResponseRequest {
   implicit val createTicketResponseRequest: OFormat[CreateTicketResponseRequest] = Json.format[CreateTicketResponseRequest]

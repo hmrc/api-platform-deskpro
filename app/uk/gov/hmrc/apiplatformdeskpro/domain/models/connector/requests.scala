@@ -79,6 +79,10 @@ case class CreateMessageRequest(
   )
 
 object CreateMessageRequest {
+
+  def fromRaw(message: String, person: String, attachments: Map[String, AttachmentRequest]): CreateMessageRequest =
+    CreateMessageRequest(message.replaceAll(Properties.lineSeparator, "<br>"), person, attachments)
+
   implicit val createMessageRequestFormat: Format[CreateMessageRequest] = Json.format[CreateMessageRequest]
 }
 
