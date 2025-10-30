@@ -153,14 +153,14 @@ class TicketService @Inject() (
       )(implicit hc: HeaderCarrier
       ) = {
       if (!checkAttachmentsContains(existingAttachments, blobDetails)) {
-        logger.debug(s"Updating message attachments for ticketId: $ticketId, messageId: $messageId - adding file ref: $fileReference")
+        logger.info(s"Updating message attachments for ticketId: $ticketId, messageId: $messageId - adding file ref: $fileReference")
         deskproConnector.updateMessageAttachments(ticketId, messageId, existingAttachments.data, blobDetails.blobId, blobDetails.blobAuth)
       } else {
         Future.successful(DeskproTicketMessageSuccess)
       }
     }
 
-    logger.debug(s"Checking message attachments for ticketId: $ticketId, messageId: $messageId")
+    logger.info(s"Checking message attachments for ticketId: $ticketId, messageId: $messageId")
 
     for {
       attachments <- deskproConnector.getMessageAttachments(ticketId, messageId)
