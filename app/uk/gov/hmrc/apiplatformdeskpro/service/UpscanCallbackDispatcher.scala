@@ -48,7 +48,7 @@ class UpscanCallbackDispatcher @Inject() (
   }
 
   private def handleSuccessfulCallback(readyCallBack: ReadyCallbackBody)(implicit hc: HeaderCarrier): Future[DeskproTicketMessageResult] = {
-    logger.debug(s"Upscan callback upload ready: $readyCallBack")
+    logger.info(s"Upscan callback upload ready: ${readyCallBack.reference.value}")
     for {
       source       <- upscanDownloadConnector.stream(readyCallBack.downloadUrl)
       blobResponse <- deskproConnector.createBlob(readyCallBack.uploadDetails.fileName, readyCallBack.uploadDetails.fileMimeType, source)
@@ -59,13 +59,13 @@ class UpscanCallbackDispatcher @Inject() (
                         size = readyCallBack.uploadDetails.size,
                         blobDetails = BlobDetails(blobResponse.data.blob_id, blobResponse.data.blob_auth)
                       )
-      result       <- ticketService.updateMessageAddAttachmentIfRequired(readyCallBack.reference.value, uploadStatus.blobDetails)
       uploadedFile <- uploadedFileRepository.create(UploadedFile(readyCallBack.reference.value, uploadStatus, instant()))
+      result       <- ticketService.updateMessageAddAttachmentIfRequired(readyCallBack.reference.value, uploadStatus.blobDetails)
     } yield result
   }
 
   private def handleFailedCallback(failedCallBack: FailedCallbackBody): Future[DeskproTicketMessageResult] = {
-    logger.info(s"Upscan callback upload failed: $failedCallBack")
+    logger.info(s"Upscan callback upload failed: ${failedCallBack.reference.value} - ${failedCallBack.failureDetails.message}, ${failedCallBack.failureDetails.failureReason}")
     for {
       uploadedFile <- uploadedFileRepository.create(UploadedFile(
                         failedCallBack.reference.value,
