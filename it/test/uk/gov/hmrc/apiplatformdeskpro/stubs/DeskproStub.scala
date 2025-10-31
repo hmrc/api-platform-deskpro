@@ -51,6 +51,17 @@ trait DeskproStub {
       )
     }
 
+    def stubBadRequest(code: String) = {
+      stubFor(
+        post(urlMatching("/api/v2/tickets"))
+          .willReturn(
+            aResponse()
+              .withBody(s"""{"status":400,"code":"invalid_input","message":"Request input is invalid.","errors":{"errors":[{"code":"${code}","message":"Duplicate ticket."}]}}""")
+              .withStatus(BAD_REQUEST)
+          )
+      )
+    }
+
     def stubInternalServerError() = {
       stubFor(
         post(urlMatching("/api/v2/tickets"))

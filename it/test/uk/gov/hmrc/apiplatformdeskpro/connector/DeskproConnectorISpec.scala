@@ -99,7 +99,23 @@ class DeskproConnectorISpec
 
         val error: Either[DeskproTicketCreationFailed, DeskproTicketCreated] = await(objInTest.createTicket(deskproTicket))
 
-        error.left.getOrElse(fail("should not reach here")).message shouldBe "Failed to create deskpro ticket: Missing authorization"
+        error.left.getOrElse(fail("should not reach here")) shouldBe DeskproTicketCreationError("Missing authorization")
+      }
+
+      "return DeskproTicketCreationFailed with 'bad request' when a none duplicate 400 returned from deskpro" in new Setup {
+        CreateTicket.stubBadRequest("bad_email")
+
+        val error: Either[DeskproTicketCreationFailed, DeskproTicketCreated] = await(objInTest.createTicket(deskproTicket))
+
+        error.left.getOrElse(fail("should not reach here")) shouldBe DeskproTicketCreationError("Bad request")
+      }
+
+      "return DeskproTicketCreationFailed with Duplicate when a duplicate 400 returned from deskpro" in new Setup {
+        CreateTicket.stubBadRequest("dupe_ticket")
+
+        val error: Either[DeskproTicketCreationFailed, DeskproTicketCreated] = await(objInTest.createTicket(deskproTicket))
+
+        error.left.getOrElse(fail("should not reach here")) shouldBe DeskproTicketCreatedDuplicate()
       }
 
       "return DeskproTicketCreationFailed with 'Unknown reason' when 500 returned from deskpro" in new Setup {
@@ -107,7 +123,7 @@ class DeskproConnectorISpec
 
         val error: Either[DeskproTicketCreationFailed, DeskproTicketCreated] = await(objInTest.createTicket(deskproTicket))
 
-        error.left.getOrElse(fail("should not reach here")).message shouldBe "Failed to create deskpro ticket: Unknown reason"
+        error.left.getOrElse(fail("should not reach here")) shouldBe DeskproTicketCreationError("Unknown reason")
       }
     }
 

@@ -21,8 +21,8 @@ import scala.concurrent.ExecutionContext
 
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models._
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.DeskproTicketCreated
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.{CreateTicketRequest, CreateTicketResponse, DeskproTicketCreationFailed}
 import uk.gov.hmrc.apiplatformdeskpro.service.TicketService
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.internalauth.client.{BackendAuthComponents, _}
@@ -39,8 +39,9 @@ class CreateTicketController @Inject() (ticketService: TicketService, cc: Contro
         withJsonBodyFromAnyContent[CreateTicketRequest] { parsedRequest =>
           ticketService.submitTicket(parsedRequest)
             .map {
-              case Right(x: DeskproTicketCreated)       => Created(Json.toJson(CreateTicketResponse(x.ref)))
-              case Left(x: DeskproTicketCreationFailed) => InternalServerError(x.message)
+              case Right(x: DeskproTicketCreated)         => Created(Json.toJson(CreateTicketResponse(Some(x.ref))))
+              case Left(_: DeskproTicketCreatedDuplicate) => Created(Json.toJson(CreateTicketResponse(None)))
+              case Left(x: DeskproTicketCreationError)    => InternalServerError(x.message)
             }
         }
     }

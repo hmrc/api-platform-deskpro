@@ -18,7 +18,7 @@ package uk.gov.hmrc.apiplatformdeskpro.domain.models
 
 import play.api.libs.json.{Json, OFormat}
 
-case class CreateTicketResponse(ref: String)
+case class CreateTicketResponse(ref: Option[String])
 
 object CreateTicketResponse {
   implicit val format: OFormat[CreateTicketResponse] = Json.format[CreateTicketResponse]
