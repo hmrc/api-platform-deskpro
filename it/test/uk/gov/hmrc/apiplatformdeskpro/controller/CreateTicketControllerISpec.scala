@@ -67,7 +67,7 @@ class CreateTicketControllerISpec extends AsyncHmrcSpec with WireMockSupport wit
         .post(Json.toJson(createTicketRequest)))
 
       response.status mustBe CREATED
-      response.json.as[CreateTicketResponse] mustBe CreateTicketResponse("SDST-1234")
+      response.json.as[CreateTicketResponse] mustBe CreateTicketResponse(Some("SDST-1234"))
     }
   }
 }

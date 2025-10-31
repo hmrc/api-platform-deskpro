@@ -16,6 +16,9 @@
 
 package uk.gov.hmrc.apiplatformdeskpro.domain.models
 
-case class DeskproTicketCreationFailed(reason: String) {
+trait DeskproTicketCreationFailed
+
+case class DeskproTicketCreationError(reason: String) extends DeskproTicketCreationFailed {
   val message = s"Failed to create deskpro ticket: $reason"
 }
+case class DeskproTicketCreatedDuplicate()            extends DeskproTicketCreationFailed
