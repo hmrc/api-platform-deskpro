@@ -24,8 +24,8 @@ import play.api.libs.json.Json
 import play.api.mvc.{AnyContentAsText, ControllerComponents, Result}
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers, StubControllerComponentsFactory, StubPlayBodyParsersFactory}
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.DeskproTicketCreationFailed
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.DeskproTicketCreated
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproTicketCreatedDuplicate, DeskproTicketCreationError}
 import uk.gov.hmrc.apiplatformdeskpro.service.TicketService
 import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
@@ -119,7 +119,7 @@ class CreateTicketControllerSpec extends AsyncHmrcSpec with StubControllerCompon
     }
 
     "return 500 when the call to deskpro fails" in new Setup {
-      when(mockService.submitTicket(*)(*)).thenReturn(Future.successful(Left(DeskproTicketCreationFailed("failed"))))
+      when(mockService.submitTicket(*)(*)).thenReturn(Future.successful(Left(DeskproTicketCreationError("failed"))))
       val request = FakeRequest(POST, "/ticket")
         .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
         .withJsonBody(createTicketRequestJson)
@@ -128,6 +128,19 @@ class CreateTicketControllerSpec extends AsyncHmrcSpec with StubControllerCompon
       val result: Future[Result] = objToTest.createTicket()(request)
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+
+    "return 201 with an empty json when the call to deskpro fails due to duplicate" in new Setup {
+      when(mockService.submitTicket(*)(*)).thenReturn(Future.successful(Left(DeskproTicketCreatedDuplicate())))
+      val request = FakeRequest(POST, "/ticket")
+        .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
+        .withJsonBody(createTicketRequestJson)
+      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
+
+      val result: Future[Result] = objToTest.createTicket()(request)
+
+      status(result) shouldBe CREATED
+      contentAsString(result) shouldBe "{}"
     }
 
     "return UpstreamErrorResponse for invalid token" in new Setup {
