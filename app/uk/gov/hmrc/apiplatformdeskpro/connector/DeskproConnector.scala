@@ -31,6 +31,7 @@ import play.api.mvc.MultipartFormData
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.domain.models._
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector._
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.BlobDetails
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.client.HttpClientV2
@@ -318,11 +319,11 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
 
   }
 
-  def createMessageWithAttachment(ticketId: Int, userEmail: String, message: String, blobId: Int, blobAuth: String)(implicit hc: HeaderCarrier)
+  def createMessageWithAttachments(ticketId: Int, userEmail: LaxEmailAddress, message: String, attachmentDetails: List[BlobDetails])(implicit hc: HeaderCarrier)
       : Future[DeskproCreateMessageWrapperResponse] =
     metrics.record(api) {
-      val attachment     = AttachmentRequest(blobAuth)
-      val messageRequest = CreateMessageRequest(message, userEmail, Map(blobId.toString() -> attachment))
+      val attachments    = attachmentDetails.map(details => (details.blobId.toString() -> AttachmentRequest(details.blobAuth))).toMap
+      val messageRequest = CreateMessageRequest.fromRaw(message, userEmail.text, attachments)
 
       http
         .post(url"${requestUrl(s"/api/v2/tickets/$ticketId/messages")}")

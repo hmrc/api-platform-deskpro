@@ -41,23 +41,16 @@ class DeskproMessageFileAttachmentRepository @Inject() (mongo: MongoComponent, v
       domainFormat = DeskproMessageFileAttachment.format,
       indexes = Seq(
         IndexModel(
-          ascending("fileReference"),
+          ascending("ticketId", "messageId"),
           IndexOptions()
-            .name("fileReferenceIndex")
+            .name("ticketId_messageId_Index")
             .unique(true)
             .background(true)
         ),
         IndexModel(
-          ascending("ticketId"),
+          ascending("fileReferences"),
           IndexOptions()
-            .name("ticketIdIndex")
-            .unique(false)
-            .background(true)
-        ),
-        IndexModel(
-          ascending("messageId"),
-          IndexOptions()
-            .name("messageIdIndex")
+            .name("fileReferencesIndex")
             .unique(false)
             .background(true)
         ),
@@ -81,6 +74,6 @@ class DeskproMessageFileAttachmentRepository @Inject() (mongo: MongoComponent, v
   }
 
   def fetchByFileReference(fileReference: String): Future[Option[DeskproMessageFileAttachment]] = {
-    collection.find(equal("fileReference", fileReference)).headOption()
+    collection.find(equal("fileReferences", fileReference)).headOption()
   }
 }

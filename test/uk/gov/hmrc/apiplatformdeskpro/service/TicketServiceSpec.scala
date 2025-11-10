@@ -312,32 +312,30 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
   "createMessage" should {
 
     "return DeskproTicketResponseSuccess when response created" in new Setup {
-      when(mockDeskproConnector.createMessage(*, *, *)(*)).thenReturn(Future.successful(messageWrapper))
+      when(mockDeskproConnector.createMessageWithAttachments(*, *[LaxEmailAddress], *, *)(*)).thenReturn(Future.successful(messageWrapper))
       when(mockDeskproConnector.updateTicketStatus(*, *)(*)).thenReturn(Future.successful(DeskproTicketUpdateSuccess))
 
       val result = await(underTest.createMessage(ticketId, CreateTicketResponseRequest(email, message, TicketStatus.AwaitingAgent)))
 
       result shouldBe messageResponse
 
-      verify(mockDeskproConnector).createMessage(eqTo(ticketId), eqTo(email.text), eqTo(message))(*)
-      verify(mockDeskproConnector, never).createMessageWithAttachment(*, *, *, *, *)(*)
+      verify(mockDeskproConnector).createMessageWithAttachments(eqTo(ticketId), eqTo(email), eqTo(message), eqTo(List.empty))(*)
       verify(mockDeskproConnector).updateTicketStatus(eqTo(ticketId), eqTo(TicketStatus.AwaitingAgent))(*)
       verify(mockMessageFileAttachmentRepo, never).create(*)
     }
 
     "return DeskproTicketResponseSuccess and save response when fileReference is present and the file is already in Deskpro as a blob" in new Setup {
       when(mockUploadedFileRepo.fetchByFileReference(*)).thenReturn(Future.successful(Some(uploadedFile)))
-      when(mockDeskproConnector.createMessageWithAttachment(*, *, *, *, *)(*)).thenReturn(Future.successful(messageWrapper))
+      when(mockDeskproConnector.createMessageWithAttachments(*, *[LaxEmailAddress], *, *)(*)).thenReturn(Future.successful(messageWrapper))
       when(mockDeskproConnector.updateTicketStatus(*, *)(*)).thenReturn(Future.successful(DeskproTicketUpdateSuccess))
-      val response = DeskproMessageFileAttachment(ticketId, messageId, fileReference, instant)
+      val response = DeskproMessageFileAttachment(ticketId, messageId, List(fileReference), instant)
       when(mockMessageFileAttachmentRepo.create(*)).thenReturn(Future.successful(response))
 
-      val result = await(underTest.createMessage(ticketId, CreateTicketResponseRequest(email, message, TicketStatus.AwaitingAgent, Some(fileReference))))
+      val result = await(underTest.createMessage(ticketId, CreateTicketResponseRequest(email, message, TicketStatus.AwaitingAgent, List(fileReference))))
 
       result shouldBe messageResponse
 
-      verify(mockDeskproConnector).createMessageWithAttachment(eqTo(ticketId), eqTo(email.text), eqTo(message), eqTo(blobId), eqTo(blobAuth))(*)
-      verify(mockDeskproConnector, never).createMessage(*, *, *)(*)
+      verify(mockDeskproConnector).createMessageWithAttachments(eqTo(ticketId), eqTo(email), eqTo(message), eqTo(List(BlobDetails(blobId, blobAuth))))(*)
       verify(mockDeskproConnector).updateTicketStatus(eqTo(ticketId), eqTo(TicketStatus.AwaitingAgent))(*)
       verify(mockMessageFileAttachmentRepo).create(eqTo(response))
     }
@@ -347,53 +345,49 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       val failedUploadedFile = UploadedFile(fileReference, failedUploadStatus, instant)
 
       when(mockUploadedFileRepo.fetchByFileReference(*)).thenReturn(Future.successful(Some(failedUploadedFile)))
-      when(mockDeskproConnector.createMessage(*, *, *)(*)).thenReturn(Future.successful(messageWrapper))
+      when(mockDeskproConnector.createMessageWithAttachments(*, *[LaxEmailAddress], *, *)(*)).thenReturn(Future.successful(messageWrapper))
       when(mockDeskproConnector.updateTicketStatus(*, *)(*)).thenReturn(Future.successful(DeskproTicketUpdateSuccess))
-      val response = DeskproMessageFileAttachment(ticketId, messageId, fileReference, instant)
+      val response = DeskproMessageFileAttachment(ticketId, messageId, List(fileReference), instant)
       when(mockMessageFileAttachmentRepo.create(*)).thenReturn(Future.successful(response))
 
-      val result = await(underTest.createMessage(ticketId, CreateTicketResponseRequest(email, message, TicketStatus.AwaitingAgent, Some(fileReference))))
+      val result = await(underTest.createMessage(ticketId, CreateTicketResponseRequest(email, message, TicketStatus.AwaitingAgent, List(fileReference))))
 
       result shouldBe messageResponse
 
-      verify(mockDeskproConnector).createMessage(eqTo(ticketId), eqTo(email.text), eqTo(message))(*)
-      verify(mockDeskproConnector, never).createMessageWithAttachment(*, *, *, *, *)(*)
+      verify(mockDeskproConnector).createMessageWithAttachments(eqTo(ticketId), eqTo(email), eqTo(message), eqTo(List.empty))(*)
       verify(mockDeskproConnector).updateTicketStatus(eqTo(ticketId), eqTo(TicketStatus.AwaitingAgent))(*)
       verify(mockMessageFileAttachmentRepo).create(eqTo(response))
     }
 
     "return DeskproTicketResponseSuccess and save response when fileReference is present and the file has not been uploaded" in new Setup {
       when(mockUploadedFileRepo.fetchByFileReference(*)).thenReturn(Future.successful(None))
-      when(mockDeskproConnector.createMessage(*, *, *)(*)).thenReturn(Future.successful(messageWrapper))
+      when(mockDeskproConnector.createMessageWithAttachments(*, *[LaxEmailAddress], *, *)(*)).thenReturn(Future.successful(messageWrapper))
       when(mockDeskproConnector.updateTicketStatus(*, *)(*)).thenReturn(Future.successful(DeskproTicketUpdateSuccess))
-      val response = DeskproMessageFileAttachment(ticketId, messageId, fileReference, instant)
+      val response = DeskproMessageFileAttachment(ticketId, messageId, List(fileReference), instant)
       when(mockMessageFileAttachmentRepo.create(*)).thenReturn(Future.successful(response))
 
-      val result = await(underTest.createMessage(ticketId, CreateTicketResponseRequest(email, message, TicketStatus.AwaitingAgent, Some(fileReference))))
+      val result = await(underTest.createMessage(ticketId, CreateTicketResponseRequest(email, message, TicketStatus.AwaitingAgent, List(fileReference))))
 
       result shouldBe messageResponse
 
-      verify(mockDeskproConnector).createMessage(eqTo(ticketId), eqTo(email.text), eqTo(message))(*)
-      verify(mockDeskproConnector, never).createMessageWithAttachment(*, *, *, *, *)(*)
+      verify(mockDeskproConnector).createMessageWithAttachments(eqTo(ticketId), eqTo(email), eqTo(message), eqTo(List.empty))(*)
       verify(mockDeskproConnector).updateTicketStatus(eqTo(ticketId), eqTo(TicketStatus.AwaitingAgent))(*)
       verify(mockMessageFileAttachmentRepo).create(eqTo(response))
     }
 
     "return DeskproTicketResponseSuccess when response created, even if ticket status update failed" in new Setup {
-      when(mockDeskproConnector.createMessage(*, *, *)(*)).thenReturn(Future.successful(messageWrapper))
+      when(mockDeskproConnector.createMessageWithAttachments(*, *[LaxEmailAddress], *, *)(*)).thenReturn(Future.successful(messageWrapper))
       when(mockDeskproConnector.updateTicketStatus(*, *)(*)).thenReturn(Future.successful(DeskproTicketUpdateFailure))
 
       val result = await(underTest.createMessage(ticketId, CreateTicketResponseRequest(email, message, TicketStatus.AwaitingAgent)))
 
       result shouldBe messageResponse
 
-      verify(mockDeskproConnector).createMessage(eqTo(ticketId), eqTo(email.text), eqTo(message))(*)
-      verify(mockDeskproConnector, never).createMessageWithAttachment(*, *, *, *, *)(*)
+      verify(mockDeskproConnector).createMessageWithAttachments(eqTo(ticketId), eqTo(email), eqTo(message), eqTo(List.empty))(*)
     }
 
     "return DeskproTicketResponseFailure if create failed" in new Setup {
-      when(mockDeskproConnector.createMessage(*, *, *)(*)).thenReturn(Future.failed(UpstreamErrorResponse("Not found", 404)))
-      when(mockDeskproConnector.updateTicketStatus(*, *)(*)).thenReturn(Future.successful(DeskproTicketUpdateSuccess))
+      when(mockDeskproConnector.createMessageWithAttachments(*, *[LaxEmailAddress], *, *)(*)).thenReturn(Future.failed(UpstreamErrorResponse("Not found", 404)))
 
       intercept[UpstreamErrorResponse] {
         await(underTest.createMessage(ticketId, CreateTicketResponseRequest(email, message, TicketStatus.AwaitingAgent)))
@@ -413,7 +407,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
 
   "updateMessageAddAttachmentIfRequired" should {
     "return a success result when adding a new attachment to the message" in new Setup {
-      val fileAttachment      = DeskproMessageFileAttachment(ticketId, messageId, fileReference, instant)
+      val fileAttachment      = DeskproMessageFileAttachment(ticketId, messageId, List(fileReference), instant)
       when(mockMessageFileAttachmentRepo.fetchByFileReference(*)).thenReturn(Future.successful(Some(fileAttachment)))
       val existingAttachments = List(DeskproAttachmentResponse(12, DeskproBlobResponse(12345, "FGFK6657HHJHJ7987", "https://example.com/file01", "example.txt")))
       val attachmantsWrapper  = DeskproAttachmentsWrapperResponse(existingAttachments)
@@ -429,7 +423,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
     }
 
     "return a success result when message already has attachment" in new Setup {
-      val fileAttachment     = DeskproMessageFileAttachment(ticketId, messageId, fileReference, instant)
+      val fileAttachment     = DeskproMessageFileAttachment(ticketId, messageId, List(fileReference), instant)
       when(mockMessageFileAttachmentRepo.fetchByFileReference(*)).thenReturn(Future.successful(Some(fileAttachment)))
       val attachmantsWrapper =
         DeskproAttachmentsWrapperResponse(List(DeskproAttachmentResponse(12, DeskproBlobResponse(blobId, blobAuth, "https://example.com/file01", "example.txt"))))
