@@ -33,7 +33,7 @@ curl -X GET --location "http://localhost:9614/organisation/12" -H "Authorization
 
 ## Adding 'Gatekeeper link' to Deskpro
 
-Here are the instructions for creating a new widget, 'Gatekeeper link', to Deskpro.
+Here are the instructions for creating a new widget, Gatekeeper link, to Deskpro.
 
 Under Widgets select **Create Widget** and fill the tabs as follows:
   
