@@ -62,7 +62,7 @@ Under the **Settings** tab create two Settings as follows
    The number prefixing "**field.**" (4 or 9) is set in the config property [*deskpro.application-id*](https://github.com/hmrc/app-config-production/blob/main/api-platform-deskpro.yaml).
 
 ### Code tab
-Under the **Code** tab paste the contents of file [deskprowidgets/gatekeeper_link.html](/deskprowidgets/gatekeeper_link.html) into the corresponding Head and Body sections.
+Under the **Code** tab paste the contents of file [gatekeeper_link.html](https://github.com/hmrc/api-platform-deskpro/tree/main/deskprowidgets/gatekeeper_link.html) into the corresponding Head and Body sections.
 
 Don't forget to **click save** before testing the link works.
 
