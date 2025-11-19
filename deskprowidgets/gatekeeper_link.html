@@ -1,0 +1,42 @@
+<!-- Head -->
+<!-- This code lives in the api-platform-deskpro repository https://github.com/hmrc/api-platform-deskpro/tree/main/deskprowidgets -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+
+<!-- Body -->
+<!-- This code lives in the api-platform-deskpro repository https://github.com/hmrc/api-platform-deskpro/tree/main/deskprowidgets -->
+<div class="container">
+    <div data-type="deskpro-template" id="developer_template">
+        <a id="developer_link" href="" target="_blank">
+            View Developer
+        </a>
+    </div>
+</div>
+
+<div class="container">
+    <div data-type="deskpro-template" id="application_template">
+        <a id="application_link" href="" target="_blank">
+            View Application
+        </a>
+    </div>
+</div>
+
+<script>
+    Deskpro.client.onReady(function (context) {
+        if(context.settings.gk_base_url != null){
+            $("#developer_link").attr("href", context.settings.gk_base_url + "/deskpro/ticket/"+context.data.ticket.id+"/developer");
+
+            if(context.data.ticket.customFields[context.settings.custom_field_num] != null ){
+                $("#application_link").attr("href", context.settings.gk_base_url+"/applications/"+context.data.ticket.customFields[context.settings.custom_field_num].value);
+            }
+        }
+    });
+
+    Deskpro.client.onChange(function (context) {
+        if(context.settings != null && context.settings.gk_base_url != null){
+            if(context.data.ticket.customFields[context.settings.custom_field_num] != null){
+                Deskpro.utils.renderTemplate("application_template", context);
+            }
+            Deskpro.utils.renderTemplate("developer_template", context);
+        }
+    });
+</script>
