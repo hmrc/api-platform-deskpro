@@ -343,6 +343,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
     "return DeskproTicketResponseSuccess and save response when fileReference is present and the file has failed to upload" in new Setup {
       val failedUploadStatus = Failed("message", "reason")
       val failedUploadedFile = UploadedFile(fileReference, failedUploadStatus, instant)
+      val expectedMessage    = s"$message<hr>At least one file has not yet finished uploading"
 
       when(mockUploadedFileRepo.fetchByFileReference(*)).thenReturn(Future.successful(Some(failedUploadedFile)))
       when(mockDeskproConnector.createMessageWithAttachments(*, *[LaxEmailAddress], *, *)(*)).thenReturn(Future.successful(messageWrapper))
@@ -354,12 +355,14 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
 
       result shouldBe messageResponse
 
-      verify(mockDeskproConnector).createMessageWithAttachments(eqTo(ticketId), eqTo(email), eqTo(message), eqTo(List.empty))(*)
+      verify(mockDeskproConnector).createMessageWithAttachments(eqTo(ticketId), eqTo(email), eqTo(expectedMessage), eqTo(List.empty))(*)
       verify(mockDeskproConnector).updateTicketStatus(eqTo(ticketId), eqTo(TicketStatus.AwaitingAgent))(*)
       verify(mockMessageFileAttachmentRepo).create(eqTo(response))
     }
 
     "return DeskproTicketResponseSuccess and save response when fileReference is present and the file has not been uploaded" in new Setup {
+      val expectedMessage = s"$message<hr>At least one file has failed to upload"
+
       when(mockUploadedFileRepo.fetchByFileReference(*)).thenReturn(Future.successful(None))
       when(mockDeskproConnector.createMessageWithAttachments(*, *[LaxEmailAddress], *, *)(*)).thenReturn(Future.successful(messageWrapper))
       when(mockDeskproConnector.updateTicketStatus(*, *)(*)).thenReturn(Future.successful(DeskproTicketUpdateSuccess))
@@ -370,7 +373,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
 
       result shouldBe messageResponse
 
-      verify(mockDeskproConnector).createMessageWithAttachments(eqTo(ticketId), eqTo(email), eqTo(message), eqTo(List.empty))(*)
+      verify(mockDeskproConnector).createMessageWithAttachments(eqTo(ticketId), eqTo(email), eqTo(expectedMessage), eqTo(List.empty))(*)
       verify(mockDeskproConnector).updateTicketStatus(eqTo(ticketId), eqTo(TicketStatus.AwaitingAgent))(*)
       verify(mockMessageFileAttachmentRepo).create(eqTo(response))
     }

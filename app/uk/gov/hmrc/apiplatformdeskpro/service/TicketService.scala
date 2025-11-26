@@ -24,7 +24,7 @@ import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.connector.DeskproConnector
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector._
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.CreateTicketResponseRequest
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.UploadStatus.UploadedSuccessfully
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.UploadStatus.{Failed, UploadedSuccessfully}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.{BlobDetails, DeskproMessageFileAttachment, UploadedFile}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.{CreateTicketRequest, DeskproTicketCreationFailed, _}
 import uk.gov.hmrc.apiplatformdeskpro.repository.{DeskproMessageFileAttachmentRepository, UploadedFileRepository}
@@ -86,7 +86,8 @@ class TicketService @Inject() (
   def createMessage(ticketId: Int, request: CreateTicketResponseRequest)(implicit hc: HeaderCarrier): Future[DeskproCreateMessageResponse] = {
     for {
       uploadedFiles        <- getUploadedFileDetails(request.fileReferences)
-      createResponseResult <- deskproConnector.createMessageWithAttachments(ticketId, request.userEmail, request.message, getBlobDetails(uploadedFiles))
+      messageWithWarnings   = addMessageFileUploadWarnings(request.message, request, uploadedFiles)
+      createResponseResult <- deskproConnector.createMessageWithAttachments(ticketId, request.userEmail, messageWithWarnings, getBlobDetails(uploadedFiles))
       _                    <- saveMessageFileDetails(ticketId, createResponseResult.data.id, request.fileReferences)
       _                    <- deskproConnector.updateTicketStatus(ticketId, request.status)
     } yield createResponseResult.data
@@ -97,6 +98,31 @@ class TicketService @Inject() (
       deskproMessageFileAttachmentRepository.create(DeskproMessageFileAttachment(ticketId, messageId, fileReferences, instant())) map { resp => Some(resp) }
     } else {
       Future.successful(None)
+    }
+  }
+
+  private def addMessageFileUploadWarnings(message: String, request: CreateTicketResponseRequest, uploadedFiles: List[UploadedFile]): String = {
+    checkForNotUploadFiles(request, uploadedFiles) match {
+      case None          => message
+      case Some(warning) => s"$message<hr>$warning"
+    }
+  }
+
+  private def checkForNotUploadFiles(request: CreateTicketResponseRequest, uploadedFiles: List[UploadedFile]): Option[String] = {
+    val getFailedToUploadFiles = uploadedFiles.map(uploadedFile =>
+      uploadedFile.uploadStatus match {
+        case failed: Failed => Some(uploadedFile.fileReference)
+        case _              => None
+      }
+    ).flatten
+    val filesNotYetUploaded    = request.fileReferences.filterNot(requestedFileReference =>
+      uploadedFiles.exists(file => file.fileReference == requestedFileReference)
+    )
+    (getFailedToUploadFiles.isEmpty, filesNotYetUploaded.isEmpty) match {
+      case (true, true)   => None
+      case (true, false)  => Some("At least one file has failed to upload")
+      case (false, true)  => Some("At least one file has not yet finished uploading")
+      case (false, false) => Some("At least one file has failed to upload and at least one file has not yet finished uploading")
     }
   }
 
