@@ -104,7 +104,7 @@ class TicketService @Inject() (
   private def addMessageFileUploadWarnings(message: String, request: CreateTicketResponseRequest, uploadedFiles: List[UploadedFile]): String = {
     checkForNotUploadFiles(request, uploadedFiles) match {
       case None          => message
-      case Some(warning) => s"$message<hr>$warning"
+      case Some(warning) => s"$message<p><b>File attachment warnings</b><br>$warning</p>"
     }
   }
 
@@ -120,8 +120,8 @@ class TicketService @Inject() (
     )
     (getFailedToUploadFiles.isEmpty, filesNotYetUploaded.isEmpty) match {
       case (true, true)   => None
-      case (true, false)  => Some("At least one file has failed to upload")
-      case (false, true)  => Some("At least one file has not yet finished uploading")
+      case (false, true)  => Some("At least one file has failed to upload")
+      case (true, false)  => Some("At least one file has not yet finished uploading")
       case (false, false) => Some("At least one file has failed to upload and at least one file has not yet finished uploading")
     }
   }
