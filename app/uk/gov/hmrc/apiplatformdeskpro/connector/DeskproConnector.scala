@@ -333,7 +333,7 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
         .execute[DeskproCreateMessageWrapperResponse]
     }
 
-  def getMessageAttachments(ticketId: Int, messageId: Int)(implicit hc: HeaderCarrier): Future[DeskproAttachmentsWrapperResponse] = metrics.record(api) {
+  def getMessageAttachments(ticketId: Int, messageId: Int)(implicit hc: HeaderCarrier): Future[DeskproAttachmentsWrapperResponse] = {
     val queryParams = Seq("count" -> 200)
     metrics.record(api) {
       http
@@ -344,10 +344,20 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
     }
   }
 
-  def updateMessageAttachments(ticketId: Int, messageId: Int, existingAttachments: List[DeskproAttachmentResponse], blobId: Int, blobAuth: String)(implicit hc: HeaderCarrier)
+  def getMessage(ticketId: Int, messageId: Int)(implicit hc: HeaderCarrier): Future[DeskproMessageWrapperResponse] = {
+    metrics.record(api) {
+      http
+        .get(url"${requestUrl(s"/api/v2/tickets/$ticketId/messages/$messageId")}")
+        .withProxy
+        .setHeader(AUTHORIZATION -> config.deskproApiKey)
+        .execute[DeskproMessageWrapperResponse]
+    }
+  }
+
+  def updateMessage(ticketId: Int, messageId: Int, message: String, existingAttachments: List[DeskproAttachmentResponse], blobId: Int, blobAuth: String)(implicit hc: HeaderCarrier)
       : Future[DeskproTicketMessageResult] = {
     val existingAttachmentsMap = existingAttachments.map(attachment => (attachment.blob.blob_id.toString() -> AttachmentRequest(attachment.blob.blob_auth))).toMap
-    val messageRequest         = UpdateMessageAttachmentsRequest(existingAttachmentsMap ++ Map(blobId.toString() -> AttachmentRequest(blobAuth)))
+    val messageRequest         = UpdateMessageRequest(message, existingAttachmentsMap ++ Map(blobId.toString() -> AttachmentRequest(blobAuth)))
 
     metrics.record(api) {
       http

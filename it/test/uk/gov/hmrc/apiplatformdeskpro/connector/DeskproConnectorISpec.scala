@@ -692,11 +692,35 @@ class DeskproConnectorISpec
     }
   }
 
+  "getMessage" should {
+    val createdDate1: Instant = LocalDateTime.parse("2025-10-20T14:04:27+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
+
+    "return DeskproMessageWrapperResponse when 200 returned from deskpro with response body" in new Setup {
+      GetMessage.stubSuccess(ticketId, messageId)
+
+      val result = await(objInTest.getMessage(ticketId, messageId))
+
+      val expectedResponse = DeskproMessageWrapperResponse(
+        DeskproMessageResponse(
+          messageId,
+          ticketId,
+          61,
+          createdDate1,
+          0,
+          "Test amending message text!!",
+          List(83)
+        )
+      )
+
+      result shouldBe expectedResponse
+    }
+  }
+
   "updateMessageAttachments" should {
     "return DeskproTicketMessageSuccess when 204 returned from deskpro" in new Setup {
       UpdateMessageAttachments.stubSuccess(ticketId, messageId)
 
-      val result = await(objInTest.updateMessageAttachments(ticketId, messageId, attachments, blobId, blobAuth))
+      val result = await(objInTest.updateMessage(ticketId, messageId, message, attachments, blobId, blobAuth))
 
       result shouldBe DeskproTicketMessageSuccess
     }
@@ -704,7 +728,7 @@ class DeskproConnectorISpec
     "return DeskproTicketMessageNotFound if ticket not found" in new Setup {
       UpdateMessageAttachments.stubNotFound(ticketId, messageId)
 
-      val result = await(objInTest.updateMessageAttachments(ticketId, messageId, attachments, blobId, blobAuth))
+      val result = await(objInTest.updateMessage(ticketId, messageId, message, attachments, blobId, blobAuth))
 
       result shouldBe DeskproTicketMessageNotFound
     }
@@ -712,7 +736,7 @@ class DeskproConnectorISpec
     "return DeskproTicketMessageFailure if error" in new Setup {
       UpdateMessageAttachments.stubFailure(ticketId, messageId)
 
-      val result = await(objInTest.updateMessageAttachments(ticketId, messageId, attachments, blobId, blobAuth))
+      val result = await(objInTest.updateMessage(ticketId, messageId, message, attachments, blobId, blobAuth))
 
       result shouldBe DeskproTicketMessageFailure
     }

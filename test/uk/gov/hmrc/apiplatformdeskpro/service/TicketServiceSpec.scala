@@ -70,6 +70,18 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
     val deskproMessage1    = DeskproMessageResponse(787, ticketId, personId, instant, 0, "message 1", List.empty)
     val deskproMessage2    = DeskproMessageResponse(788, ticketId, personId, instant.minus(Duration.ofDays(2)), 0, "message 2", List.empty)
     val deskproMessage3    = DeskproMessageResponse(789, ticketId, personId, instant.minus(Duration.ofDays(5)), 0, "message 3", List.empty)
+
+    val deskproMessage4    = DeskproMessageResponse(
+      369,
+      ticketId,
+      personId,
+      instant.minus(Duration.ofDays(8)),
+      0,
+      "message 4<p><b>File attachment warnings</b><br>At least one file has not yet finished uploading</p>",
+      List.empty
+    )
+    val message1Wrapper    = DeskproMessageWrapperResponse(deskproMessage1)
+    val message4Wrapper    = DeskproMessageWrapperResponse(deskproMessage4)
     val attachmentId       = 1
     val deskproAttachment1 = DeskproAttachmentResponse(attachmentId, DeskproBlobResponse(123, "auth", "https://example.com", "file.name"))
 
@@ -415,14 +427,48 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       val existingAttachments = List(DeskproAttachmentResponse(12, DeskproBlobResponse(12345, "FGFK6657HHJHJ7987", "https://example.com/file01", "example.txt")))
       val attachmantsWrapper  = DeskproAttachmentsWrapperResponse(existingAttachments)
       when(mockDeskproConnector.getMessageAttachments(*, *)(*)).thenReturn(Future.successful(attachmantsWrapper))
-      when(mockDeskproConnector.updateMessageAttachments(*, *, *, *, *)(*)).thenReturn(Future.successful(DeskproTicketMessageSuccess))
+      when(mockDeskproConnector.getMessage(*, *)(*)).thenReturn(Future.successful(message1Wrapper))
+      when(mockDeskproConnector.updateMessage(*, *, *, *, *, *)(*)).thenReturn(Future.successful(DeskproTicketMessageSuccess))
+      when(mockUploadedFileRepo.fetchByFileReference(*)).thenReturn(Future.successful(None))
 
       val result = await(underTest.updateMessageAddAttachmentIfRequired(fileReference, blobDetails))
 
       result shouldBe DeskproTicketMessageSuccess
       verify(mockMessageFileAttachmentRepo).fetchByFileReference(eqTo(fileReference))
       verify(mockDeskproConnector).getMessageAttachments(eqTo(ticketId), eqTo(messageId))(*)
-      verify(mockDeskproConnector).updateMessageAttachments(eqTo(ticketId), eqTo(messageId), eqTo(existingAttachments), eqTo(blobId), eqTo(blobAuth))(*)
+      verify(mockDeskproConnector).updateMessage(
+        eqTo(ticketId),
+        eqTo(messageId),
+        eqTo("message 1<p><b>File attachment warnings</b><br>At least one file has not yet finished uploading</p>"),
+        eqTo(existingAttachments),
+        eqTo(blobId),
+        eqTo(blobAuth)
+      )(*)
+    }
+
+    "return a success result when adding a new attachment to the message and remove file attachment warning" in new Setup {
+      val fileAttachment      = DeskproMessageFileAttachment(ticketId, messageId, List(fileReference), instant)
+      when(mockMessageFileAttachmentRepo.fetchByFileReference(*)).thenReturn(Future.successful(Some(fileAttachment)))
+      val existingAttachments = List(DeskproAttachmentResponse(12, DeskproBlobResponse(12345, "FGFK6657HHJHJ7987", "https://example.com/file01", "example.txt")))
+      val attachmantsWrapper  = DeskproAttachmentsWrapperResponse(existingAttachments)
+      when(mockDeskproConnector.getMessageAttachments(*, *)(*)).thenReturn(Future.successful(attachmantsWrapper))
+      when(mockDeskproConnector.getMessage(*, *)(*)).thenReturn(Future.successful(message4Wrapper))
+      when(mockDeskproConnector.updateMessage(*, *, *, *, *, *)(*)).thenReturn(Future.successful(DeskproTicketMessageSuccess))
+      when(mockUploadedFileRepo.fetchByFileReference(*)).thenReturn(Future.successful(Some(uploadedFile)))
+
+      val result = await(underTest.updateMessageAddAttachmentIfRequired(fileReference, blobDetails))
+
+      result shouldBe DeskproTicketMessageSuccess
+      verify(mockMessageFileAttachmentRepo).fetchByFileReference(eqTo(fileReference))
+      verify(mockDeskproConnector).getMessageAttachments(eqTo(ticketId), eqTo(messageId))(*)
+      verify(mockDeskproConnector).updateMessage(
+        eqTo(ticketId),
+        eqTo(messageId),
+        eqTo("message 4"),
+        eqTo(existingAttachments),
+        eqTo(blobId),
+        eqTo(blobAuth)
+      )(*)
     }
 
     "return a success result when message already has attachment" in new Setup {
@@ -431,13 +477,16 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       val attachmantsWrapper =
         DeskproAttachmentsWrapperResponse(List(DeskproAttachmentResponse(12, DeskproBlobResponse(blobId, blobAuth, "https://example.com/file01", "example.txt"))))
       when(mockDeskproConnector.getMessageAttachments(*, *)(*)).thenReturn(Future.successful(attachmantsWrapper))
+      when(mockDeskproConnector.getMessage(*, *)(*)).thenReturn(Future.successful(message1Wrapper))
+      when(mockUploadedFileRepo.fetchByFileReference(*)).thenReturn(Future.successful(None))
 
       val result = await(underTest.updateMessageAddAttachmentIfRequired(fileReference, blobDetails))
 
       result shouldBe DeskproTicketMessageSuccess
       verify(mockMessageFileAttachmentRepo).fetchByFileReference(eqTo(fileReference))
       verify(mockDeskproConnector).getMessageAttachments(eqTo(ticketId), eqTo(messageId))(*)
-      verify(mockDeskproConnector, never).updateMessageAttachments(*, *, *, *, *)(*)
+      verify(mockDeskproConnector).getMessage(eqTo(ticketId), eqTo(messageId))(*)
+      verify(mockDeskproConnector, never).updateMessage(*, *, *, *, *, *)(*)
     }
 
     "return a success result when no file attachment record found (therefore nothing to do)" in new Setup {
@@ -448,7 +497,8 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       result shouldBe DeskproTicketMessageSuccess
       verify(mockMessageFileAttachmentRepo).fetchByFileReference(eqTo(fileReference))
       verify(mockDeskproConnector, never).getMessageAttachments(*, *)(*)
-      verify(mockDeskproConnector, never).updateMessageAttachments(*, *, *, *, *)(*)
+      verify(mockDeskproConnector, never).getMessage(*, *)(*)
+      verify(mockDeskproConnector, never).updateMessage(*, *, *, *, *, *)(*)
     }
   }
 }
