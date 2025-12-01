@@ -73,6 +73,7 @@ class DeskproConnectorISpec
     val personId             = 1
     val blobId               = 67890
     val blobAuth             = "4476FHDGBJHJ55356BVN1"
+    val blobDetails          = Some(BlobDetails(blobId, blobAuth))
     val attachments          = List(DeskproAttachmentResponse(123, DeskproBlobResponse(12345, "26854KPJHXXQWRNRQHBQ0", "https:example.com/file02", "example.txt")))
     val createdDate: Instant = LocalDateTime.parse("2020-01-02T03:04:05+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
 
@@ -720,7 +721,7 @@ class DeskproConnectorISpec
     "return DeskproTicketMessageSuccess when 204 returned from deskpro" in new Setup {
       UpdateMessageAttachments.stubSuccess(ticketId, messageId)
 
-      val result = await(objInTest.updateMessage(ticketId, messageId, message, attachments, blobId, blobAuth))
+      val result = await(objInTest.updateMessage(ticketId, messageId, message, attachments, blobDetails))
 
       result shouldBe DeskproTicketMessageSuccess
     }
@@ -728,7 +729,7 @@ class DeskproConnectorISpec
     "return DeskproTicketMessageNotFound if ticket not found" in new Setup {
       UpdateMessageAttachments.stubNotFound(ticketId, messageId)
 
-      val result = await(objInTest.updateMessage(ticketId, messageId, message, attachments, blobId, blobAuth))
+      val result = await(objInTest.updateMessage(ticketId, messageId, message, attachments, blobDetails))
 
       result shouldBe DeskproTicketMessageNotFound
     }
@@ -736,7 +737,7 @@ class DeskproConnectorISpec
     "return DeskproTicketMessageFailure if error" in new Setup {
       UpdateMessageAttachments.stubFailure(ticketId, messageId)
 
-      val result = await(objInTest.updateMessage(ticketId, messageId, message, attachments, blobId, blobAuth))
+      val result = await(objInTest.updateMessage(ticketId, messageId, message, attachments, blobDetails))
 
       result shouldBe DeskproTicketMessageFailure
     }

@@ -354,28 +354,39 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
     }
   }
 
-  def updateMessage(ticketId: Int, messageId: Int, message: String, existingAttachments: List[DeskproAttachmentResponse], blobId: Int, blobAuth: String)(implicit hc: HeaderCarrier)
-      : Future[DeskproTicketMessageResult] = {
-    val existingAttachmentsMap = existingAttachments.map(attachment => (attachment.blob.blob_id.toString() -> AttachmentRequest(attachment.blob.blob_auth))).toMap
-    val messageRequest         = UpdateMessageRequest(message, existingAttachmentsMap ++ Map(blobId.toString() -> AttachmentRequest(blobAuth)))
+  def updateMessage(
+      ticketId: Int,
+      messageId: Int,
+      message: String,
+      existingAttachments: List[DeskproAttachmentResponse],
+      blobDetails: Option[BlobDetails]
+    )(implicit hc: HeaderCarrier
+    ): Future[DeskproTicketMessageResult] = {
+    val existingAttachmentsMap                    = existingAttachments.map(attachment => (attachment.blob.blob_id.toString() -> AttachmentRequest(attachment.blob.blob_auth))).toMap
+    def getMessageRequest(): UpdateMessageRequest = {
+      blobDetails match {
+        case Some(blobDetails) => UpdateMessageRequest(message, existingAttachmentsMap ++ Map(blobDetails.blobId.toString() -> AttachmentRequest(blobDetails.blobAuth)))
+        case _                 => UpdateMessageRequest(message, existingAttachmentsMap)
+      }
+    }
 
     metrics.record(api) {
       http
         .put(url"${requestUrl(s"/api/v2/tickets/$ticketId/messages/$messageId")}")
         .withProxy
-        .withBody(Json.toJson(messageRequest))
+        .withBody(Json.toJson((getMessageRequest())))
         .setHeader(AUTHORIZATION -> config.deskproApiKey)
         .execute[HttpResponse]
         .map(response =>
           response.status match {
             case NO_CONTENT =>
-              logger.info(s"Updated message attachments for ticket '$ticketId', message '$messageId' successfully")
+              logger.info(s"Updated message for ticket '$ticketId', message '$messageId' successfully")
               DeskproTicketMessageSuccess
             case NOT_FOUND  =>
-              logger.warn(s"Failed to update message attachments for ticket '$ticketId, message '$messageId'. Ticket not found")
+              logger.warn(s"Failed to update message for ticket '$ticketId, message '$messageId'. Ticket not found")
               DeskproTicketMessageNotFound
             case _          =>
-              logger.error(s"Failed to update message attachments for ticket '$ticketId, message '$messageId'. Status: ${response.status}")
+              logger.error(s"Failed to update message for ticket '$ticketId, message '$messageId'. Status: ${response.status}")
               DeskproTicketMessageFailure
           }
         )

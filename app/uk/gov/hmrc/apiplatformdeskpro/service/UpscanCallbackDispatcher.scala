@@ -21,9 +21,9 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import uk.gov.hmrc.apiplatformdeskpro.connector.{DeskproConnector, UpscanDownloadConnector}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.DeskproTicketMessageResult
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.{FailedCallbackBody, ReadyCallbackBody, UpscanCallbackBody}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.{BlobDetails, UploadStatus, UploadedFile}
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproTicketMessageResult, DeskproTicketMessageSuccess}
 import uk.gov.hmrc.apiplatformdeskpro.repository.UploadedFileRepository
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HeaderCarrier
@@ -60,11 +60,11 @@ class UpscanCallbackDispatcher @Inject() (
                         blobDetails = BlobDetails(blobResponse.data.blob_id, blobResponse.data.blob_auth)
                       )
       uploadedFile <- uploadedFileRepository.create(UploadedFile(readyCallBack.reference.value, uploadStatus, instant()))
-      result       <- ticketService.updateMessageAddAttachmentIfRequired(readyCallBack.reference.value, uploadStatus.blobDetails)
+      result       <- ticketService.updateMessageAttachmentsIfRequired(readyCallBack.reference.value, Some(uploadStatus.blobDetails))
     } yield result
   }
 
-  private def handleFailedCallback(failedCallBack: FailedCallbackBody): Future[DeskproTicketMessageResult] = {
+  private def handleFailedCallback(failedCallBack: FailedCallbackBody)(implicit hc: HeaderCarrier): Future[DeskproTicketMessageResult] = {
     logger.info(s"Upscan callback upload failed: ${failedCallBack.reference.value} - ${failedCallBack.failureDetails.message}, ${failedCallBack.failureDetails.failureReason}")
     for {
       uploadedFile <- uploadedFileRepository.create(UploadedFile(
@@ -72,6 +72,7 @@ class UpscanCallbackDispatcher @Inject() (
                         UploadStatus.Failed(failedCallBack.failureDetails.message, failedCallBack.failureDetails.failureReason),
                         instant()
                       ))
-    } yield DeskproTicketMessageSuccess
+      result       <- ticketService.updateMessageAttachmentsIfRequired(failedCallBack.reference.value, None)
+    } yield result
   }
 }
