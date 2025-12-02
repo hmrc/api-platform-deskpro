@@ -2165,7 +2165,7 @@ trait DeskproStub {
     }
   }
 
-  object UpdateMessageAttachments {
+  object UpdateMessage {
 
     def stubSuccess(ticketId: Int, messageId: Int) = {
       stubFor(
@@ -2178,6 +2178,24 @@ trait DeskproStub {
                                           |    },
                                           |    "67890": {
                                           |      "blob_auth": "4476FHDGBJHJ55356BVN1"
+                                          |    }
+                                          |  }
+                                          |}""".stripMargin))
+          .willReturn(
+            aResponse()
+              .withStatus(NO_CONTENT)
+          )
+      )
+    }
+
+    def stubSuccessNoBlobDetails(ticketId: Int, messageId: Int) = {
+      stubFor(
+        put(urlPathEqualTo(s"/api/v2/tickets/$ticketId/messages/$messageId"))
+          .withRequestBody(equalToJson(s"""{
+                                          |  "message": "This is where the message for the ticket goes",
+                                          |  "attachments": {
+                                          |    "12345": {
+                                          |      "blob_auth": "26854KPJHXXQWRNRQHBQ0"
                                           |    }
                                           |  }
                                           |}""".stripMargin))

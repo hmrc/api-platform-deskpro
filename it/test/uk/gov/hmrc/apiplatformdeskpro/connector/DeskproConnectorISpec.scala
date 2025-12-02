@@ -717,17 +717,25 @@ class DeskproConnectorISpec
     }
   }
 
-  "updateMessageAttachments" should {
+  "updateMessage" should {
     "return DeskproTicketMessageSuccess when 204 returned from deskpro" in new Setup {
-      UpdateMessageAttachments.stubSuccess(ticketId, messageId)
+      UpdateMessage.stubSuccess(ticketId, messageId)
 
       val result = await(objInTest.updateMessage(ticketId, messageId, message, attachments, blobDetails))
 
       result shouldBe DeskproTicketMessageSuccess
     }
 
+    "return DeskproTicketMessageSuccess when 204 returned from deskpro when no blob details" in new Setup {
+      UpdateMessage.stubSuccessNoBlobDetails(ticketId, messageId)
+
+      val result = await(objInTest.updateMessage(ticketId, messageId, message, attachments, None))
+
+      result shouldBe DeskproTicketMessageSuccess
+    }
+
     "return DeskproTicketMessageNotFound if ticket not found" in new Setup {
-      UpdateMessageAttachments.stubNotFound(ticketId, messageId)
+      UpdateMessage.stubNotFound(ticketId, messageId)
 
       val result = await(objInTest.updateMessage(ticketId, messageId, message, attachments, blobDetails))
 
@@ -735,7 +743,7 @@ class DeskproConnectorISpec
     }
 
     "return DeskproTicketMessageFailure if error" in new Setup {
-      UpdateMessageAttachments.stubFailure(ticketId, messageId)
+      UpdateMessage.stubFailure(ticketId, messageId)
 
       val result = await(objInTest.updateMessage(ticketId, messageId, message, attachments, blobDetails))
 
