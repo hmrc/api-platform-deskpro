@@ -86,12 +86,13 @@ object CreateMessageRequest {
   implicit val createMessageRequestFormat: Format[CreateMessageRequest] = Json.format[CreateMessageRequest]
 }
 
-case class UpdateMessageAttachmentsRequest(
+case class UpdateMessageRequest(
+    message: String,
     attachments: Map[String, AttachmentRequest]
   )
 
-object UpdateMessageAttachmentsRequest {
-  implicit val updateMessageAttachmentsRequestFormat: Format[UpdateMessageAttachmentsRequest] = Json.format[UpdateMessageAttachmentsRequest]
+object UpdateMessageRequest {
+  implicit val updateMessageRequestFormat: Format[UpdateMessageRequest] = Json.format[UpdateMessageRequest]
 }
 
 sealed abstract class TicketStatus(val value: String) {

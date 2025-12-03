@@ -24,7 +24,7 @@ import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.connector.DeskproConnector
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector._
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.CreateTicketResponseRequest
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.UploadStatus.UploadedSuccessfully
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.UploadStatus.{Failed, UploadedSuccessfully}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.{BlobDetails, DeskproMessageFileAttachment, UploadedFile}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.{CreateTicketRequest, DeskproTicketCreationFailed, _}
 import uk.gov.hmrc.apiplatformdeskpro.repository.{DeskproMessageFileAttachmentRepository, UploadedFileRepository}
@@ -44,6 +44,8 @@ class TicketService @Inject() (
     val clock: Clock
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger with ClockNow {
+
+  val fileAttachmentWarningLabel: String = "<p><b>File attachment warnings</b><br>"
 
   def submitTicket(createTicketRequest: CreateTicketRequest)(implicit hc: HeaderCarrier): Future[Either[DeskproTicketCreationFailed, DeskproTicketCreated]] = {
 
@@ -86,7 +88,8 @@ class TicketService @Inject() (
   def createMessage(ticketId: Int, request: CreateTicketResponseRequest)(implicit hc: HeaderCarrier): Future[DeskproCreateMessageResponse] = {
     for {
       uploadedFiles        <- getUploadedFileDetails(request.fileReferences)
-      createResponseResult <- deskproConnector.createMessageWithAttachments(ticketId, request.userEmail, request.message, getBlobDetails(uploadedFiles))
+      messageWithWarnings   = addMessageFileUploadWarnings(request.message, request.fileReferences, uploadedFiles)
+      createResponseResult <- deskproConnector.createMessageWithAttachments(ticketId, request.userEmail, messageWithWarnings, getBlobDetails(uploadedFiles))
       _                    <- saveMessageFileDetails(ticketId, createResponseResult.data.id, request.fileReferences)
       _                    <- deskproConnector.updateTicketStatus(ticketId, request.status)
     } yield createResponseResult.data
@@ -97,6 +100,31 @@ class TicketService @Inject() (
       deskproMessageFileAttachmentRepository.create(DeskproMessageFileAttachment(ticketId, messageId, fileReferences, instant())) map { resp => Some(resp) }
     } else {
       Future.successful(None)
+    }
+  }
+
+  private def addMessageFileUploadWarnings(message: String, fileReferences: List[String], uploadedFiles: List[UploadedFile]): String = {
+    checkForNotUploadedFiles(fileReferences, uploadedFiles) match {
+      case None          => message
+      case Some(warning) => s"$message$fileAttachmentWarningLabel$warning</p>"
+    }
+  }
+
+  private def checkForNotUploadedFiles(fileReferences: List[String], uploadedFiles: List[UploadedFile]): Option[String] = {
+    val getFailedToUploadFiles = uploadedFiles.map(uploadedFile =>
+      uploadedFile.uploadStatus match {
+        case failed: Failed => Some(uploadedFile.fileReference)
+        case _              => None
+      }
+    ).flatten
+    val filesNotYetUploaded    = fileReferences.filterNot(requestedFileReference =>
+      uploadedFiles.exists(file => file.fileReference == requestedFileReference)
+    )
+    (getFailedToUploadFiles.isEmpty, filesNotYetUploaded.isEmpty) match {
+      case (true, true)   => None
+      case (false, true)  => Some("At least one file has failed to upload")
+      case (true, false)  => Some("At least one file has not yet finished uploading")
+      case (false, false) => Some("At least one file has failed to upload and at least one file has not yet finished uploading")
     }
   }
 
@@ -115,46 +143,50 @@ class TicketService @Inject() (
     } yield uploadFiles.flatten
   }
 
-  def updateMessageAddAttachmentIfRequired(fileReference: String, blobDetails: BlobDetails)(implicit hc: HeaderCarrier): Future[DeskproTicketMessageResult] = {
+  def updateMessageAttachmentsIfRequired(fileReference: String, maybeBlobDetails: Option[BlobDetails])(implicit hc: HeaderCarrier): Future[DeskproTicketMessageResult] = {
     for {
       maybeMessage <- deskproMessageFileAttachmentRepository.fetchByFileReference(fileReference)
-      result       <- updateMessageIfAlreadyCreated(fileReference, maybeMessage, blobDetails)
+      result       <- updateMessageIfAlreadyCreated(fileReference, maybeMessage, maybeBlobDetails)
     } yield result
   }
 
-  private def updateMessageIfAlreadyCreated(fileReference: String, maybeMessage: Option[DeskproMessageFileAttachment], blobDetails: BlobDetails)(implicit hc: HeaderCarrier)
-      : Future[DeskproTicketMessageResult] = {
+  private def updateMessageIfAlreadyCreated(
+      fileReference: String,
+      maybeMessage: Option[DeskproMessageFileAttachment],
+      maybeBlobDetails: Option[BlobDetails]
+    )(implicit hc: HeaderCarrier
+    ): Future[DeskproTicketMessageResult] = {
     maybeMessage match {
-      case Some(message) => updateMessageAttachments(fileReference, message.ticketId, message.messageId, blobDetails)
-      case _             => Future.successful(DeskproTicketMessageSuccess)
+      case Some(messageFileAttachment) => updateMessage(fileReference, messageFileAttachment, maybeBlobDetails)
+      case _                           => Future.successful(DeskproTicketMessageSuccess)
     }
   }
 
-  private def updateMessageAttachments(fileReference: String, ticketId: Int, messageId: Int, blobDetails: BlobDetails)(implicit hc: HeaderCarrier)
-      : Future[DeskproTicketMessageResult] = {
-    def checkAttachmentsContains(attachments: DeskproAttachmentsWrapperResponse, blobDetails: BlobDetails) = {
-      attachments.data.exists(attachment => (attachment.blob.blob_id == blobDetails.blobId && attachment.blob.blob_auth == blobDetails.blobAuth))
+  private def amendMessageFileAttachmentWarnings(message: String, fileReferences: List[String], uploadedFiles: List[UploadedFile]): String = {
+    val userMessageWithoutWarning = if (message.contains(fileAttachmentWarningLabel)) {
+      message.substring(0, message.indexOf(fileAttachmentWarningLabel))
+    } else {
+      message
     }
-    def addNewAttachmentIfNotPresent(
-        ticketId: Int,
-        messageId: Int,
-        existingAttachments: DeskproAttachmentsWrapperResponse,
-        blobDetails: BlobDetails
-      )(implicit hc: HeaderCarrier
-      ) = {
-      if (!checkAttachmentsContains(existingAttachments, blobDetails)) {
-        logger.info(s"Updating message attachments for ticketId: $ticketId, messageId: $messageId - adding file ref: $fileReference")
-        deskproConnector.updateMessageAttachments(ticketId, messageId, existingAttachments.data, blobDetails.blobId, blobDetails.blobAuth)
-      } else {
-        Future.successful(DeskproTicketMessageSuccess)
-      }
-    }
+    addMessageFileUploadWarnings(userMessageWithoutWarning, fileReferences, uploadedFiles)
+  }
 
-    logger.info(s"Checking message attachments for ticketId: $ticketId, messageId: $messageId")
+  private def updateMessage(fileReference: String, messageFileAttachment: DeskproMessageFileAttachment, maybeBlobDetails: Option[BlobDetails])(implicit hc: HeaderCarrier)
+      : Future[DeskproTicketMessageResult] = {
+    logger.info(s"Updating message for ticketId: ${messageFileAttachment.ticketId}, messageId: ${messageFileAttachment.messageId}")
 
     for {
-      attachments <- deskproConnector.getMessageAttachments(ticketId, messageId)
-      result      <- addNewAttachmentIfNotPresent(ticketId, messageId, attachments, blobDetails)
+      attachments   <- deskproConnector.getMessageAttachments(messageFileAttachment.ticketId, messageFileAttachment.messageId)
+      message       <- deskproConnector.getMessage(messageFileAttachment.ticketId, messageFileAttachment.messageId)
+      uploadedFiles <- getUploadedFileDetails(messageFileAttachment.fileReferences)
+      amendedMessage = amendMessageFileAttachmentWarnings(message.data.message, messageFileAttachment.fileReferences, uploadedFiles)
+      result        <- deskproConnector.updateMessage(
+                         messageFileAttachment.ticketId,
+                         messageFileAttachment.messageId,
+                         amendedMessage,
+                         attachments.data,
+                         maybeBlobDetails
+                       )
     } yield result
   }
 

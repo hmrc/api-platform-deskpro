@@ -2115,12 +2115,63 @@ trait DeskproStub {
     }
   }
 
-  object UpdateMessageAttachments {
+  object GetMessage {
+
+    def stubSuccess(ticketId: Int, messageId: Int) = {
+      stubFor(
+        get(urlPathEqualTo(s"/api/v2/tickets/$ticketId/messages/$messageId"))
+          .willReturn(
+            aResponse()
+              .withBody(s"""{
+                           |  "data": {
+                           |    "id": $messageId,
+                           |    "ticket": $ticketId,
+                           |    "person": 61,
+                           |    "email_source": null,
+                           |    "attributes": [
+                           |      {
+                           |        "name": "agent_type",
+                           |        "value": "agent",
+                           |        "date_created": "2025-10-20T14:04:27+0000",
+                           |        "type": "value"
+                           |      }
+                           |    ],
+                           |    "attachments": [
+                           |      83
+                           |    ],
+                           |    "date_created": "2025-10-20T14:04:27+0000",
+                           |    "is_agent_note": 0,
+                           |    "creation_system": "web.api",
+                           |    "ip_address": "",
+                           |    "visitor_id": null,
+                           |    "hostname": "",
+                           |    "email": "",
+                           |    "message_hash": "dc9694d8f0c761ae93a47732d528d332d6164263",
+                           |    "primary_translation": null,
+                           |    "message": "Test amending message text!!",
+                           |    "message_without_images": "Test amending message text!!",
+                           |    "message_full": "",
+                           |    "message_raw": null,
+                           |    "message_preview_text": "Test amending message text!!",
+                           |    "show_full_hint": false,
+                           |    "lang_code": null
+                           |  },
+                           |  "meta": {},
+                           |  "linked": {}
+                           |}""".stripMargin)
+              .withStatus(OK)
+          )
+      )
+    }
+  }
+
+  object UpdateMessage {
 
     def stubSuccess(ticketId: Int, messageId: Int) = {
       stubFor(
         put(urlPathEqualTo(s"/api/v2/tickets/$ticketId/messages/$messageId"))
           .withRequestBody(equalToJson(s"""{
+                                          |  "message": "This is where the message for the ticket goes",
                                           |  "attachments": {
                                           |    "12345": {
                                           |      "blob_auth": "26854KPJHXXQWRNRQHBQ0"
@@ -2137,10 +2188,29 @@ trait DeskproStub {
       )
     }
 
+    def stubSuccessNoBlobDetails(ticketId: Int, messageId: Int) = {
+      stubFor(
+        put(urlPathEqualTo(s"/api/v2/tickets/$ticketId/messages/$messageId"))
+          .withRequestBody(equalToJson(s"""{
+                                          |  "message": "This is where the message for the ticket goes",
+                                          |  "attachments": {
+                                          |    "12345": {
+                                          |      "blob_auth": "26854KPJHXXQWRNRQHBQ0"
+                                          |    }
+                                          |  }
+                                          |}""".stripMargin))
+          .willReturn(
+            aResponse()
+              .withStatus(NO_CONTENT)
+          )
+      )
+    }
+
     def stubNotFound(ticketId: Int, messageId: Int) = {
       stubFor(
         put(urlPathEqualTo(s"/api/v2/tickets/$ticketId/messages/$messageId"))
           .withRequestBody(equalToJson(s"""{
+                                          |  "message": "This is where the message for the ticket goes",
                                           |  "attachments": {
                                           |    "12345": {
                                           |      "blob_auth": "26854KPJHXXQWRNRQHBQ0"
@@ -2161,6 +2231,7 @@ trait DeskproStub {
       stubFor(
         put(urlPathEqualTo(s"/api/v2/tickets/$ticketId/messages/$messageId"))
           .withRequestBody(equalToJson(s"""{
+                                          |  "message": "This is where the message for the ticket goes",
                                           |  "attachments": {
                                           |    "12345": {
                                           |      "blob_auth": "26854KPJHXXQWRNRQHBQ0"

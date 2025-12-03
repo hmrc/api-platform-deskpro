@@ -69,7 +69,7 @@ class UpscanCallbackDispatcherSpec extends AsyncHmrcSpec with FixedClock {
       when(mockUploadedFileRepository.create(*)).thenReturn(Future.successful(uploadedSuccess))
       when(mockUpscanDownloadConnector.stream(*)(*)).thenReturn(Future.successful(stream))
       when(mockDeskproConnector.createBlob(*, *, *)(*)).thenReturn(Future.successful(blobWrapperResp))
-      when(mockTicketService.updateMessageAddAttachmentIfRequired(*, *)(*)).thenReturn(Future.successful(DeskproTicketMessageSuccess))
+      when(mockTicketService.updateMessageAttachmentsIfRequired(*, *)(*)).thenReturn(Future.successful(DeskproTicketMessageSuccess))
 
       val result = await(underTest.handleCallback(callbackReady))
 
@@ -77,20 +77,21 @@ class UpscanCallbackDispatcherSpec extends AsyncHmrcSpec with FixedClock {
       verify(mockUploadedFileRepository).create(eqTo(uploadedSuccess))
       verify(mockUpscanDownloadConnector).stream(eqTo(url))(*)
       verify(mockDeskproConnector).createBlob(eqTo("filename"), eqTo("text/plain"), eqTo(stream))(*)
-      verify(mockTicketService).updateMessageAddAttachmentIfRequired(eqTo(fileReference.value), eqTo(BlobDetails(1234, "auth")))(*)
+      verify(mockTicketService).updateMessageAttachmentsIfRequired(eqTo(fileReference.value), eqTo(Some(BlobDetails(1234, "auth"))))(*)
     }
 
     "successfully add a failed callback to the uploaded files repository" in new Setup {
 
       when(mockUploadedFileRepository.create(*)).thenReturn(Future.successful(uploadedFailed))
+      when(mockTicketService.updateMessageAttachmentsIfRequired(*, *)(*)).thenReturn(Future.successful(DeskproTicketMessageSuccess))
 
       val result = await(underTest.handleCallback(callbackFailed))
 
       result shouldBe DeskproTicketMessageSuccess
       verify(mockUploadedFileRepository).create(eqTo(uploadedFailed))
+      verify(mockTicketService).updateMessageAttachmentsIfRequired(eqTo(fileReference.value), eqTo(None))(*)
       verify(mockUpscanDownloadConnector, never).stream(*)(*)
       verify(mockDeskproConnector, never).createBlob(*, *, *)(*)
-      verify(mockTicketService, never).updateMessageAddAttachmentIfRequired(*, *)(*)
     }
   }
 }

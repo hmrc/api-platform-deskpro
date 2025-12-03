@@ -73,6 +73,7 @@ class DeskproConnectorISpec
     val personId             = 1
     val blobId               = 67890
     val blobAuth             = "4476FHDGBJHJ55356BVN1"
+    val blobDetails          = Some(BlobDetails(blobId, blobAuth))
     val attachments          = List(DeskproAttachmentResponse(123, DeskproBlobResponse(12345, "26854KPJHXXQWRNRQHBQ0", "https:example.com/file02", "example.txt")))
     val createdDate: Instant = LocalDateTime.parse("2020-01-02T03:04:05+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
 
@@ -692,27 +693,59 @@ class DeskproConnectorISpec
     }
   }
 
-  "updateMessageAttachments" should {
-    "return DeskproTicketMessageSuccess when 204 returned from deskpro" in new Setup {
-      UpdateMessageAttachments.stubSuccess(ticketId, messageId)
+  "getMessage" should {
+    val createdDate1: Instant = LocalDateTime.parse("2025-10-20T14:04:27+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
 
-      val result = await(objInTest.updateMessageAttachments(ticketId, messageId, attachments, blobId, blobAuth))
+    "return DeskproMessageWrapperResponse when 200 returned from deskpro with response body" in new Setup {
+      GetMessage.stubSuccess(ticketId, messageId)
+
+      val result = await(objInTest.getMessage(ticketId, messageId))
+
+      val expectedResponse = DeskproMessageWrapperResponse(
+        DeskproMessageResponse(
+          messageId,
+          ticketId,
+          61,
+          createdDate1,
+          0,
+          "Test amending message text!!",
+          List(83)
+        )
+      )
+
+      result shouldBe expectedResponse
+    }
+  }
+
+  "updateMessage" should {
+    "return DeskproTicketMessageSuccess when 204 returned from deskpro" in new Setup {
+      UpdateMessage.stubSuccess(ticketId, messageId)
+
+      val result = await(objInTest.updateMessage(ticketId, messageId, message, attachments, blobDetails))
+
+      result shouldBe DeskproTicketMessageSuccess
+    }
+
+    "return DeskproTicketMessageSuccess when 204 returned from deskpro when no blob details" in new Setup {
+      UpdateMessage.stubSuccessNoBlobDetails(ticketId, messageId)
+
+      val result = await(objInTest.updateMessage(ticketId, messageId, message, attachments, None))
 
       result shouldBe DeskproTicketMessageSuccess
     }
 
     "return DeskproTicketMessageNotFound if ticket not found" in new Setup {
-      UpdateMessageAttachments.stubNotFound(ticketId, messageId)
+      UpdateMessage.stubNotFound(ticketId, messageId)
 
-      val result = await(objInTest.updateMessageAttachments(ticketId, messageId, attachments, blobId, blobAuth))
+      val result = await(objInTest.updateMessage(ticketId, messageId, message, attachments, blobDetails))
 
       result shouldBe DeskproTicketMessageNotFound
     }
 
     "return DeskproTicketMessageFailure if error" in new Setup {
-      UpdateMessageAttachments.stubFailure(ticketId, messageId)
+      UpdateMessage.stubFailure(ticketId, messageId)
 
-      val result = await(objInTest.updateMessageAttachments(ticketId, messageId, attachments, blobId, blobAuth))
+      val result = await(objInTest.updateMessage(ticketId, messageId, message, attachments, blobDetails))
 
       result shouldBe DeskproTicketMessageFailure
     }
