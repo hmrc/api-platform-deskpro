@@ -357,7 +357,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
     "return DeskproTicketResponseSuccess and save response when fileReference is present and the file has failed to upload" in new Setup {
       val failedUploadStatus = Failed("message", "reason")
       val failedUploadedFile = UploadedFile(fileReference, failedUploadStatus, instant)
-      val expectedMessage    = s"$message<p><strong>File attachment warnings</strong><br>At least one file has failed to upload</p>"
+      val expectedMessage    = s"$message<p><strong>File attachment warnings</strong><ul><li><strong>fileName.txt</strong> has failed to upload</li></ul></p>"
 
       when(mockUploadedFileRepo.fetchByFileReference(*)).thenReturn(Future.successful(Some(failedUploadedFile)))
       when(mockDeskproConnector.createMessageWithAttachments(*, *[LaxEmailAddress], *, *)(*)).thenReturn(Future.successful(messageWrapper))
@@ -375,7 +375,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
     }
 
     "return DeskproTicketResponseSuccess and save response when fileReference is present and the file has not been uploaded" in new Setup {
-      val expectedMessage = s"$message<p><strong>File attachment warnings</strong><br>At least one file has not yet finished uploading</p>"
+      val expectedMessage = s"$message<p><strong>File attachment warnings</strong><ul><li><strong>fileName.txt</strong> has not yet finished uploading</li></ul></p>"
 
       when(mockUploadedFileRepo.fetchByFileReference(*)).thenReturn(Future.successful(None))
       when(mockDeskproConnector.createMessageWithAttachments(*, *[LaxEmailAddress], *, *)(*)).thenReturn(Future.successful(messageWrapper))
@@ -441,7 +441,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       verify(mockDeskproConnector).updateMessage(
         eqTo(ticketId),
         eqTo(messageId),
-        eqTo("message 1<p><strong>File attachment warnings</strong><br>At least one file has not yet finished uploading</p>"),
+        eqTo("message 1<p><strong>File attachment warnings</strong><ul><li><strong>fileName.txt</strong> has not yet finished uploading</li></ul></p>"),
         eqTo(existingAttachments),
         eqTo(blobDetails)
       )(*)

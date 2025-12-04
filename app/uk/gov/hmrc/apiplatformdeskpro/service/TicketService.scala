@@ -45,7 +45,7 @@ class TicketService @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger with ClockNow {
 
-  val fileAttachmentWarningLabel: String = "<p><strong>File attachment warnings</strong><br>"
+  val fileAttachmentWarningLabel: String = "<p><strong>File attachment warnings</strong>"
 
   def submitTicket(createTicketRequest: CreateTicketRequest)(implicit hc: HeaderCarrier): Future[Either[DeskproTicketCreationFailed, DeskproTicketCreated]] = {
 
@@ -106,25 +106,30 @@ class TicketService @Inject() (
   private def addMessageFileUploadWarnings(message: String, attachments: List[FileAttachment], uploadedFiles: List[UploadedFile]): String = {
     checkForNotUploadedFiles(attachments, uploadedFiles) match {
       case None          => message
-      case Some(warning) => s"$message$fileAttachmentWarningLabel$warning</p>"
+      case Some(warning) => s"$message$fileAttachmentWarningLabel<ul>$warning</ul></p>"
     }
   }
 
+  private def getFileAttachment(fileReference: String, attachments: List[FileAttachment]): Option[FileAttachment] = {
+    attachments.find(attachment => attachment.fileReference == fileReference)
+  }
+
   private def checkForNotUploadedFiles(attachments: List[FileAttachment], uploadedFiles: List[UploadedFile]): Option[String] = {
-    val getFailedToUploadFiles = uploadedFiles.map(uploadedFile =>
+    val failedToUploadFiles: List[FileAttachment] = uploadedFiles.map(uploadedFile =>
       uploadedFile.uploadStatus match {
-        case failed: Failed => Some(uploadedFile.fileReference)
+        case failed: Failed => getFileAttachment(uploadedFile.fileReference, attachments)
         case _              => None
       }
     ).flatten
-    val filesNotYetUploaded    = attachments.filterNot(requestedFileAttachment =>
+    val filesNotYetUploaded: List[FileAttachment] = attachments.filterNot(requestedFileAttachment =>
       uploadedFiles.exists(file => file.fileReference == requestedFileAttachment.fileReference)
     )
-    (getFailedToUploadFiles.isEmpty, filesNotYetUploaded.isEmpty) match {
+    (failedToUploadFiles.isEmpty, filesNotYetUploaded.isEmpty) match {
       case (true, true)   => None
-      case (false, true)  => Some("At least one file has failed to upload")
-      case (true, false)  => Some("At least one file has not yet finished uploading")
-      case (false, false) => Some("At least one file has failed to upload and at least one file has not yet finished uploading")
+      case (false, true)  => Some(failedToUploadFiles.map(file => s"<li><strong>${file.fileName}</strong> has failed to upload</li>").mkString)
+      case (true, false)  => Some(filesNotYetUploaded.map(file => s"<li><strong>${file.fileName}</strong> has not yet finished uploading</li>").mkString)
+      case (false, false) => Some(failedToUploadFiles.map(file => s"<li><strong>${file.fileName}</strong> has failed to upload</li>").mkString ++
+          filesNotYetUploaded.map(file => s"<li><strong>${file.fileName}</strong> has not yet finished uploading</li>").mkString)
     }
   }
 
