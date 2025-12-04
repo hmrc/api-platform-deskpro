@@ -66,7 +66,27 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
           "userEmail": "$email",
           "message": "$response",
           "status": "${TicketStatus.AwaitingAgent}",
-          "fileReferences": []
+          "attachments": []
+        }
+      """
+    )
+
+    val createTicketResponseRequestWithAttachmentsJson = Json.parse(
+      s"""
+        {
+          "userEmail": "$email",
+          "message": "$response",
+          "status": "${TicketStatus.AwaitingAgent}",
+          "attachments": [
+            {
+              "fileReference": "fileReference1",
+              "fileName": "fileName1.txt"
+            },
+            {
+              "fileReference": "fileReference2",
+              "fileName": "fileName2.doc"
+            }
+          ]
         }
       """
     )
@@ -227,6 +247,20 @@ class TicketControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFa
       val request = FakeRequest(POST, s"/ticket/$ticketId/response")
         .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
         .withJsonBody(createTicketResponseRequestJson)
+
+      val result: Future[Result] = objToTest.createMessage(ticketId)(request)
+
+      status(result) shouldBe OK
+    }
+
+    "return 200 when response created successfully with attachments" in new Setup {
+
+      when(mockService.createMessage(*, *)(*)).thenReturn(Future.successful(messageResponse))
+      when(mockStubBehaviour.stubAuth(Some(expectedPredicate), Retrieval.EmptyRetrieval)).thenReturn(Future.successful(Retrieval.Username("Bob")))
+
+      val request = FakeRequest(POST, s"/ticket/$ticketId/response")
+        .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json", "Authorization" -> "123456")
+        .withJsonBody(createTicketResponseRequestWithAttachmentsJson)
 
       val result: Future[Result] = objToTest.createMessage(ticketId)(request)
 
