@@ -48,7 +48,7 @@ class DeskproMessageFileAttachmentRepository @Inject() (mongo: MongoComponent, v
             .background(true)
         ),
         IndexModel(
-          ascending("fileReferences"),
+          ascending("attachments.fileReference"),
           IndexOptions()
             .name("fileReferencesIndex")
             .unique(false)
@@ -74,6 +74,6 @@ class DeskproMessageFileAttachmentRepository @Inject() (mongo: MongoComponent, v
   }
 
   def fetchByFileReference(fileReference: String): Future[Option[DeskproMessageFileAttachment]] = {
-    collection.find(equal("fileReferences", fileReference)).headOption()
+    collection.find(equal("attachments.fileReference", fileReference)).headOption()
   }
 }

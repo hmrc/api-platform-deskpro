@@ -23,6 +23,7 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.testkit.NoMaterializer
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.FileAttachment
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.DeskproMessageFileAttachment
 import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
@@ -41,22 +42,26 @@ class DeskproMessageFileAttachmentRepositoryISpec extends AsyncHmrcSpec
   override protected val repository: PlayMongoRepository[DeskproMessageFileAttachment] = messageFileAttachmentRepo
 
   trait Setup {
-    val fileReference1 = "fileRef1"
-    val fileReference2 = "fileRef2"
-    val ticketId       = 3281
-    val messageId      = 789
+    val fileReference1  = "fileRef1"
+    val fileName1       = "fileName1.txt"
+    val fileAttachment1 = FileAttachment(fileReference1, fileName1)
+    val fileReference2  = "fileRef2"
+    val fileName2       = "fileName2.doc"
+    val fileAttachment2 = FileAttachment(fileReference2, fileName2)
+    val ticketId        = 3281
+    val messageId       = 789
   }
 
   "DeskproMessageFileAttachmentRepository" when {
     "create" should {
       "save the DeskproMessageFileAttachment successfully" in new Setup {
-        val response = DeskproMessageFileAttachment(ticketId, messageId, List(fileReference1, fileReference2), instant)
+        val response = DeskproMessageFileAttachment(ticketId, messageId, List(fileAttachment1, fileAttachment2), instant)
         val result   = await(messageFileAttachmentRepo.create(response))
         result shouldBe response
       }
 
       "not save duplicates" in new Setup {
-        val response = DeskproMessageFileAttachment(ticketId, messageId, List(fileReference1, fileReference2), instant)
+        val response = DeskproMessageFileAttachment(ticketId, messageId, List(fileAttachment1, fileAttachment2), instant)
         await(messageFileAttachmentRepo.create(response))
 
         intercept[MongoWriteException] {
@@ -67,7 +72,7 @@ class DeskproMessageFileAttachmentRepositoryISpec extends AsyncHmrcSpec
 
     "fetchByfileReference" should {
       "find DeskproMessageFileAttachment when exists in db" in new Setup {
-        val response = DeskproMessageFileAttachment(ticketId, messageId, List(fileReference1, fileReference2), instant)
+        val response = DeskproMessageFileAttachment(ticketId, messageId, List(fileAttachment1, fileAttachment2), instant)
         await(messageFileAttachmentRepo.create(response))
 
         // Should be able to fetch by either file reference
