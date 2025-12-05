@@ -20,6 +20,7 @@ import scala.util.Properties
 
 import play.api.libs.json._
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.DeskproPerson
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.BlobDetails
 
 case class DeskproTicketMessage(
     message: String,
@@ -29,8 +30,9 @@ case class DeskproTicketMessage(
   )
 
 object DeskproTicketMessage {
-  def fromRaw(message: String, person: DeskproPerson, attachments: List[AttachmentRequest] = List.empty): DeskproTicketMessage =
-    DeskproTicketMessage(message.replaceAll(Properties.lineSeparator, "<br>"), person, attachments = attachments)
+
+  def fromRaw(message: String, person: DeskproPerson, blobDetails: List[BlobDetails] = List.empty): DeskproTicketMessage =
+    DeskproTicketMessage(message.replaceAll(Properties.lineSeparator, "<br>"), person, attachments = blobDetails.map(blob => AttachmentRequest(blob.blobAuth)))
 }
 
 case class CreateDeskproTicket(
@@ -50,8 +52,12 @@ object CreateDeskproTicket {
 sealed trait TicketResult
 
 case object TicketCreated                    extends TicketResult
-case class DeskproTicketCreated(ref: String) extends TicketResult
+case class DeskproTicket(id: Int, ref: String)
+case class DeskproTicketCreated(data: DeskproTicket) extends TicketResult
+
 
 case object DeskproTicketCreated {
-  implicit val reader: Reads[DeskproTicketCreated] = (__ \ "data" \ "ref").read[String].map(DeskproTicketCreated(_))
+  implicit val deskproTicketFormat: OFormat[DeskproTicket]         = Json.format[DeskproTicket]
+  implicit val deskproTicketCreatedFormat: OFormat[DeskproTicketCreated]         = Json.format[DeskproTicketCreated]
+//  implicit val reader: Reads[DeskproTicketCreated] = (__ \ "data" \ "ref").read[String].map(DeskproTicketCreated(_))
 }

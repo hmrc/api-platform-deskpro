@@ -16,22 +16,10 @@
 
 package uk.gov.hmrc.apiplatformdeskpro.domain.models
 
-import play.api.libs.json._
+import play.api.libs.json.{Json, OFormat}
 
-case class CreateTicketRequest(
-    fullName: String,
-    email: String,
-    subject: String,
-    message: String,
-    apiName: Option[String],
-    applicationId: Option[String],
-    organisation: Option[String],
-    supportReason: Option[String],
-    reasonKey: Option[String],
-    teamMemberEmail: Option[String],
-    attachments: List[FileAttachment] = List.empty
-  )
+case class FileAttachment(fileReference: String, fileName: String)
 
-object CreateTicketRequest {
-  implicit val createTicketFormat: OFormat[CreateTicketRequest] = Json.format[CreateTicketRequest]
+object FileAttachment {
+  implicit val fileAttachmentFormat: OFormat[FileAttachment] = Json.format[FileAttachment]
 }
