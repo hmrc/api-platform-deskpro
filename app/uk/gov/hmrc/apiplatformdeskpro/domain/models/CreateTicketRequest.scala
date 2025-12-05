@@ -28,7 +28,8 @@ case class CreateTicketRequest(
     organisation: Option[String],
     supportReason: Option[String],
     reasonKey: Option[String],
-    teamMemberEmail: Option[String]
+    teamMemberEmail: Option[String],
+    fileReferences: List[String] = List.empty
   )
 
 object CreateTicketRequest {

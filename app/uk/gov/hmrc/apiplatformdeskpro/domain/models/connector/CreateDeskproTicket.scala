@@ -24,11 +24,13 @@ import uk.gov.hmrc.apiplatformdeskpro.domain.models.DeskproPerson
 case class DeskproTicketMessage(
     message: String,
     person: DeskproPerson,
-    format: String = "html"
+    format: String = "html",
+    attachments: List[AttachmentRequest] = List.empty
   )
 
 object DeskproTicketMessage {
-  def fromRaw(message: String, person: DeskproPerson): DeskproTicketMessage = DeskproTicketMessage(message.replaceAll(Properties.lineSeparator, "<br>"), person)
+  def fromRaw(message: String, person: DeskproPerson, attachments: List[AttachmentRequest] = List.empty): DeskproTicketMessage =
+    DeskproTicketMessage(message.replaceAll(Properties.lineSeparator, "<br>"), person, attachments = attachments)
 }
 
 case class CreateDeskproTicket(

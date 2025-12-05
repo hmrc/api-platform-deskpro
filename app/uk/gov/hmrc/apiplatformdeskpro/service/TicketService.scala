@@ -49,11 +49,12 @@ class TicketService @Inject() (
 
   def submitTicket(createTicketRequest: CreateTicketRequest)(implicit hc: HeaderCarrier): Future[Either[DeskproTicketCreationFailed, DeskproTicketCreated]] = {
 
-    val deskproTicket: CreateDeskproTicket = createDeskproTicket(createTicketRequest)
-    deskproConnector.createTicket(deskproTicket)
+    createDeskproTicket(createTicketRequest)
+//    deskproConnector.createTicket(deskproTicket)
   }
 
-  private def createDeskproTicket(request: CreateTicketRequest): CreateDeskproTicket = {
+  private def createDeskproTicket(request: CreateTicketRequest)(implicit hc: HeaderCarrier):
+  Future[Either[DeskproTicketCreationFailed, DeskproTicketCreated]] = {
 
     val maybeOrganisation    = request.organisation.fold(Map.empty[String, String])(v => Map(config.deskproOrganisation -> v))
     val maybeTeamMemberEmail = request.teamMemberEmail.fold(Map.empty[String, String])(v => Map(config.deskproTeamMemberEmail -> v))
@@ -65,13 +66,22 @@ class TicketService @Inject() (
     val fields = maybeOrganisation ++ maybeTeamMemberEmail ++ maybeApiName ++ maybeApplicationId ++ maybeSupportReason ++ maybeReasonKey
     val person = DeskproPerson(request.fullName, request.email)
 
-    CreateDeskproTicket(
-      person,
-      request.subject,
-      DeskproTicketMessage.fromRaw(request.message, person),
-      config.deskproBrand,
-      fields
-    )
+    for {
+      uploadedFiles <- getUploadedFileDetails(request.fileReferences)
+      messageWithWarnings   = addMessageFileUploadWarnings(request.message, request.fileReferences, uploadedFiles)
+      attachmentRequests = uploadedFiles.map(uploadedFile =>
+                            uploadedFile.uploadStatus match {
+                            case uploadedSuccessfully: UploadedSuccessfully => AttachmentRequest(uploadedSuccessfully.blobDetails.blobAuth)
+                  //          case _ => ""
+                            })
+                  //        .filterNot(blobAuth => blobAuth == "")
+      deskproTicket =  CreateDeskproTicket(person, request.subject,
+                                DeskproTicketMessage.fromRaw(messageWithWarnings, person, attachmentRequests),
+                                config.deskproBrand,
+                                fields)
+      response <- deskproConnector.createTicket(deskproTicket)
+    } yield response
+
   }
 
   def getTicketsForPerson(personEmail: LaxEmailAddress, status: Option[String])(implicit hc: HeaderCarrier): Future[List[DeskproTicket]] = {
