@@ -64,9 +64,7 @@ class TicketService @Inject() (
       uploadedFiles      <- ET.liftF(getUploadedFileDetails(request.attachments))
       messageWithWarnings = addMessageFileUploadWarnings(request.message, request.attachments, uploadedFiles)
       createDeskproTicket =
-        CreateDeskproTicket(person, request.subject,
-          DeskproTicketMessage.fromRaw(messageWithWarnings, person, getBlobDetails(uploadedFiles)),
-          config.deskproBrand, fields)
+        CreateDeskproTicket(person, request.subject, DeskproTicketMessage.fromRaw(messageWithWarnings, person, getBlobDetails(uploadedFiles)), config.deskproBrand, fields)
       ticket             <- ET.fromEitherF(deskproConnector.createTicket(createDeskproTicket))
       ticketId            = ticket.data.id
       ticketMessages     <- ET.liftF(deskproConnector.getTicketMessages(ticketId))
