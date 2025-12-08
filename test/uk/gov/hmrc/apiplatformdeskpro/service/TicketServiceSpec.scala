@@ -52,6 +52,8 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
     val message         = "This is where the message for the ticket goes"
     val fileReference   = "fileRef"
     val fileName        = "fileName.txt"
+    val fileReference2  = "43567345639245763490"
+    val fileName2       = "file-name2.pdf"
     val fileAttachment  = FileAttachment(fileReference, fileName)
     val apiName         = "apiName"
     val applicationId   = ApplicationId.random.toString()
@@ -188,11 +190,9 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
 
     "successfully create a new deskpro ticket with attachments" in new Setup {
 
-      val fileReference2 = "43567345639245763490"
-      val fileName2      = "file-name2.pdf"
-      val blobId2        = 65342242
-      val blobAuth2      = "nmsdgfbclgfcbsdkjcgbsdljf"
-      val uploadedFile2  =
+      val blobId2       = 65342242
+      val blobAuth2     = "nmsdgfbclgfcbsdkjcgbsdljf"
+      val uploadedFile2 =
         UploadedFile(fileReference2, UploadedSuccessfully(fileName2, "text/plain", new URL("https://example.com/file1"), 1000, BlobDetails(blobId2, blobAuth2)), instant)
 
       val createTicketRequest = CreateTicketRequest(
@@ -251,7 +251,10 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       verify(mockDeskproConnector).createTicket(eqTo(expectedDeskproTicket))(*)
     }
 
-    "successfully create a new deskpro ticket with a failed attachment" in new Setup {
+    "successfully create a new deskpro ticket with failed attachments" in new Setup {
+
+      val failedFile =
+        UploadedFile(fileReference2, Failed("reason", "message"), instant)
 
       val createTicketRequest = CreateTicketRequest(
         fullName,
@@ -264,15 +267,20 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
         Some(supportReason),
         Some(reasonKey),
         Some(teamMemberEmail),
-        List(FileAttachment(fileReference, fileName))
+        List(
+          FileAttachment(fileReference, fileName),
+          FileAttachment(fileReference2, fileName2)
+        )
       )
 
       val fields                = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "6" -> teamMemberEmail, "7" -> reasonKey)
       val expectedPerson        = DeskproPerson(fullName, email.text)
-      val expectedMessage       = s"$message<p><strong>File attachment warnings</strong><ul><li><strong>$fileName</strong> has not yet finished uploading</li></ul></p>"
+      val expectedMessage       =
+        s"$message<p><strong>File attachment warnings</strong><ul><li><strong>$fileName2</strong> has failed to upload</li><li><strong>$fileName</strong> has not yet finished uploading</li></ul></p>"
       val expectedDeskproTicket = CreateDeskproTicket(expectedPerson, subject, DeskproTicketMessage(expectedMessage, expectedPerson, "html", List.empty), brand, fields)
 
-      when(mockUploadedFileRepo.fetchByFileReference(*)).thenReturn(Future.successful(None))
+      when(mockUploadedFileRepo.fetchByFileReference(eqTo(fileReference))).thenReturn(Future.successful(None))
+      when(mockUploadedFileRepo.fetchByFileReference(eqTo(fileReference2))).thenReturn(Future.successful(Some(failedFile)))
       when(mockDeskproConnector.createTicket(*)(*)).thenReturn(Future.successful(Right(DeskproTicketCreated(DeskproTicketData(ticketId, ref)))))
       when(mockDeskproConnector.getTicketMessages(*, *, *, *)(*)).thenReturn(Future.successful(DeskproMessagesWrapperResponse(List(DeskproMessageResponse(
         messageId,
