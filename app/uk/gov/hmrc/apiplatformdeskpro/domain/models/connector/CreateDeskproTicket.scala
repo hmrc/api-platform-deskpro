@@ -51,13 +51,12 @@ object CreateDeskproTicket {
 
 sealed trait TicketResult
 
-case object TicketCreated                    extends TicketResult
-case class DeskproTicket(id: Int, ref: String)
-case class DeskproTicketCreated(data: DeskproTicket) extends TicketResult
-
+case object TicketCreated                                extends TicketResult
+case class DeskproTicketData(id: Int, ref: String)
+case class DeskproTicketCreated(data: DeskproTicketData) extends TicketResult
 
 case object DeskproTicketCreated {
-  implicit val deskproTicketFormat: OFormat[DeskproTicket]         = Json.format[DeskproTicket]
-  implicit val deskproTicketCreatedFormat: OFormat[DeskproTicketCreated]         = Json.format[DeskproTicketCreated]
+  implicit val deskproTicketFormat: OFormat[DeskproTicketData]           = Json.format[DeskproTicketData]
+  implicit val deskproTicketCreatedFormat: OFormat[DeskproTicketCreated] = Json.format[DeskproTicketCreated]
 //  implicit val reader: Reads[DeskproTicketCreated] = (__ \ "data" \ "ref").read[String].map(DeskproTicketCreated(_))
 }
