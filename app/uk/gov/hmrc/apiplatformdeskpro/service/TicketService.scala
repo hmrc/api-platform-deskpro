@@ -45,10 +45,26 @@ class TicketService @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger with ClockNow {
 
-  val fileAttachmentWarningLabel: String = "<p><strong>File attachment warnings</strong>"
+  private val ET = EitherTHelper.make[DeskproTicketCreationFailed]
+
+  private val fileAttachmentWarningLabel: String = "<p><strong>File attachment warnings</strong>"
 
   def submitTicket(request: CreateTicketRequest)(implicit hc: HeaderCarrier): Future[Either[DeskproTicketCreationFailed, DeskproTicketCreated]] = {
+    (
+      for {
+        uploadedFiles      <- ET.liftF(getUploadedFileDetails(request.attachments))
+        messageWithWarnings = addMessageFileUploadWarnings(request.message, request.attachments, uploadedFiles)
+        createDeskproTicket = createDeskproTicketRequest(request, messageWithWarnings, uploadedFiles)
+        ticket             <- ET.fromEitherF(deskproConnector.createTicket(createDeskproTicket))
+        ticketId            = ticket.data.id
+        ticketMessages     <- ET.liftF(deskproConnector.getTicketMessages(ticketId))
+        messageId           = ticketMessages.data.head.id
+        _                  <- ET.liftF(saveMessageFileDetails(ticketId, messageId, request.attachments))
+      } yield ticket
+    ).value
+  }
 
+  private def createDeskproTicketRequest(request: CreateTicketRequest, message: String, uploadedFiles: List[UploadedFile]): CreateDeskproTicket = {
     val maybeOrganisation    = request.organisation.fold(Map.empty[String, String])(v => Map(config.deskproOrganisation -> v))
     val maybeTeamMemberEmail = request.teamMemberEmail.fold(Map.empty[String, String])(v => Map(config.deskproTeamMemberEmail -> v))
     val maybeApiName         = request.apiName.fold(Map.empty[String, String])(v => Map(config.deskproApiName -> v))
@@ -58,19 +74,14 @@ class TicketService @Inject() (
 
     val fields = maybeOrganisation ++ maybeTeamMemberEmail ++ maybeApiName ++ maybeApplicationId ++ maybeSupportReason ++ maybeReasonKey
     val person = DeskproPerson(request.fullName, request.email)
-    val ET     = EitherTHelper.make[DeskproTicketCreationFailed]
 
-    (for {
-      uploadedFiles      <- ET.liftF(getUploadedFileDetails(request.attachments))
-      messageWithWarnings = addMessageFileUploadWarnings(request.message, request.attachments, uploadedFiles)
-      createDeskproTicket =
-        CreateDeskproTicket(person, request.subject, DeskproTicketMessage.fromRaw(messageWithWarnings, person, getBlobDetails(uploadedFiles)), config.deskproBrand, fields)
-      ticket             <- ET.fromEitherF(deskproConnector.createTicket(createDeskproTicket))
-      ticketId            = ticket.data.id
-      ticketMessages     <- ET.liftF(deskproConnector.getTicketMessages(ticketId))
-      messageId           = ticketMessages.data.head.id
-      _                  <- ET.liftF(saveMessageFileDetails(ticketId, messageId, request.attachments))
-    } yield ticket).value
+    CreateDeskproTicket(
+      person,
+      request.subject,
+      DeskproTicketMessage.fromRaw(message, person, getBlobDetails(uploadedFiles)),
+      config.deskproBrand,
+      fields
+    )
   }
 
   def getTicketsForPerson(personEmail: LaxEmailAddress, status: Option[String])(implicit hc: HeaderCarrier): Future[List[DeskproTicket]] = {
