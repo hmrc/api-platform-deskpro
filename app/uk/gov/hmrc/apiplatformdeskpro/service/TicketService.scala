@@ -34,6 +34,11 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.common.services.{ClockNow, EitherTHelper}
 
+case class FileAttachmentFailed(
+    fileAttachment: FileAttachment,
+    failed: Failed
+  )
+
 @Singleton
 class TicketService @Inject() (
     deskproConnector: DeskproConnector,
@@ -120,27 +125,45 @@ class TicketService @Inject() (
     }
   }
 
-  private def getFileAttachment(fileReference: String, attachments: List[FileAttachment]): Option[FileAttachment] = {
-    attachments.find(attachment => attachment.fileReference == fileReference)
-  }
-
   private def checkForNotUploadedFiles(attachments: List[FileAttachment], uploadedFiles: List[UploadedFile]): Option[String] = {
-    val failedToUploadFiles: List[FileAttachment] = uploadedFiles.map(uploadedFile =>
+    val failedToUploadFiles: List[FileAttachmentFailed] = uploadedFiles.map(uploadedFile =>
       uploadedFile.uploadStatus match {
-        case failed: Failed => getFileAttachment(uploadedFile.fileReference, attachments)
+        case failed: Failed => getFileAttachmentFailed(uploadedFile.fileReference, attachments, failed)
         case _              => None
       }
     ).flatten
-    val filesNotYetUploaded: List[FileAttachment] = attachments.filterNot(requestedFileAttachment =>
+    val filesNotYetUploaded: List[FileAttachment]       = attachments.filterNot(requestedFileAttachment =>
       uploadedFiles.exists(file => file.fileReference == requestedFileAttachment.fileReference)
     )
     (failedToUploadFiles.isEmpty, filesNotYetUploaded.isEmpty) match {
       case (true, true)   => None
-      case (false, true)  => Some(failedToUploadFiles.map(file => s"<li><strong>${file.fileName}</strong> has failed to upload</li>").mkString)
-      case (true, false)  => Some(filesNotYetUploaded.map(file => s"<li><strong>${file.fileName}</strong> has not yet finished uploading</li>").mkString)
-      case (false, false) => Some(failedToUploadFiles.map(file => s"<li><strong>${file.fileName}</strong> has failed to upload</li>").mkString ++
-          filesNotYetUploaded.map(file => s"<li><strong>${file.fileName}</strong> has not yet finished uploading</li>").mkString)
+      case (false, true)  => Some(failedToUploadFiles.map(file => getFileFailedToUploadMessage(file)).mkString)
+      case (true, false)  => Some(filesNotYetUploaded.map(file => getFileNotYetUploadedMessage(file)).mkString)
+      case (false, false) => Some(failedToUploadFiles.map(file => getFileFailedToUploadMessage(file)).mkString ++
+          filesNotYetUploaded.map(file => getFileNotYetUploadedMessage(file)).mkString)
     }
+  }
+
+  private def getFileNotYetUploadedMessage(file: FileAttachment) = {
+    s"<li><strong>${file.fileName}</strong> has not yet finished uploading</li>"
+  }
+
+  private def getFileFailedToUploadMessage(file: FileAttachmentFailed) = {
+    s"<li><strong>${file.fileAttachment.fileName}</strong> has failed to upload${getFailureMessage(file.failed)}</li>"
+  }
+
+  private def getFailureMessage(failed: Failed): String = {
+    if (failed.reason == "REJECTED" && failed.message.contains("MIME type")) {
+      ": The file must be a XLS, XLSX, JPG, JPEG, PNG, DOC, DOCX, TXT, CSV or PDF"
+    } else if (failed.reason == "QUARANTINE") {
+      ": The file has a virus"
+    } else {
+      ""
+    }
+  }
+
+  private def getFileAttachmentFailed(fileReference: String, attachments: List[FileAttachment], failed: Failed): Option[FileAttachmentFailed] = {
+    attachments.find(attachment => attachment.fileReference == fileReference).map(attachment => FileAttachmentFailed(attachment, failed))
   }
 
   private def getBlobDetails(uploadedFiles: List[UploadedFile]): List[BlobDetails] = {
