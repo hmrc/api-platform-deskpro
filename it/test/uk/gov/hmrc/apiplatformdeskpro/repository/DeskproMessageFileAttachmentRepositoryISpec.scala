@@ -23,7 +23,7 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.testkit.NoMaterializer
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.FileAttachment
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.FileAttachment
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.DeskproMessageFileAttachment
 import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository

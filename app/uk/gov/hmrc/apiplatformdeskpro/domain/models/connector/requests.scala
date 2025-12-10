@@ -69,6 +69,8 @@ case class AttachmentRequest(
   )
 
 object AttachmentRequest {
+  def fromRaw(blobAuth: String): AttachmentRequest = AttachmentRequest(blobAuth)
+
   implicit val attachmentRequestFormat: Format[AttachmentRequest] = Json.format[AttachmentRequest]
 }
 

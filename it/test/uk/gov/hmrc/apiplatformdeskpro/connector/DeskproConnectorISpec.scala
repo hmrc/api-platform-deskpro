@@ -93,7 +93,7 @@ class DeskproConnectorISpec
         CreateTicket.stubSuccess(deskproTicket)
 
         val result: Either[DeskproTicketCreationFailed, DeskproTicketCreated] = await(objInTest.createTicket(deskproTicket))
-        result shouldBe Right(DeskproTicketCreated("SDST-1234"))
+        result shouldBe Right(DeskproTicketCreated(DeskproTicketData(12345, "SDST-1234")))
       }
 
       "return DeskproTicketCreationFailed with 'missing authorisation' when 401 returned from deskpro" in new Setup {

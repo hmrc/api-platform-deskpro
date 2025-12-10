@@ -24,7 +24,7 @@ import play.api.libs.json.Json
 import play.api.mvc.{AnyContentAsText, ControllerComponents, Result}
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers, StubControllerComponentsFactory, StubPlayBodyParsersFactory}
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.DeskproTicketCreated
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproTicketCreated, DeskproTicketData}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproTicketCreatedDuplicate, DeskproTicketCreationError}
 import uk.gov.hmrc.apiplatformdeskpro.service.TicketService
 import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
@@ -57,6 +57,7 @@ class CreateTicketControllerSpec extends AsyncHmrcSpec with StubControllerCompon
     val organisation    = "organisation"
     val supportReason   = "supportReason"
     val teamMemberEmail = "frank@example.com"
+    val ticketId        = 12345
 
     val createTicketRequestJson = Json.parse(
       s"""
@@ -69,13 +70,14 @@ class CreateTicketControllerSpec extends AsyncHmrcSpec with StubControllerCompon
             "applicationId": "$applicationId",
             "organisation": "$organisation",
             "supportReason": "$supportReason",
-            "teamMemberEmail": "$teamMemberEmail"
+            "teamMemberEmail": "$teamMemberEmail",
+            "attachments": []
           }
       """
     )
 
     def stubServiceSuccess(ref: String) = {
-      when(mockService.submitTicket(*)(*)).thenReturn(Future.successful(Right(DeskproTicketCreated(ref))))
+      when(mockService.submitTicket(*)(*)).thenReturn(Future.successful(Right(DeskproTicketCreated(DeskproTicketData(ticketId, ref)))))
     }
   }
 

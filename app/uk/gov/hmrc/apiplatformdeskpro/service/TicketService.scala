@@ -22,17 +22,17 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import uk.gov.hmrc.apiplatformdeskpro.config.AppConfig
 import uk.gov.hmrc.apiplatformdeskpro.connector.DeskproConnector
+import uk.gov.hmrc.apiplatformdeskpro.domain.models._
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector._
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.{CreateTicketResponseRequest, FileAttachment}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.CreateTicketResponseRequest
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.UploadStatus.{Failed, UploadedSuccessfully}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.{BlobDetails, DeskproMessageFileAttachment, UploadedFile}
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.{CreateTicketRequest, DeskproTicketCreationFailed, _}
 import uk.gov.hmrc.apiplatformdeskpro.repository.{DeskproMessageFileAttachmentRepository, UploadedFileRepository}
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
-import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
+import uk.gov.hmrc.apiplatform.modules.common.services.{ClockNow, EitherTHelper}
 
 @Singleton
 class TicketService @Inject() (
@@ -45,16 +45,26 @@ class TicketService @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger with ClockNow {
 
-  val fileAttachmentWarningLabel: String = "<p><strong>File attachment warnings</strong>"
+  private val ET = EitherTHelper.make[DeskproTicketCreationFailed]
 
-  def submitTicket(createTicketRequest: CreateTicketRequest)(implicit hc: HeaderCarrier): Future[Either[DeskproTicketCreationFailed, DeskproTicketCreated]] = {
+  private val fileAttachmentWarningLabel: String = "<p><strong>File attachment warnings</strong>"
 
-    val deskproTicket: CreateDeskproTicket = createDeskproTicket(createTicketRequest)
-    deskproConnector.createTicket(deskproTicket)
+  def submitTicket(request: CreateTicketRequest)(implicit hc: HeaderCarrier): Future[Either[DeskproTicketCreationFailed, DeskproTicketCreated]] = {
+    (
+      for {
+        uploadedFiles      <- ET.liftF(getUploadedFileDetails(request.attachments))
+        messageWithWarnings = addMessageFileUploadWarnings(request.message, request.attachments, uploadedFiles)
+        createDeskproTicket = createDeskproTicketRequest(request, messageWithWarnings, uploadedFiles)
+        ticket             <- ET.fromEitherF(deskproConnector.createTicket(createDeskproTicket))
+        ticketId            = ticket.data.id
+        ticketMessages     <- ET.liftF(deskproConnector.getTicketMessages(ticketId))
+        messageId           = ticketMessages.data.head.id
+        _                  <- ET.liftF(saveMessageFileDetails(ticketId, messageId, request.attachments))
+      } yield ticket
+    ).value
   }
 
-  private def createDeskproTicket(request: CreateTicketRequest): CreateDeskproTicket = {
-
+  private def createDeskproTicketRequest(request: CreateTicketRequest, message: String, uploadedFiles: List[UploadedFile]): CreateDeskproTicket = {
     val maybeOrganisation    = request.organisation.fold(Map.empty[String, String])(v => Map(config.deskproOrganisation -> v))
     val maybeTeamMemberEmail = request.teamMemberEmail.fold(Map.empty[String, String])(v => Map(config.deskproTeamMemberEmail -> v))
     val maybeApiName         = request.apiName.fold(Map.empty[String, String])(v => Map(config.deskproApiName -> v))
@@ -68,7 +78,7 @@ class TicketService @Inject() (
     CreateDeskproTicket(
       person,
       request.subject,
-      DeskproTicketMessage.fromRaw(request.message, person),
+      DeskproTicketMessage.fromRaw(message, person, getBlobDetails(uploadedFiles)),
       config.deskproBrand,
       fields
     )

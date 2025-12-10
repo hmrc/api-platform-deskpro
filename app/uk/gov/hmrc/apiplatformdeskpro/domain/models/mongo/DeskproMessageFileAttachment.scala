@@ -19,7 +19,7 @@ package uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo
 import java.time.Instant
 
 import play.api.libs.json.{Format, Json, OFormat}
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.FileAttachment
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.FileAttachment
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 case class DeskproMessageFileAttachment(ticketId: Int, messageId: Int, attachments: List[FileAttachment], createdAt: Instant)
