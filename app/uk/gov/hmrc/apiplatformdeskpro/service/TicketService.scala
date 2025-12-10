@@ -145,7 +145,7 @@ class TicketService @Inject() (
   }
 
   private def getFileNotYetUploadedMessage(file: FileAttachment) = {
-    s"<li><strong>${file.fileName}</strong> has not yet finished uploading</li>"
+    s"<li><strong>${file.fileName}</strong> is in a queue to be scanned for viruses</li>"
   }
 
   private def getFileFailedToUploadMessage(file: FileAttachmentFailed) = {

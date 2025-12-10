@@ -276,7 +276,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       val fields                = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "6" -> teamMemberEmail, "7" -> reasonKey)
       val expectedPerson        = DeskproPerson(fullName, email.text)
       val expectedMessage       =
-        s"$message<p><strong>File attachment warnings</strong><ul><li><strong>$fileName2</strong> has failed to upload: The file must be a XLS, XLSX, JPG, JPEG, PNG, DOC, DOCX, TXT, CSV or PDF</li><li><strong>$fileName</strong> has not yet finished uploading</li></ul></p>"
+        s"$message<p><strong>File attachment warnings</strong><ul><li><strong>$fileName2</strong> has failed to upload: The file must be a XLS, XLSX, JPG, JPEG, PNG, DOC, DOCX, TXT, CSV or PDF</li><li><strong>$fileName</strong> is in a queue to be scanned for viruses</li></ul></p>"
       val expectedDeskproTicket = CreateDeskproTicket(expectedPerson, subject, DeskproTicketMessage(expectedMessage, expectedPerson, "html", List.empty), brand, fields)
 
       when(mockUploadedFileRepo.fetchByFileReference(eqTo(fileReference))).thenReturn(Future.successful(None))
@@ -519,7 +519,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
     }
 
     "return DeskproTicketResponseSuccess and save response when fileReference is present and the file has not been uploaded" in new Setup {
-      val expectedMessage = s"$message<p><strong>File attachment warnings</strong><ul><li><strong>fileName.txt</strong> has not yet finished uploading</li></ul></p>"
+      val expectedMessage = s"$message<p><strong>File attachment warnings</strong><ul><li><strong>fileName.txt</strong> is in a queue to be scanned for viruses</li></ul></p>"
 
       when(mockUploadedFileRepo.fetchByFileReference(*)).thenReturn(Future.successful(None))
       when(mockDeskproConnector.createMessageWithAttachments(*, *[LaxEmailAddress], *, *)(*)).thenReturn(Future.successful(messageWrapper))
@@ -585,7 +585,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       verify(mockDeskproConnector).updateMessage(
         eqTo(ticketId),
         eqTo(messageId),
-        eqTo("message 1<p><strong>File attachment warnings</strong><ul><li><strong>fileName.txt</strong> has not yet finished uploading</li></ul></p>"),
+        eqTo("message 1<p><strong>File attachment warnings</strong><ul><li><strong>fileName.txt</strong> is in a queue to be scanned for viruses</li></ul></p>"),
         eqTo(existingAttachments),
         eqTo(blobDetails)
       )(*)
