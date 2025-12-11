@@ -145,20 +145,20 @@ class TicketService @Inject() (
   }
 
   private def getFileNotYetUploadedMessage(file: FileAttachment) = {
-    s"<li><strong>${file.fileName}</strong> is in a queue to be scanned for viruses</li>"
+    s"<li><strong>${file.fileName}</strong> - The file is in a queue to be scanned for viruses.</li>"
   }
 
   private def getFileFailedToUploadMessage(file: FileAttachmentFailed) = {
-    s"<li><strong>${file.fileAttachment.fileName}</strong> has failed to upload${getFailureMessage(file.failed)}</li>"
+    s"<li><strong>${file.fileAttachment.fileName}</strong> - ${getFailureMessage(file.failed)}</li>"
   }
 
   private def getFailureMessage(failed: Failed): String = {
     if (failed.reason == "REJECTED" && failed.message.contains("MIME type")) {
-      ": The file must be a XLS, XLSX, JPG, JPEG, PNG, DOC, DOCX, TXT, CSV or PDF"
+      "The file is not one of the accepted file types and has not been received."
     } else if (failed.reason == "QUARANTINE") {
-      ": The file has a virus"
+      "The file contains a virus and has not been received."
     } else {
-      ""
+      "The file could not be uploaded - try again."
     }
   }
 
