@@ -74,7 +74,7 @@ class DeskproConnectorISpec
     val blobId               = 67890
     val blobAuth             = "4476FHDGBJHJ55356BVN1"
     val blobDetails          = Some(BlobDetails(blobId, blobAuth))
-    val attachments          = List(DeskproAttachmentResponse(123, DeskproBlobResponse(12345, "26854KPJHXXQWRNRQHBQ0", "https:example.com/file02", "example.txt")))
+    val attachments          = List(DeskproAttachmentResponse(123, DeskproBlobResponse(12345, "26854KPJHXXQWRNRQHBQ0", "https:example.com/file02", "example.txt", "23.6 KB")))
     val createdDate: Instant = LocalDateTime.parse("2020-01-02T03:04:05+00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(ZoneOffset.UTC).toInstant()
 
     val fields: Map[String, String]                  = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "6" -> teamMemberEmail)
@@ -466,7 +466,7 @@ class DeskproConnectorISpec
         DeskproMessageResponse(3698, ticketId, 61, createdDate2, 0, "<p>Reply message from agent. What else gets filled in?</p>", List(60))
       )
       val expectedAttachments = List(
-        DeskproAttachmentResponse(60, DeskproBlobResponse(26417, "26417TKZAGNMDGQXPBDH0T", "https://example.com", "file.name"))
+        DeskproAttachmentResponse(60, DeskproBlobResponse(26417, "26417TKZAGNMDGQXPBDH0T", "https://example.com", "file.name", "1.83 MB"))
       )
 
       val expectedResponse = BatchResponse(
@@ -683,7 +683,8 @@ class DeskproConnectorISpec
               27604,
               "27604SWTHHKQXHCZKCJY0T",
               "https://example.com/file.php/27604SWTHHKQXHCZKCJY0T",
-              "panic.txt"
+              "panic.txt",
+              "183.00 B"
             )
           )
         )

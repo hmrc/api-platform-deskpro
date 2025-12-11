@@ -108,7 +108,7 @@ object DeskproTicketWrapperResponse {
   implicit val reads: Reads[DeskproTicketWrapperResponse] = Json.reads[DeskproTicketWrapperResponse]
 }
 
-case class DeskproBlobResponse(blob_id: Int, blob_auth: String, download_url: String, filename: String)
+case class DeskproBlobResponse(blob_id: Int, blob_auth: String, download_url: String, filename: String, filesize_readable: String)
 
 object DeskproBlobResponse {
   implicit val reads: Reads[DeskproBlobResponse] = Json.reads[DeskproBlobResponse]
