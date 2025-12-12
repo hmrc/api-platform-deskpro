@@ -23,12 +23,12 @@ import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
-case class DeskproAttachment(id: Int, filename: String, url: String)
+case class DeskproAttachment(id: Int, filename: String, url: String, fileSize: String)
 
 object DeskproAttachment {
 
   def build(response: DeskproAttachmentResponse): DeskproAttachment = {
-    DeskproAttachment(response.id, response.blob.filename, response.blob.download_url)
+    DeskproAttachment(response.id, response.blob.filename, response.blob.download_url, response.blob.filesize_readable)
   }
   implicit val format: OFormat[DeskproAttachment]                   = Json.format[DeskproAttachment]
 }
