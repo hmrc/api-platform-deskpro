@@ -61,11 +61,18 @@ Under the **Settings** tab create two Settings as follows
    - Value = **field.4** for [Production](https://github.com/hmrc/app-config-production/blob/main/api-platform-deskpro.yaml) or **field.9** for [QA](https://github.com/hmrc/api-platform-deskpro/blob/main/conf/application.conf). 
    The number prefixing "**field.**" (4 or 9) is set in the config property [*deskpro.application-id*](https://github.com/hmrc/app-config-production/blob/main/api-platform-deskpro.yaml).
 
+### Code tab
+Under the **Code** tab paste the contents of file [gatekeeper_link.html](https://github.com/hmrc/api-platform-deskpro/tree/main/deskprowidgets/gatekeeper_link.html) into the corresponding Head and Body sections.
 
-### File Attachments
+Don't forget to **click save** before testing the link works.
+
+
+## File Attachments
 
 It is possible to add file attachments when creating a ticket in Deskpro, or when adding a new message to an existing Deskpro ticket.
 We use upscan to upload the file and check for viruses, etc.
+
+### Uploading file to upscan and handling upscan callbacks
 
 ```mermaid
 sequenceDiagram
@@ -73,14 +80,16 @@ sequenceDiagram
         actor upscan
         actor api-platform-deskpro
         actor deskpro
-        devhub-support-frontend->>upscan: upload
+        devhub-support-frontend->>upscan: upload file
         upscan->>api-platform-deskpro: callback
-        api-platform-deskpro->>deskpro: create blob
-        api-platform-deskpro->>api-platform-deskpro: add uploaded file to mongo
+        api-platform-deskpro->>deskpro: create blob (if upload was successful)
+        api-platform-deskpro->>api-platform-deskpro: add uploaded file details to mongo
         api-platform-deskpro->>api-platform-deskpro: check for message request in mongo
         api-platform-deskpro->>deskpro: get message (if message exists)
-        api-platform-deskpro->>deskpro: amend message (if message exists)
+        api-platform-deskpro->>deskpro: amend message (add attachments and/or warnings if message exists)
 ```
+
+### Create Deskpro message with attachments
 
 ```mermaid
 sequenceDiagram
@@ -89,16 +98,12 @@ sequenceDiagram
         actor api-platform-deskpro
         actor deskpro
         devhub-support-frontend->>api-platform-deskpro: create message
-        api-platform-deskpro->>api-platform-deskpro: check for uploaded files in mongo
-        api-platform-deskpro->>deskpro: create message (with attachments if any)
+        api-platform-deskpro->>api-platform-deskpro: check for uploaded file details in mongo
+        api-platform-deskpro->>deskpro: create message (with attachments and warnings if any)
         api-platform-deskpro->>api-platform-deskpro: save message request to mongo
         api-platform-deskpro->>deskpro: change ticket status
 ```
 
-### Code tab
-Under the **Code** tab paste the contents of file [gatekeeper_link.html](https://github.com/hmrc/api-platform-deskpro/tree/main/deskprowidgets/gatekeeper_link.html) into the corresponding Head and Body sections.
-
-Don't forget to **click save** before testing the link works.
 
 ### License
 
