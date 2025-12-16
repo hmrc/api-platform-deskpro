@@ -61,6 +61,40 @@ Under the **Settings** tab create two Settings as follows
    - Value = **field.4** for [Production](https://github.com/hmrc/app-config-production/blob/main/api-platform-deskpro.yaml) or **field.9** for [QA](https://github.com/hmrc/api-platform-deskpro/blob/main/conf/application.conf). 
    The number prefixing "**field.**" (4 or 9) is set in the config property [*deskpro.application-id*](https://github.com/hmrc/app-config-production/blob/main/api-platform-deskpro.yaml).
 
+
+### File Attachments
+
+It is possible to add file attachments when creating a ticket in Deskpro, or when adding a new message to an existing Deskpro ticket.
+We use upscan to upload the file and check for viruses, etc.
+
+```mermaid
+sequenceDiagram
+        actor devhub-support-frontend
+        actor upscan
+        actor api-platform-deskpro
+        actor deskpro
+        devhub-support-frontend->>upscan: upload
+        upscan->>api-platform-deskpro: callback
+        api-platform-deskpro->>deskpro: create blob
+        api-platform-deskpro->>api-platform-deskpro: add uploaded file to mongo
+        api-platform-deskpro->>api-platform-deskpro: check for message request in mongo
+        api-platform-deskpro->>deskpro: get message (if message exists)
+        api-platform-deskpro->>deskpro: amend message (if message exists)
+```
+
+```mermaid
+sequenceDiagram
+        actor devhub-support-frontend
+        actor upscan
+        actor api-platform-deskpro
+        actor deskpro
+        devhub-support-frontend->>api-platform-deskpro: create message
+        api-platform-deskpro->>api-platform-deskpro: check for uploaded files in mongo
+        api-platform-deskpro->>deskpro: create message (with attachments if any)
+        api-platform-deskpro->>api-platform-deskpro: save message request to mongo
+        api-platform-deskpro->>deskpro: change ticket status
+```
+
 ### Code tab
 Under the **Code** tab paste the contents of file [gatekeeper_link.html](https://github.com/hmrc/api-platform-deskpro/tree/main/deskprowidgets/gatekeeper_link.html) into the corresponding Head and Body sections.
 
