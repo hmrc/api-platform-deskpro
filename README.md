@@ -72,6 +72,8 @@ Don't forget to **click save** before testing the link works.
 It is possible to add file attachments when creating a ticket in Deskpro, or when adding a new message to an existing Deskpro ticket.
 We use upscan to upload the file and check for viruses, etc.
 
+Note that warnings about any file upload failures or file uploads that are still in progress are added to the text of the Deskpro message.
+
 ### Uploading file to upscan and handling upscan callbacks
 
 ```mermaid
@@ -94,7 +96,6 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
         actor devhub-support-frontend
-        actor upscan
         actor api-platform-deskpro
         actor deskpro
         devhub-support-frontend->>api-platform-deskpro: create message
@@ -105,6 +106,6 @@ sequenceDiagram
 ```
 
 
-### License
+## License
 
 This code is open source software licensed under the [Apache 2.0 License]("http://www.apache.org/licenses/LICENSE-2.0.html").
