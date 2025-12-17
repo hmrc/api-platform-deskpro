@@ -538,6 +538,31 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       verify(mockMessageFileAttachmentRepo).create(eqTo(response))
     }
 
+    "return DeskproTicketResponseSuccess and save response when fileReference is present and the file has not been uploaded but is there on recheck" in new Setup {
+      val expectedMessage =
+        s"$message<p><strong>File attachment warnings</strong><ul><li><strong>fileName.txt</strong> - The file is in a queue to be scanned for viruses.</li></ul></p>"
+
+      when(mockUploadedFileRepo.fetchByFileReference(eqTo(fileAttachment.fileReference))).thenReturn(Future.successful(None), Future.successful(Some(uploadedFile)))
+      when(mockDeskproConnector.createMessageWithAttachments(*, *[LaxEmailAddress], *, *)(*)).thenReturn(Future.successful(messageWrapper))
+      when(mockDeskproConnector.updateTicketStatus(*, *)(*)).thenReturn(Future.successful(DeskproTicketUpdateSuccess))
+      val response            = DeskproMessageFileAttachment(ticketId, messageId, List(fileAttachment), instant)
+      when(mockMessageFileAttachmentRepo.create(*)).thenReturn(Future.successful(response))
+      val attachmentsResponse = DeskproAttachmentsWrapperResponse(List.empty)
+      when(mockDeskproConnector.getMessageAttachments(*, *)(*)).thenReturn(Future.successful(attachmentsResponse))
+      when(mockDeskproConnector.getMessage(*, *)(*)).thenReturn(Future.successful(message1Wrapper))
+      when(mockDeskproConnector.updateMessage(*, *, *, *, *)(*)).thenReturn(Future.successful(DeskproTicketMessageSuccess))
+
+      val result = await(underTest.createMessage(ticketId, CreateTicketResponseRequest(email, message, TicketStatus.AwaitingAgent, List(fileAttachment))))
+
+      result shouldBe messageResponse
+
+      verify(mockUploadedFileRepo, times(2)).fetchByFileReference(eqTo(fileAttachment.fileReference))
+      verify(mockDeskproConnector).createMessageWithAttachments(eqTo(ticketId), eqTo(email), eqTo(expectedMessage), eqTo(List.empty))(*)
+      verify(mockDeskproConnector).updateTicketStatus(eqTo(ticketId), eqTo(TicketStatus.AwaitingAgent))(*)
+      verify(mockDeskproConnector).updateMessage(eqTo(ticketId), eqTo(messageId), eqTo(message1Wrapper.data.message), eqTo(attachmentsResponse.data), eqTo(blobDetails))(*)
+      verify(mockMessageFileAttachmentRepo).create(eqTo(response))
+    }
+
     "return DeskproTicketResponseSuccess when response created, even if ticket status update failed" in new Setup {
       when(mockDeskproConnector.createMessageWithAttachments(*, *[LaxEmailAddress], *, *)(*)).thenReturn(Future.successful(messageWrapper))
       when(mockDeskproConnector.updateTicketStatus(*, *)(*)).thenReturn(Future.successful(DeskproTicketUpdateFailure))

@@ -64,7 +64,8 @@ class TicketService @Inject() (
         ticketId            = ticket.data.id
         ticketMessages     <- ET.liftF(deskproConnector.getTicketMessages(ticketId))
         messageId           = ticketMessages.data.head.id
-        _                  <- ET.liftF(saveMessageFileDetails(ticketId, messageId, request.attachments))
+        maybeMessage       <- ET.liftF(saveMessageFileDetails(ticketId, messageId, request.attachments))
+        _                  <- ET.liftF(recheckUploadedFiles(maybeMessage, uploadedFiles))
       } yield ticket
     ).value
   }
@@ -102,12 +103,13 @@ class TicketService @Inject() (
 
   def createMessage(ticketId: Int, request: CreateTicketResponseRequest)(implicit hc: HeaderCarrier): Future[DeskproCreateMessageResponse] = {
     for {
-      uploadedFiles        <- getUploadedFileDetails(request.attachments)
-      messageWithWarnings   = addMessageFileUploadWarnings(request.message, request.attachments, uploadedFiles)
-      createResponseResult <- deskproConnector.createMessageWithAttachments(ticketId, request.userEmail, messageWithWarnings, getBlobDetails(uploadedFiles))
-      _                    <- saveMessageFileDetails(ticketId, createResponseResult.data.id, request.attachments)
-      _                    <- deskproConnector.updateTicketStatus(ticketId, request.status)
-    } yield createResponseResult.data
+      uploadedFiles       <- getUploadedFileDetails(request.attachments)
+      messageWithWarnings  = addMessageFileUploadWarnings(request.message, request.attachments, uploadedFiles)
+      createMessageResult <- deskproConnector.createMessageWithAttachments(ticketId, request.userEmail, messageWithWarnings, getBlobDetails(uploadedFiles))
+      maybeMessage        <- saveMessageFileDetails(ticketId, createMessageResult.data.id, request.attachments)
+      _                   <- deskproConnector.updateTicketStatus(ticketId, request.status)
+      _                   <- recheckUploadedFiles(maybeMessage, uploadedFiles)
+    } yield createMessageResult.data
   }
 
   private def saveMessageFileDetails(ticketId: Int, messageId: Int, attachments: List[FileAttachment]): Future[Option[DeskproMessageFileAttachment]] = {
@@ -168,11 +170,15 @@ class TicketService @Inject() (
 
   private def getBlobDetails(uploadedFiles: List[UploadedFile]): List[BlobDetails] = {
     uploadedFiles.map(uploadedFile =>
-      uploadedFile.uploadStatus match {
-        case success: UploadedSuccessfully => Some(success.blobDetails)
-        case _                             => None
-      }
+      getBlobDetails(uploadedFile)
     ).flatten
+  }
+
+  private def getBlobDetails(uploadedFile: UploadedFile): Option[BlobDetails] = {
+    uploadedFile.uploadStatus match {
+      case success: UploadedSuccessfully => Some(success.blobDetails)
+      case _                             => None
+    }
   }
 
   private def getUploadedFileDetails(attachments: List[FileAttachment]): Future[List[UploadedFile]] = {
@@ -181,21 +187,40 @@ class TicketService @Inject() (
     } yield uploadFiles.flatten
   }
 
+  private def recheckUploadedFiles(maybeMessage: Option[DeskproMessageFileAttachment], previousUploadedFiles: List[UploadedFile])(implicit hc: HeaderCarrier)
+      : Future[Option[List[UploadedFile]]] = {
+    maybeMessage match {
+      case Some(message) => {
+        for {
+          uploadedFiles   <- getUploadedFileDetails(message.attachments)
+          newUploadedFiles = uploadedFiles.filterNot(file => previousUploadedFiles.contains(file))
+          _               <- Future.sequence(newUploadedFiles.map(uploadedFile => updateMessage(uploadedFile.fileReference, message, uploadedFiles, getBlobDetails(uploadedFile))))
+        } yield Some(newUploadedFiles)
+      }
+      case _             => Future.successful(None)
+    }
+  }
+
   def updateMessageAttachmentsIfRequired(fileReference: String, maybeBlobDetails: Option[BlobDetails])(implicit hc: HeaderCarrier): Future[DeskproTicketMessageResult] = {
     for {
-      maybeMessage <- deskproMessageFileAttachmentRepository.fetchByFileReference(fileReference)
-      result       <- updateMessageIfAlreadyCreated(fileReference, maybeMessage, maybeBlobDetails)
+      maybeMessage  <- deskproMessageFileAttachmentRepository.fetchByFileReference(fileReference)
+      uploadedFiles <- maybeMessage match {
+                         case Some(message) => getUploadedFileDetails(message.attachments)
+                         case _             => Future.successful(List.empty)
+                       }
+      result        <- updateMessageIfAlreadyCreated(fileReference, maybeMessage, uploadedFiles, maybeBlobDetails)
     } yield result
   }
 
   private def updateMessageIfAlreadyCreated(
       fileReference: String,
       maybeMessage: Option[DeskproMessageFileAttachment],
+      uploadedFiles: List[UploadedFile],
       maybeBlobDetails: Option[BlobDetails]
     )(implicit hc: HeaderCarrier
     ): Future[DeskproTicketMessageResult] = {
     maybeMessage match {
-      case Some(messageFileAttachment) => updateMessage(fileReference, messageFileAttachment, maybeBlobDetails)
+      case Some(messageFileAttachment) => updateMessage(fileReference, messageFileAttachment, uploadedFiles, maybeBlobDetails)
       case _                           => Future.successful(DeskproTicketMessageSuccess)
     }
   }
@@ -209,14 +234,18 @@ class TicketService @Inject() (
     addMessageFileUploadWarnings(userMessageWithoutWarning, attachments, uploadedFiles)
   }
 
-  private def updateMessage(fileReference: String, messageFileAttachment: DeskproMessageFileAttachment, maybeBlobDetails: Option[BlobDetails])(implicit hc: HeaderCarrier)
-      : Future[DeskproTicketMessageResult] = {
+  private def updateMessage(
+      fileReference: String,
+      messageFileAttachment: DeskproMessageFileAttachment,
+      uploadedFiles: List[UploadedFile],
+      maybeBlobDetails: Option[BlobDetails]
+    )(implicit hc: HeaderCarrier
+    ): Future[DeskproTicketMessageResult] = {
     logger.info(s"Updating message for ticketId: ${messageFileAttachment.ticketId}, messageId: ${messageFileAttachment.messageId}")
 
     for {
       attachments   <- deskproConnector.getMessageAttachments(messageFileAttachment.ticketId, messageFileAttachment.messageId)
       message       <- deskproConnector.getMessage(messageFileAttachment.ticketId, messageFileAttachment.messageId)
-      uploadedFiles <- getUploadedFileDetails(messageFileAttachment.attachments)
       amendedMessage = amendMessageFileAttachmentWarnings(message.data.message, messageFileAttachment.attachments, uploadedFiles)
       result        <- deskproConnector.updateMessage(
                          messageFileAttachment.ticketId,
