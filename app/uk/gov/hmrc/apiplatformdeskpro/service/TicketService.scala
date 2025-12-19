@@ -52,7 +52,7 @@ class TicketService @Inject() (
 
   private val ET = EitherTHelper.make[DeskproTicketCreationFailed]
 
-  private val fileAttachmentWarningLabel: String = "<p><strong>File attachment warnings</strong>"
+  private val fileAttachmentWarningLabel: String = "<h4 class=\"govuk-heading-s govuk-!-margin-bottom-1\">Attached files</h4>"
 
   def submitTicket(request: CreateTicketRequest)(implicit hc: HeaderCarrier): Future[Either[DeskproTicketCreationFailed, DeskproTicketCreated]] = {
     (
@@ -123,7 +123,7 @@ class TicketService @Inject() (
   private def addMessageFileUploadWarnings(message: String, attachments: List[FileAttachment], uploadedFiles: List[UploadedFile]): String = {
     checkForNotUploadedFiles(attachments, uploadedFiles) match {
       case None          => message
-      case Some(warning) => s"$message$fileAttachmentWarningLabel<ul>$warning</ul></p>"
+      case Some(warning) => s"$message$fileAttachmentWarningLabel$warning"
     }
   }
 
@@ -147,11 +147,13 @@ class TicketService @Inject() (
   }
 
   private def getFileNotYetUploadedMessage(file: FileAttachment) = {
-    s"<li><strong>${file.fileName}</strong> - The file is in a queue to be scanned for viruses.</li>"
+    s"""${file.fileName}<br><p class="govuk-body govuk-!-margin-bottom-0 govuk-!-margin-top-1 govuk-!-font-size-16">The file is in a queue to be scanned for viruses.</p><hr class="govuk-section-break govuk-!-margin-top-2 govuk-!-margin-bottom-3 govuk-section-break--visible">"""
   }
 
   private def getFileFailedToUploadMessage(file: FileAttachmentFailed) = {
-    s"<li><strong>${file.fileAttachment.fileName}</strong> - ${getFailureMessage(file.failed)}</li>"
+    s"""${file.fileAttachment.fileName}<br><p class="govuk-body govuk-!-margin-bottom-0 govuk-!-margin-top-1 govuk-!-font-size-16">${getFailureMessage(
+        file.failed
+      )}</p><hr class="govuk-section-break govuk-!-margin-top-2 govuk-!-margin-bottom-3 govuk-section-break--visible">"""
   }
 
   private def getFailureMessage(failed: Failed): String = {
