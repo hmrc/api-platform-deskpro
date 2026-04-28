@@ -117,9 +117,9 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
         Some(teamMemberEmail)
       )
 
-      val fields                = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "6" -> teamMemberEmail, "7" -> reasonKey)
+      val fields                = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "7" -> reasonKey)
       val expectedPerson        = DeskproPerson(fullName, email.text)
-      val expectedDeskproTicket = CreateDeskproTicket(expectedPerson, subject, DeskproTicketMessage(message, expectedPerson), brand, fields)
+      val expectedDeskproTicket = CreateDeskproTicket(expectedPerson, subject, DeskproTicketMessage(message, expectedPerson), brand, fields, List(teamMemberEmail))
 
       when(mockDeskproConnector.createTicket(*)(*)).thenReturn(Future.successful(Right(DeskproTicketCreated(DeskproTicketData(ticketId, ref)))))
       when(mockDeskproConnector.getTicketMessages(*, *, *, *)(*)).thenReturn(Future.successful(DeskproMessagesWrapperResponse(List(DeskproMessageResponse(
@@ -140,7 +140,6 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       when(mockAppConfig.deskproOrganisation).thenReturn("4")
       when(mockAppConfig.deskproSupportReason).thenReturn("5")
       when(mockAppConfig.deskproReasonKey).thenReturn("7")
-      when(mockAppConfig.deskproTeamMemberEmail).thenReturn("6")
 
       val result = await(underTest.submitTicket(createTicketRequest))
 
@@ -212,14 +211,15 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
         )
       )
 
-      val fields                = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "6" -> teamMemberEmail, "7" -> reasonKey)
+      val fields                = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "7" -> reasonKey)
       val expectedPerson        = DeskproPerson(fullName, email.text)
       val expectedDeskproTicket = CreateDeskproTicket(
         expectedPerson,
         subject,
         DeskproTicketMessage(message, expectedPerson, "html", List(AttachmentRequest(blobAuth), AttachmentRequest(blobAuth2))),
         brand,
-        fields
+        fields,
+        List(teamMemberEmail)
       )
 
       when(mockUploadedFileRepo.fetchByFileReference(eqTo(fileReference))).thenReturn(Future.successful(Some(uploadedFile)))
@@ -243,7 +243,6 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       when(mockAppConfig.deskproOrganisation).thenReturn("4")
       when(mockAppConfig.deskproSupportReason).thenReturn("5")
       when(mockAppConfig.deskproReasonKey).thenReturn("7")
-      when(mockAppConfig.deskproTeamMemberEmail).thenReturn("6")
 
       val result = await(underTest.submitTicket(createTicketRequest))
 
@@ -273,11 +272,12 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
         )
       )
 
-      val fields                = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "6" -> teamMemberEmail, "7" -> reasonKey)
+      val fields                = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "7" -> reasonKey)
       val expectedPerson        = DeskproPerson(fullName, email.text)
       val expectedMessage       =
         s"""$message<h4 class="govuk-heading-s govuk-!-margin-bottom-1">Attached files</h4>$fileName2<br><p class="govuk-body govuk-!-margin-bottom-0 govuk-!-margin-top-1 govuk-!-font-size-16">The file is not one of the accepted file types and has not been received.</p><hr class="govuk-section-break govuk-!-margin-top-2 govuk-!-margin-bottom-3 govuk-section-break--visible">$fileName<br><p class="govuk-body govuk-!-margin-bottom-0 govuk-!-margin-top-1 govuk-!-font-size-16">The file is in a queue to be scanned for viruses.</p><hr class="govuk-section-break govuk-!-margin-top-2 govuk-!-margin-bottom-3 govuk-section-break--visible">"""
-      val expectedDeskproTicket = CreateDeskproTicket(expectedPerson, subject, DeskproTicketMessage(expectedMessage, expectedPerson, "html", List.empty), brand, fields)
+      val expectedDeskproTicket =
+        CreateDeskproTicket(expectedPerson, subject, DeskproTicketMessage(expectedMessage, expectedPerson, "html", List.empty), brand, fields, List(teamMemberEmail))
 
       when(mockUploadedFileRepo.fetchByFileReference(eqTo(fileReference))).thenReturn(Future.successful(None))
       when(mockUploadedFileRepo.fetchByFileReference(eqTo(fileReference2))).thenReturn(Future.successful(Some(failedFile)))
@@ -300,7 +300,6 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       when(mockAppConfig.deskproOrganisation).thenReturn("4")
       when(mockAppConfig.deskproSupportReason).thenReturn("5")
       when(mockAppConfig.deskproReasonKey).thenReturn("7")
-      when(mockAppConfig.deskproTeamMemberEmail).thenReturn("6")
 
       val result = await(underTest.submitTicket(createTicketRequest))
 
