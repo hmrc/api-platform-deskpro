@@ -71,14 +71,13 @@ class TicketService @Inject() (
   }
 
   private def createDeskproTicketRequest(request: CreateTicketRequest, message: String, uploadedFiles: List[UploadedFile]): CreateDeskproTicket = {
-    val maybeOrganisation    = request.organisation.fold(Map.empty[String, String])(v => Map(config.deskproOrganisation -> v))
-    val maybeTeamMemberEmail = request.teamMemberEmail.fold(Map.empty[String, String])(v => Map(config.deskproTeamMemberEmail -> v))
-    val maybeApiName         = request.apiName.fold(Map.empty[String, String])(v => Map(config.deskproApiName -> v))
-    val maybeApplicationId   = request.applicationId.fold(Map.empty[String, String])(v => Map(config.deskproApplicationId -> v))
-    val maybeSupportReason   = request.supportReason.fold(Map.empty[String, String])(v => Map(config.deskproSupportReason -> v))
-    val maybeReasonKey       = request.reasonKey.fold(Map.empty[String, String])(v => Map(config.deskproReasonKey -> v))
+    val maybeOrganisation  = request.organisation.fold(Map.empty[String, String])(v => Map(config.deskproOrganisation -> v))
+    val maybeApiName       = request.apiName.fold(Map.empty[String, String])(v => Map(config.deskproApiName -> v))
+    val maybeApplicationId = request.applicationId.fold(Map.empty[String, String])(v => Map(config.deskproApplicationId -> v))
+    val maybeSupportReason = request.supportReason.fold(Map.empty[String, String])(v => Map(config.deskproSupportReason -> v))
+    val maybeReasonKey     = request.reasonKey.fold(Map.empty[String, String])(v => Map(config.deskproReasonKey -> v))
 
-    val fields = maybeOrganisation ++ maybeTeamMemberEmail ++ maybeApiName ++ maybeApplicationId ++ maybeSupportReason ++ maybeReasonKey
+    val fields = maybeOrganisation ++ maybeApiName ++ maybeApplicationId ++ maybeSupportReason ++ maybeReasonKey
     val person = DeskproPerson(request.fullName, request.email)
 
     CreateDeskproTicket(
@@ -86,7 +85,8 @@ class TicketService @Inject() (
       request.subject,
       DeskproTicketMessage.fromRaw(message, person, getBlobDetails(uploadedFiles)),
       config.deskproBrand,
-      fields
+      fields,
+      request.teamMemberEmail.map(List(_)).getOrElse(List.empty)
     )
   }
 
