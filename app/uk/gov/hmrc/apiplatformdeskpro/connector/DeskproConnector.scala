@@ -290,13 +290,14 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
         .execute[BatchResponse]
     }
 
-  def createBlob(fileName: String, fileType: String, src: Source[ByteString, _])(implicit hc: HeaderCarrier): Future[DeskproCreateBlobWrapperResponse] = {
+  def createBlob(fileName: String, fileType: String, fileSize: Long, src: Source[ByteString, _])(implicit hc: HeaderCarrier): Future[DeskproCreateBlobWrapperResponse] = {
 
     val filePart: MultipartFormData.Part[Source[ByteString, _]] = MultipartFormData.FilePart(
       "file",
       fileName,
       Some(fileType),
-      src
+      src,
+      fileSize
     )
 
     metrics.record(api) {

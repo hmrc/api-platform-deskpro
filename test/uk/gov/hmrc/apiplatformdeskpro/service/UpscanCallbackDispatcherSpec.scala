@@ -68,7 +68,7 @@ class UpscanCallbackDispatcherSpec extends AsyncHmrcSpec with FixedClock {
 
       when(mockUploadedFileRepository.create(*)).thenReturn(Future.successful(uploadedSuccess))
       when(mockUpscanDownloadConnector.stream(*)(*)).thenReturn(Future.successful(stream))
-      when(mockDeskproConnector.createBlob(*, *, *)(*)).thenReturn(Future.successful(blobWrapperResp))
+      when(mockDeskproConnector.createBlob(*, *, *, *)(*)).thenReturn(Future.successful(blobWrapperResp))
       when(mockTicketService.updateMessageAttachmentsIfRequired(*, *)(*)).thenReturn(Future.successful(DeskproTicketMessageSuccess))
 
       val result = await(underTest.handleCallback(callbackReady))
@@ -76,7 +76,7 @@ class UpscanCallbackDispatcherSpec extends AsyncHmrcSpec with FixedClock {
       result shouldBe DeskproTicketMessageSuccess
       verify(mockUploadedFileRepository).create(eqTo(uploadedSuccess))
       verify(mockUpscanDownloadConnector).stream(eqTo(url))(*)
-      verify(mockDeskproConnector).createBlob(eqTo("filename"), eqTo("text/plain"), eqTo(stream))(*)
+      verify(mockDeskproConnector).createBlob(eqTo("filename"), eqTo("text/plain"), eqTo(1000), eqTo(stream))(*)
       verify(mockTicketService).updateMessageAttachmentsIfRequired(eqTo(fileReference.value), eqTo(Some(BlobDetails(1234, "auth"))))(*)
     }
 
@@ -91,7 +91,7 @@ class UpscanCallbackDispatcherSpec extends AsyncHmrcSpec with FixedClock {
       verify(mockUploadedFileRepository).create(eqTo(uploadedFailed))
       verify(mockTicketService).updateMessageAttachmentsIfRequired(eqTo(fileReference.value), eqTo(None))(*)
       verify(mockUpscanDownloadConnector, never).stream(*)(*)
-      verify(mockDeskproConnector, never).createBlob(*, *, *)(*)
+      verify(mockDeskproConnector, never).createBlob(*, *, *, *)(*)
     }
   }
 }

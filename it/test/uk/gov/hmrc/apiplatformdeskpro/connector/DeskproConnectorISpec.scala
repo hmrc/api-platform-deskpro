@@ -590,7 +590,7 @@ class DeskproConnectorISpec
       val file: java.nio.file.Path   = Paths.get(fileName)
       val src: Source[ByteString, _] = FileIO.fromPath(file)
 
-      val result = await(objInTest.createBlob(fileName, "text/plain", src))
+      val result = await(objInTest.createBlob(fileName, "text/plain", 4244, src))
 
       val expectedResponse = DeskproCreateBlobWrapperResponse(
         DeskproCreateBlobResponse(26854, "26854KPJHXXQWRNRQHBQ0")
@@ -605,7 +605,7 @@ class DeskproConnectorISpec
       val src: Source[ByteString, _] = FileIO.fromPath(file)
 
       intercept[UpstreamErrorResponse] {
-        await(objInTest.createBlob(fileName, "text/plain", src))
+        await(objInTest.createBlob(fileName, "text/plain", 4244, src))
       }
     }
   }
