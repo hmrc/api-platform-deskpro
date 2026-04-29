@@ -36,7 +36,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 @Singleton
 class ReadyFileRepository @Inject() (mongo: MongoComponent, val clock: Clock)(implicit val ec: ExecutionContext)
     extends PlayMongoRepository[ReadyFile](
-      collectionName = "uploadedFile",
+      collectionName = "readyFile",
       mongoComponent = mongo,
       domainFormat = ReadyFile.format,
       indexes = Seq(
