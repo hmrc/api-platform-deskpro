@@ -161,7 +161,7 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
     DeskproInactivePerson(
       Map(
         config.deskproInactive        -> "1",
-        config.deskproInactivatedDate -> DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(now())
+        config.deskproInactivatedDate -> DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(now)
       )
     )
 
