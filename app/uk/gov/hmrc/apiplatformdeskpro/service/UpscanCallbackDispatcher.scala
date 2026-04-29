@@ -23,8 +23,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.apiplatformdeskpro.connector.{DeskproConnector, UpscanDownloadConnector}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.DeskproTicketMessageResult
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.{FailedCallbackBody, ReadyCallbackBody, UpscanCallbackBody}
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.{BlobDetails, UploadStatus, UploadedFile}
-import uk.gov.hmrc.apiplatformdeskpro.repository.UploadedFileRepository
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.{BlobDetails, ReadyFile, UploadStatus, UploadedFile}
+import uk.gov.hmrc.apiplatformdeskpro.repository.{ReadyFileRepository, UploadedFileRepository}
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -33,6 +33,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 @Singleton
 class UpscanCallbackDispatcher @Inject() (
     uploadedFileRepository: UploadedFileRepository,
+    readyFileRepository: ReadyFileRepository,
     ticketService: TicketService,
     deskproConnector: DeskproConnector,
     upscanDownloadConnector: UpscanDownloadConnector,
@@ -50,6 +51,14 @@ class UpscanCallbackDispatcher @Inject() (
   private def handleSuccessfulCallback(readyCallBack: ReadyCallbackBody)(implicit hc: HeaderCarrier): Future[DeskproTicketMessageResult] = {
     logger.info(s"Upscan callback upload ready: ${readyCallBack.reference.value} - fileName: ${readyCallBack.uploadDetails.fileName}, fileType: ${readyCallBack.uploadDetails.fileMimeType}, size: ${readyCallBack.uploadDetails.size}")
     for {
+      readyFile    <- readyFileRepository.create(ReadyFile(
+                        readyCallBack.reference.value,
+                        readyCallBack.uploadDetails.fileName,
+                        readyCallBack.uploadDetails.fileMimeType,
+                        readyCallBack.downloadUrl,
+                        readyCallBack.uploadDetails.size,
+                        instant
+                      ))
       source       <- upscanDownloadConnector.stream(readyCallBack.downloadUrl)
       blobResponse <- deskproConnector.createBlob(readyCallBack.uploadDetails.fileName, readyCallBack.uploadDetails.fileMimeType, readyCallBack.uploadDetails.size, source)
       uploadStatus  = UploadStatus.UploadedSuccessfully(
