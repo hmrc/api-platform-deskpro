@@ -48,7 +48,7 @@ class UpscanCallbackDispatcher @Inject() (
   }
 
   private def handleSuccessfulCallback(readyCallBack: ReadyCallbackBody)(implicit hc: HeaderCarrier): Future[DeskproTicketMessageResult] = {
-    logger.info(s"Upscan callback upload ready: ${readyCallBack.reference.value} - fileName: ${readyCallBack.uploadDetails.fileName}, fileType: ${readyCallBack.uploadDetails.fileMimeType}, size: ${readyCallBack.uploadDetails.size}, URL: ${readyCallBack.downloadUrl.toString()}")
+    logger.info(s"Upscan callback upload ready: ${readyCallBack.reference.value} - fileName: ${readyCallBack.uploadDetails.fileName}, fileType: ${readyCallBack.uploadDetails.fileMimeType}, size: ${readyCallBack.uploadDetails.size}")
     for {
       source       <- upscanDownloadConnector.stream(readyCallBack.downloadUrl)
       blobResponse <- deskproConnector.createBlob(readyCallBack.uploadDetails.fileName, readyCallBack.uploadDetails.fileMimeType, source)
