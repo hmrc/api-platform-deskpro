@@ -56,7 +56,7 @@ class PersonService @Inject() (
     for {
       response <- deskproConnector.getPersonForEmail(email)
       personId  = response.data.headOption.getOrElse(throw new DeskproPersonNotFound("Person not found")).id
-      _        <- deskproPersonCacheRepository.saveDeskproPersonCache(DeskproPersonCache(email, personId, instant()))
+      _        <- deskproPersonCacheRepository.saveDeskproPersonCache(DeskproPersonCache(email, personId, instant))
     } yield personId
   }
 

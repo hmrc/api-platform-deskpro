@@ -51,7 +51,7 @@ class UpscanCallbackDispatcher @Inject() (
     logger.info(s"Upscan callback upload ready: ${readyCallBack.reference.value} - fileName: ${readyCallBack.uploadDetails.fileName}, fileType: ${readyCallBack.uploadDetails.fileMimeType}, size: ${readyCallBack.uploadDetails.size}")
     for {
       source       <- upscanDownloadConnector.stream(readyCallBack.downloadUrl)
-      blobResponse <- deskproConnector.createBlob(readyCallBack.uploadDetails.fileName, readyCallBack.uploadDetails.fileMimeType, source)
+      blobResponse <- deskproConnector.createBlob(readyCallBack.uploadDetails.fileName, readyCallBack.uploadDetails.fileMimeType, readyCallBack.uploadDetails.size, source)
       uploadStatus  = UploadStatus.UploadedSuccessfully(
                         name = readyCallBack.uploadDetails.fileName,
                         mimeType = readyCallBack.uploadDetails.fileMimeType,
@@ -59,7 +59,7 @@ class UpscanCallbackDispatcher @Inject() (
                         size = readyCallBack.uploadDetails.size,
                         blobDetails = BlobDetails(blobResponse.data.blob_id, blobResponse.data.blob_auth)
                       )
-      uploadedFile <- uploadedFileRepository.create(UploadedFile(readyCallBack.reference.value, uploadStatus, instant()))
+      uploadedFile <- uploadedFileRepository.create(UploadedFile(readyCallBack.reference.value, uploadStatus, instant))
       result       <- ticketService.updateMessageAttachmentsIfRequired(readyCallBack.reference.value, Some(uploadStatus.blobDetails))
     } yield result
   }
@@ -70,7 +70,7 @@ class UpscanCallbackDispatcher @Inject() (
       uploadedFile <- uploadedFileRepository.create(UploadedFile(
                         failedCallBack.reference.value,
                         UploadStatus.Failed(failedCallBack.failureDetails.message, failedCallBack.failureDetails.failureReason),
-                        instant()
+                        instant
                       ))
       result       <- ticketService.updateMessageAttachmentsIfRequired(failedCallBack.reference.value, None)
     } yield result
