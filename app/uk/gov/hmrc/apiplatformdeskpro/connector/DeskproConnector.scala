@@ -299,12 +299,14 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
       src,
       fileSize
     )
+    val contentLength                                           = fileName.length() + fileType.length() + fileSize + 122
 
     metrics.record(api) {
       http
         .post(url"${requestUrl("/api/v2/blobs/temp")}")
         .withProxy
         .setHeader(AUTHORIZATION -> config.deskproApiKey)
+        .setHeader("content-length" -> contentLength.toString())
         .withBody(Source(Seq(filePart)))
         .execute[DeskproCreateBlobWrapperResponse]
     }
