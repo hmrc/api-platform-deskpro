@@ -300,11 +300,16 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
       fileSize
     )
 
+    // Note - we're setting the content-length here because for some reason it's not always being
+    // set correctly by the framework (especially for larger files) and then Deskpro rejects the request.
+    val contentLength = fileName.length() + fileType.length() + fileSize + 122
+
     metrics.record(api) {
       http
         .post(url"${requestUrl("/api/v2/blobs/temp")}")
         .withProxy
         .setHeader(AUTHORIZATION -> config.deskproApiKey)
+        .setHeader("content-length" -> contentLength.toString())
         .withBody(Source(Seq(filePart)))
         .execute[DeskproCreateBlobWrapperResponse]
     }

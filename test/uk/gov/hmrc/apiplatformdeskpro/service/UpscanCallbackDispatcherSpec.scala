@@ -27,8 +27,8 @@ import uk.gov.hmrc.apiplatformdeskpro.connector.{DeskproConnector, UpscanDownloa
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.DeskproTicketMessageSuccess
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector.{DeskproCreateBlobResponse, DeskproCreateBlobWrapperResponse}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.{ErrorDetails, FailedCallbackBody, ReadyCallbackBody, Reference, UploadDetails}
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.{BlobDetails, ReadyFile, UploadStatus, UploadedFile}
-import uk.gov.hmrc.apiplatformdeskpro.repository.{ReadyFileRepository, UploadedFileRepository}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.{BlobDetails, UploadStatus, UploadedFile}
+import uk.gov.hmrc.apiplatformdeskpro.repository.UploadedFileRepository
 import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -40,7 +40,6 @@ class UpscanCallbackDispatcherSpec extends AsyncHmrcSpec with FixedClock {
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val mockUploadedFileRepository  = mock[UploadedFileRepository]
-    val mockReadyFileRepository     = mock[ReadyFileRepository]
     val mockUpscanDownloadConnector = mock[UpscanDownloadConnector]
     val mockDeskproConnector        = mock[DeskproConnector]
     val mockTicketService           = mock[TicketService]
@@ -52,7 +51,6 @@ class UpscanCallbackDispatcherSpec extends AsyncHmrcSpec with FixedClock {
     val errorDetails   = ErrorDetails("failureReason", "message")
     val callbackFailed = FailedCallbackBody(fileReference, errorDetails)
 
-    val readySuccess    = ReadyFile(fileReference.value, "filename", "text/plain", url, 1000, instant)
     val uploadSuccess   = UploadStatus.UploadedSuccessfully("filename", "text/plain", url, 1000, BlobDetails(1234, "auth"))
     val uploadedSuccess = UploadedFile(fileReference.value, uploadSuccess, instant)
     val uploadFailed    = UploadStatus.Failed("message", "failureReason")
@@ -62,13 +60,12 @@ class UpscanCallbackDispatcherSpec extends AsyncHmrcSpec with FixedClock {
     val blobWrapperResp = DeskproCreateBlobWrapperResponse(blobResponse)
     val stream          = mock[Source[ByteString, ?]]
 
-    val underTest = new UpscanCallbackDispatcher(mockUploadedFileRepository, mockReadyFileRepository, mockTicketService, mockDeskproConnector, mockUpscanDownloadConnector, clock)
+    val underTest = new UpscanCallbackDispatcher(mockUploadedFileRepository, mockTicketService, mockDeskproConnector, mockUpscanDownloadConnector, clock)
   }
 
   "handleCallback" should {
     "successfully add a ready callback to the uploaded files repository" in new Setup {
 
-      when(mockReadyFileRepository.create(*)).thenReturn(Future.successful(readySuccess))
       when(mockUploadedFileRepository.create(*)).thenReturn(Future.successful(uploadedSuccess))
       when(mockUpscanDownloadConnector.stream(*)(*)).thenReturn(Future.successful(stream))
       when(mockDeskproConnector.createBlob(*, *, *, *)(*)).thenReturn(Future.successful(blobWrapperResp))
@@ -77,7 +74,6 @@ class UpscanCallbackDispatcherSpec extends AsyncHmrcSpec with FixedClock {
       val result = await(underTest.handleCallback(callbackReady))
 
       result shouldBe DeskproTicketMessageSuccess
-      verify(mockReadyFileRepository).create(eqTo(readySuccess))
       verify(mockUploadedFileRepository).create(eqTo(uploadedSuccess))
       verify(mockUpscanDownloadConnector).stream(eqTo(url))(*)
       verify(mockDeskproConnector).createBlob(eqTo("filename"), eqTo("text/plain"), eqTo(1000), eqTo(stream))(*)
