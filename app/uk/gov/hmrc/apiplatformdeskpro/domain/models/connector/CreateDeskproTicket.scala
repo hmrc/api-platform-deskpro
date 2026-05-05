@@ -40,7 +40,8 @@ case class CreateDeskproTicket(
     subject: String,
     message: DeskproTicketMessage,
     brand: Int,
-    fields: Map[String, String] = Map.empty
+    fields: Map[String, String] = Map.empty,
+    cc: List[String] = List.empty
   )
 
 object CreateDeskproTicket {
