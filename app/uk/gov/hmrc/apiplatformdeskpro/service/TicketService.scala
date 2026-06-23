@@ -76,8 +76,11 @@ class TicketService @Inject() (
     val maybeApplicationId = request.applicationId.fold(Map.empty[String, String])(v => Map(config.deskproApplicationId -> v))
     val maybeSupportReason = request.supportReason.fold(Map.empty[String, String])(v => Map(config.deskproSupportReason -> v))
     val maybeReasonKey     = request.reasonKey.fold(Map.empty[String, String])(v => Map(config.deskproReasonKey -> v))
+    val maybeSessionId     = request.sessionId.fold(Map.empty[String, String])(v => Map(config.deskproSessionId -> v))
+    val maybeReferrer      = request.referrer.fold(Map.empty[String, String])(v => Map(config.deskproReferrer -> v))
+    val maybeUserAgent     = request.userAgent.fold(Map.empty[String, String])(v => Map(config.deskproUserAgent -> v))
 
-    val fields = maybeOrganisation ++ maybeApiName ++ maybeApplicationId ++ maybeSupportReason ++ maybeReasonKey
+    val fields = maybeOrganisation ++ maybeApiName ++ maybeApplicationId ++ maybeSupportReason ++ maybeReasonKey ++ maybeSessionId ++ maybeReferrer ++ maybeUserAgent
     val person = DeskproPerson(request.fullName, request.email)
 
     CreateDeskproTicket(

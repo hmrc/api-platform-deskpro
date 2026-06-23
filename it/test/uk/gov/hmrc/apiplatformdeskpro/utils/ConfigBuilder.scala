@@ -31,6 +31,9 @@ trait ConfigBuilder {
     "deskpro.organisation"                             -> "4",
     "deskpro.application-id"                           -> "5",
     "deskpro.team-member-email"                        -> "6",
+    "deskpro.session-id"                               -> "12",
+    "deskpro.referrer"                                 -> "13",
+    "deskpro.user-agent"                               -> "14",
     "metrics.jvm"                                      -> false
   )
 }
