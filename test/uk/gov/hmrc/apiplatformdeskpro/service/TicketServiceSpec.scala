@@ -61,6 +61,10 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
     val supportReason   = "supportReason"
     val reasonKey       = "reason-key"
     val teamMemberEmail = "frank@example.com"
+    val service         = "third-party-developer"
+    val referrer        = "referrer"
+    val sessionId       = "569fkfie65w9efgsdjhgflsdfgsdlj"
+    val userAgent       = "Chrome"
     val ref             = "ref"
     val brand           = 1
 
@@ -114,10 +118,24 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
         Some(organisation),
         Some(supportReason),
         Some(reasonKey),
-        Some(teamMemberEmail)
+        Some(teamMemberEmail),
+        Some(service),
+        Some(referrer),
+        Some(sessionId),
+        Some(userAgent)
       )
 
-      val fields                = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "7" -> reasonKey)
+      val fields                = Map(
+        "2"  -> apiName,
+        "3"  -> applicationId,
+        "4"  -> organisation,
+        "5"  -> supportReason,
+        "7"  -> reasonKey,
+        "13" -> referrer,
+        "14" -> service,
+        "15" -> sessionId,
+        "16" -> userAgent
+      )
       val expectedPerson        = DeskproPerson(fullName, email.text)
       val expectedDeskproTicket = CreateDeskproTicket(expectedPerson, subject, DeskproTicketMessage(message, expectedPerson), brand, fields, List(teamMemberEmail))
 
@@ -140,6 +158,10 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       when(mockAppConfig.deskproOrganisation).thenReturn("4")
       when(mockAppConfig.deskproSupportReason).thenReturn("5")
       when(mockAppConfig.deskproReasonKey).thenReturn("7")
+      when(mockAppConfig.deskproReferrer).thenReturn("13")
+      when(mockAppConfig.deskproService).thenReturn("14")
+      when(mockAppConfig.deskproSessionId).thenReturn("15")
+      when(mockAppConfig.deskproUserAgent).thenReturn("16")
 
       val result = await(underTest.submitTicket(createTicketRequest))
 
@@ -154,6 +176,10 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
         email.text,
         subject,
         message,
+        None,
+        None,
+        None,
+        None,
         None,
         None,
         None,
@@ -205,13 +231,27 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
         Some(supportReason),
         Some(reasonKey),
         Some(teamMemberEmail),
+        Some(service),
+        Some(referrer),
+        Some(sessionId),
+        Some(userAgent),
         List(
           FileAttachment(fileReference, fileName),
           FileAttachment(fileReference2, fileName2)
         )
       )
 
-      val fields                = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "7" -> reasonKey)
+      val fields                = Map(
+        "2"  -> apiName,
+        "3"  -> applicationId,
+        "4"  -> organisation,
+        "5"  -> supportReason,
+        "7"  -> reasonKey,
+        "13" -> referrer,
+        "14" -> service,
+        "15" -> sessionId,
+        "16" -> userAgent
+      )
       val expectedPerson        = DeskproPerson(fullName, email.text)
       val expectedDeskproTicket = CreateDeskproTicket(
         expectedPerson,
@@ -243,6 +283,10 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       when(mockAppConfig.deskproOrganisation).thenReturn("4")
       when(mockAppConfig.deskproSupportReason).thenReturn("5")
       when(mockAppConfig.deskproReasonKey).thenReturn("7")
+      when(mockAppConfig.deskproReferrer).thenReturn("13")
+      when(mockAppConfig.deskproService).thenReturn("14")
+      when(mockAppConfig.deskproSessionId).thenReturn("15")
+      when(mockAppConfig.deskproUserAgent).thenReturn("16")
 
       val result = await(underTest.submitTicket(createTicketRequest))
 
@@ -266,13 +310,27 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
         Some(supportReason),
         Some(reasonKey),
         Some(teamMemberEmail),
+        Some(service),
+        Some(referrer),
+        Some(sessionId),
+        Some(userAgent),
         List(
           FileAttachment(fileReference, fileName),
           FileAttachment(fileReference2, fileName2)
         )
       )
 
-      val fields                = Map("2" -> apiName, "3" -> applicationId, "4" -> organisation, "5" -> supportReason, "7" -> reasonKey)
+      val fields                = Map(
+        "2"  -> apiName,
+        "3"  -> applicationId,
+        "4"  -> organisation,
+        "5"  -> supportReason,
+        "7"  -> reasonKey,
+        "13" -> referrer,
+        "14" -> service,
+        "15" -> sessionId,
+        "16" -> userAgent
+      )
       val expectedPerson        = DeskproPerson(fullName, email.text)
       val expectedMessage       =
         s"""$message<h4 class="govuk-heading-s govuk-!-margin-bottom-1">Attached files</h4>$fileName2<br><p class="govuk-body govuk-!-margin-bottom-0 govuk-!-margin-top-1 govuk-!-font-size-16">The file is not one of the accepted file types and has not been received.</p><hr class="govuk-section-break govuk-!-margin-top-2 govuk-!-margin-bottom-3 govuk-section-break--visible">$fileName<br><p class="govuk-body govuk-!-margin-bottom-0 govuk-!-margin-top-1 govuk-!-font-size-16">The file is in a queue to be scanned for viruses.</p><hr class="govuk-section-break govuk-!-margin-top-2 govuk-!-margin-bottom-3 govuk-section-break--visible">"""
@@ -300,6 +358,10 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       when(mockAppConfig.deskproOrganisation).thenReturn("4")
       when(mockAppConfig.deskproSupportReason).thenReturn("5")
       when(mockAppConfig.deskproReasonKey).thenReturn("7")
+      when(mockAppConfig.deskproReferrer).thenReturn("13")
+      when(mockAppConfig.deskproService).thenReturn("14")
+      when(mockAppConfig.deskproSessionId).thenReturn("15")
+      when(mockAppConfig.deskproUserAgent).thenReturn("16")
 
       val result = await(underTest.submitTicket(createTicketRequest))
 
