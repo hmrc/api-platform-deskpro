@@ -40,16 +40,26 @@ object UploadStatus {
       blobDetails: BlobDetails
     ) extends UploadStatus
 
+  case class PendingUploadToDeskpro(
+      name: String,
+      mimeType: String,
+      downloadUrl: URL,
+      size: Long,
+      attempt: Int
+    ) extends UploadStatus
+
   import uk.gov.hmrc.play.json.Union
 
   implicit val urlFormat: Format[URL] = HttpUrlFormat.format
 
-  private implicit val formatFailed: OFormat[Failed]                             = Json.format[Failed]
-  private implicit val formatUploadedSuccessfully: OFormat[UploadedSuccessfully] = Json.format[UploadedSuccessfully]
+  private implicit val formatFailed: OFormat[Failed]                                 = Json.format[Failed]
+  private implicit val formatUploadedSuccessfully: OFormat[UploadedSuccessfully]     = Json.format[UploadedSuccessfully]
+  private implicit val formatPendingUploadToDeskpro: OFormat[PendingUploadToDeskpro] = Json.format[PendingUploadToDeskpro]
 
   implicit val format: OFormat[UploadStatus] = Union.from[UploadStatus]("uploadStatus")
     .and[Failed]("Failed")
     .and[UploadedSuccessfully]("UploadedSuccessfully")
+    .and[PendingUploadToDeskpro]("PendingUploadToDeskpro")
     .format
 }
 

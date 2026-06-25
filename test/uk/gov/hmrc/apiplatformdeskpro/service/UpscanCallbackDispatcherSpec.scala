@@ -55,6 +55,8 @@ class UpscanCallbackDispatcherSpec extends AsyncHmrcSpec with FixedClock {
     val uploadedSuccess = UploadedFile(fileReference.value, uploadSuccess, instant)
     val uploadFailed    = UploadStatus.Failed("message", "failureReason")
     val uploadedFailed  = UploadedFile(fileReference.value, uploadFailed, instant)
+    val uploadPending   = UploadStatus.PendingUploadToDeskpro("filename", "text/plain", url, 1000, 1)
+    val uploadedPending = UploadedFile(fileReference.value, uploadPending, instant)
 
     val blobResponse    = DeskproCreateBlobResponse(1234, "auth")
     val blobWrapperResp = DeskproCreateBlobWrapperResponse(blobResponse)
@@ -66,7 +68,8 @@ class UpscanCallbackDispatcherSpec extends AsyncHmrcSpec with FixedClock {
   "handleCallback" should {
     "successfully add a ready callback to the uploaded files repository" in new Setup {
 
-      when(mockUploadedFileRepository.create(*)).thenReturn(Future.successful(uploadedSuccess))
+      when(mockUploadedFileRepository.fetchByFileReference(*)).thenReturn(Future.successful(None))
+      when(mockUploadedFileRepository.createOrUpdate(*)).thenReturn(Future.successful(uploadedSuccess))
       when(mockUpscanDownloadConnector.stream(*)(*)).thenReturn(Future.successful(stream))
       when(mockDeskproConnector.createBlob(*, *, *, *)(*)).thenReturn(Future.successful(blobWrapperResp))
       when(mockTicketService.updateMessageAttachmentsIfRequired(*, *)(*)).thenReturn(Future.successful(DeskproTicketMessageSuccess))
@@ -74,7 +77,29 @@ class UpscanCallbackDispatcherSpec extends AsyncHmrcSpec with FixedClock {
       val result = await(underTest.handleCallback(callbackReady))
 
       result shouldBe DeskproTicketMessageSuccess
-      verify(mockUploadedFileRepository).create(eqTo(uploadedSuccess))
+      verify(mockUploadedFileRepository).createOrUpdate(eqTo(uploadedPending))
+      verify(mockUploadedFileRepository).createOrUpdate(eqTo(uploadedSuccess))
+      verify(mockUpscanDownloadConnector).stream(eqTo(url))(*)
+      verify(mockDeskproConnector).createBlob(eqTo("filename"), eqTo("text/plain"), eqTo(1000), eqTo(stream))(*)
+      verify(mockTicketService).updateMessageAttachmentsIfRequired(eqTo(fileReference.value), eqTo(Some(BlobDetails(1234, "auth"))))(*)
+    }
+
+    "successfully add a ready callback to the uploaded files repository where one exists already" in new Setup {
+
+      val uploadPending2   = UploadStatus.PendingUploadToDeskpro("filename", "text/plain", url, 1000, 2)
+      val uploadedPending2 = UploadedFile(fileReference.value, uploadPending2, instant)
+
+      when(mockUploadedFileRepository.fetchByFileReference(*)).thenReturn(Future.successful(Some(uploadedPending)))
+      when(mockUploadedFileRepository.createOrUpdate(*)).thenReturn(Future.successful(uploadedSuccess))
+      when(mockUpscanDownloadConnector.stream(*)(*)).thenReturn(Future.successful(stream))
+      when(mockDeskproConnector.createBlob(*, *, *, *)(*)).thenReturn(Future.successful(blobWrapperResp))
+      when(mockTicketService.updateMessageAttachmentsIfRequired(*, *)(*)).thenReturn(Future.successful(DeskproTicketMessageSuccess))
+
+      val result = await(underTest.handleCallback(callbackReady))
+
+      result shouldBe DeskproTicketMessageSuccess
+      verify(mockUploadedFileRepository).createOrUpdate(eqTo(uploadedPending2))
+      verify(mockUploadedFileRepository).createOrUpdate(eqTo(uploadedSuccess))
       verify(mockUpscanDownloadConnector).stream(eqTo(url))(*)
       verify(mockDeskproConnector).createBlob(eqTo("filename"), eqTo("text/plain"), eqTo(1000), eqTo(stream))(*)
       verify(mockTicketService).updateMessageAttachmentsIfRequired(eqTo(fileReference.value), eqTo(Some(BlobDetails(1234, "auth"))))(*)
@@ -82,13 +107,13 @@ class UpscanCallbackDispatcherSpec extends AsyncHmrcSpec with FixedClock {
 
     "successfully add a failed callback to the uploaded files repository" in new Setup {
 
-      when(mockUploadedFileRepository.create(*)).thenReturn(Future.successful(uploadedFailed))
+      when(mockUploadedFileRepository.createOrUpdate(*)).thenReturn(Future.successful(uploadedFailed))
       when(mockTicketService.updateMessageAttachmentsIfRequired(*, *)(*)).thenReturn(Future.successful(DeskproTicketMessageSuccess))
 
       val result = await(underTest.handleCallback(callbackFailed))
 
       result shouldBe DeskproTicketMessageSuccess
-      verify(mockUploadedFileRepository).create(eqTo(uploadedFailed))
+      verify(mockUploadedFileRepository).createOrUpdate(eqTo(uploadedFailed))
       verify(mockTicketService).updateMessageAttachmentsIfRequired(eqTo(fileReference.value), eqTo(None))(*)
       verify(mockUpscanDownloadConnector, never).stream(*)(*)
       verify(mockDeskproConnector, never).createBlob(*, *, *, *)(*)

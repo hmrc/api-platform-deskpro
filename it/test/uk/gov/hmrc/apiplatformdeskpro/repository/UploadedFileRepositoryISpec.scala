@@ -50,15 +50,15 @@ class UploadedFileRepositoryISpec extends AsyncHmrcSpec
     "create" should {
       "save the UploadedFile successfully" in new Setup {
         val uploadedFile = UploadedFile(fileReference, uploadStatus, instant)
-        val result       = await(uploadedFileRepo.create(uploadedFile))
+        val result       = await(uploadedFileRepo.createOrUpdate(uploadedFile))
         result shouldBe uploadedFile
       }
 
       "replace existing in event of duplicates" in new Setup {
         val uploadedFile = UploadedFile(fileReference, uploadStatus, instant)
-        await(uploadedFileRepo.create(uploadedFile))
+        await(uploadedFileRepo.createOrUpdate(uploadedFile))
 
-        val result = await(uploadedFileRepo.create(uploadedFile))
+        val result = await(uploadedFileRepo.createOrUpdate(uploadedFile))
         result shouldBe uploadedFile
       }
     }
@@ -66,7 +66,7 @@ class UploadedFileRepositoryISpec extends AsyncHmrcSpec
     "fetchByFileReference" should {
       "find UploadedFile when exists in db" in new Setup {
         val uploadedFile = UploadedFile(fileReference, uploadStatus, instant)
-        await(uploadedFileRepo.create(uploadedFile))
+        await(uploadedFileRepo.createOrUpdate(uploadedFile))
 
         await(uploadedFileRepo.fetchByFileReference(fileReference)) shouldBe Some(uploadedFile)
       }

@@ -42,6 +42,7 @@ class CreateTicketController @Inject() (ticketService: TicketService, cc: Contro
               case Right(x: DeskproTicketCreated)         => Created(Json.toJson(CreateTicketResponse(Some(x.data.ref))))
               case Left(_: DeskproTicketCreatedDuplicate) => Created(Json.toJson(CreateTicketResponse(None)))
               case Left(x: DeskproTicketCreationError)    => InternalServerError(x.message)
+              case _                                      => InternalServerError
             }
         }
     }
