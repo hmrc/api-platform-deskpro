@@ -25,7 +25,7 @@ import uk.gov.hmrc.apiplatformdeskpro.connector.DeskproConnector
 import uk.gov.hmrc.apiplatformdeskpro.domain.models._
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector._
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.CreateTicketResponseRequest
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.UploadStatus.{Failed, PendingUploadToDeskpro, UploadedSuccessfully}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.UploadStatus.UploadedSuccessfully
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.{BlobDetails, DeskproMessageFileAttachment, UploadedFile}
 import uk.gov.hmrc.apiplatformdeskpro.repository.{DeskproMessageFileAttachmentRepository, UploadedFileRepository}
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger

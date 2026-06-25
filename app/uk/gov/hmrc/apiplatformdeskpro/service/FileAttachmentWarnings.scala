@@ -60,7 +60,7 @@ object FileAttachmentWarnings {
     val pendingUploadFiles: List[FileAttachmentPending] = uploadedFiles.map(uploadedFile =>
       uploadedFile.uploadStatus match {
         case pending: PendingUploadToDeskpro => getFileAttachmentPending(uploadedFile.fileReference, attachments, pending)
-        case _              => None
+        case _                               => None
       }
     ).flatten
     val filesNotYetUploaded: List[FileAttachment]       = attachments.filterNot(requestedFileAttachment =>
