@@ -29,6 +29,10 @@ case class CreateTicketRequest(
     supportReason: Option[String],
     reasonKey: Option[String],
     teamMemberEmail: Option[String],
+    service: Option[String],
+    referrer: Option[String],
+    sessionId: Option[String],
+    userAgent: Option[String],
     attachments: List[FileAttachment] = List.empty
   )
 
