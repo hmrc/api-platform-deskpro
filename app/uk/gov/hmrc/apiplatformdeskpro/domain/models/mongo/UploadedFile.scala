@@ -48,6 +48,15 @@ object UploadStatus {
       attempt: Int
     ) extends UploadStatus
 
+  case class FailedUploadToDeskpro(
+      name: String,
+      mimeType: String,
+      downloadUrl: URL,
+      size: Long,
+      attempt: Int,
+      error: String
+    ) extends UploadStatus
+
   import uk.gov.hmrc.play.json.Union
 
   implicit val urlFormat: Format[URL] = HttpUrlFormat.format
@@ -55,11 +64,13 @@ object UploadStatus {
   private implicit val formatFailed: OFormat[Failed]                                 = Json.format[Failed]
   private implicit val formatUploadedSuccessfully: OFormat[UploadedSuccessfully]     = Json.format[UploadedSuccessfully]
   private implicit val formatPendingUploadToDeskpro: OFormat[PendingUploadToDeskpro] = Json.format[PendingUploadToDeskpro]
+  private implicit val formatFailedUploadToDeskpro: OFormat[FailedUploadToDeskpro]   = Json.format[FailedUploadToDeskpro]
 
   implicit val format: OFormat[UploadStatus] = Union.from[UploadStatus]("uploadStatus")
     .and[Failed]("Failed")
     .and[UploadedSuccessfully]("UploadedSuccessfully")
     .and[PendingUploadToDeskpro]("PendingUploadToDeskpro")
+    .and[FailedUploadToDeskpro]("FailedUploadToDeskpro")
     .format
 }
 

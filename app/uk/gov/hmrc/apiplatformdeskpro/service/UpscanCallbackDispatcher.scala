@@ -21,9 +21,9 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import uk.gov.hmrc.apiplatformdeskpro.connector.{DeskproConnector, UpscanDownloadConnector}
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.DeskproTicketMessageResult
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.{FailedCallbackBody, ReadyCallbackBody, UpscanCallbackBody}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.{BlobDetails, UploadStatus, UploadedFile}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproBlobCreationFailure, DeskproBlobCreationResult, DeskproBlobCreationSuccess, DeskproTicketMessageResult}
 import uk.gov.hmrc.apiplatformdeskpro.repository.UploadedFileRepository
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HeaderCarrier
@@ -49,40 +49,64 @@ class UpscanCallbackDispatcher @Inject() (
 
   private def handleSuccessfulCallback(readyCallBack: ReadyCallbackBody)(implicit hc: HeaderCarrier): Future[DeskproTicketMessageResult] = {
     logger.info(s"Upscan callback upload ready: ${readyCallBack.reference.value} - fileName: ${readyCallBack.uploadDetails.fileName}, fileType: ${readyCallBack.uploadDetails.fileMimeType}, size: ${readyCallBack.uploadDetails.size}")
-    def getUploadStatusSuccess(blobDetails: BlobDetails)                        = {
-      UploadStatus.UploadedSuccessfully(
-        name = readyCallBack.uploadDetails.fileName,
-        mimeType = readyCallBack.uploadDetails.fileMimeType,
-        downloadUrl = readyCallBack.downloadUrl,
-        size = readyCallBack.uploadDetails.size,
-        blobDetails = blobDetails
-      )
-    }
-    def getUploadStatusPending(maybePreviousUploadedFile: Option[UploadedFile]) = {
-      val attempt: Int = maybePreviousUploadedFile match {
+    def getAttempt(maybePreviousUploadedFile: Option[UploadedFile]): Int                                                = {
+      maybePreviousUploadedFile match {
         case Some(uploadedFile) => uploadedFile.uploadStatus match {
             case pending: UploadStatus.PendingUploadToDeskpro => pending.attempt + 1
+            case failed: UploadStatus.FailedUploadToDeskpro   => failed.attempt + 1
             case _                                            => 1
           }
         case _                  => 1
       }
+    }
+    def getUploadStatus(blobResponseResult: DeskproBlobCreationResult, maybePreviousUploadedFile: Option[UploadedFile]) = {
+      blobResponseResult match {
+        case DeskproBlobCreationSuccess(blobResponse) => UploadStatus.UploadedSuccessfully(
+            name = readyCallBack.uploadDetails.fileName,
+            mimeType = readyCallBack.uploadDetails.fileMimeType,
+            downloadUrl = readyCallBack.downloadUrl,
+            size = readyCallBack.uploadDetails.size,
+            blobDetails = BlobDetails(blobResponse.blob_id, blobResponse.blob_auth)
+          )
+        case DeskproBlobCreationFailure(message)      => UploadStatus.FailedUploadToDeskpro(
+            name = readyCallBack.uploadDetails.fileName,
+            mimeType = readyCallBack.uploadDetails.fileMimeType,
+            downloadUrl = readyCallBack.downloadUrl,
+            size = readyCallBack.uploadDetails.size,
+            attempt = getAttempt(maybePreviousUploadedFile),
+            error = message
+          )
+      }
+    }
+    def getUploadStatusPending(maybePreviousUploadedFile: Option[UploadedFile])                                         = {
       UploadStatus.PendingUploadToDeskpro(
         name = readyCallBack.uploadDetails.fileName,
         mimeType = readyCallBack.uploadDetails.fileMimeType,
         downloadUrl = readyCallBack.downloadUrl,
         size = readyCallBack.uploadDetails.size,
-        attempt = attempt
+        attempt = getAttempt(maybePreviousUploadedFile)
       )
+    }
+    def getBlobDetails(blobResponseResult: DeskproBlobCreationResult): Option[BlobDetails]                              = {
+      blobResponseResult match {
+        case DeskproBlobCreationSuccess(blobResponse) => Some(BlobDetails(blobResponse.blob_id, blobResponse.blob_auth))
+        case _                                        => None
+      }
     }
 
     for {
       maybePreviousUploadedFile <- uploadedFileRepository.fetchByFileReference(readyCallBack.reference.value)
       _                         <- uploadedFileRepository.createOrUpdate(UploadedFile(readyCallBack.reference.value, getUploadStatusPending(maybePreviousUploadedFile), instant))
       source                    <- upscanDownloadConnector.stream(readyCallBack.downloadUrl)
-      blobResponseWrapper       <- deskproConnector.createBlob(readyCallBack.uploadDetails.fileName, readyCallBack.uploadDetails.fileMimeType, readyCallBack.uploadDetails.size, source)
-      blobDetails                = BlobDetails(blobResponseWrapper.data.blob_id, blobResponseWrapper.data.blob_auth)
-      newUploadedFile           <- uploadedFileRepository.createOrUpdate(UploadedFile(readyCallBack.reference.value, getUploadStatusSuccess(blobDetails), instant))
-      result                    <- ticketService.updateMessageAttachmentsIfRequired(readyCallBack.reference.value, Some(blobDetails))
+      blobResponseResult        <- deskproConnector.createBlob(
+                                     readyCallBack.uploadDetails.fileName,
+                                     readyCallBack.uploadDetails.fileMimeType,
+                                     readyCallBack.uploadDetails.size,
+                                     readyCallBack.reference.value,
+                                     source
+                                   )
+      newUploadedFile           <- uploadedFileRepository.createOrUpdate(UploadedFile(readyCallBack.reference.value, getUploadStatus(blobResponseResult, maybePreviousUploadedFile), instant))
+      result                    <- ticketService.updateMessageAttachmentsIfRequired(readyCallBack.reference.value, getBlobDetails(blobResponseResult))
     } yield result
   }
 

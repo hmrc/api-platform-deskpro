@@ -17,17 +17,22 @@
 package uk.gov.hmrc.apiplatformdeskpro.service
 
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.FileAttachment
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.UploadStatus.{Failed, PendingUploadToDeskpro}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.UploadStatus.{Failed, FailedUploadToDeskpro, PendingUploadToDeskpro}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.UploadedFile
 
-case class FileAttachmentFailed(
+case class FileAttachmentUpscanFailed(
     fileAttachment: FileAttachment,
     failed: Failed
   )
 
-case class FileAttachmentPending(
+case class FileAttachmentUploadPending(
     fileAttachment: FileAttachment,
     pending: PendingUploadToDeskpro
+  )
+
+case class FileAttachmentUploadFailed(
+    fileAttachment: FileAttachment,
+    pending: FailedUploadToDeskpro
   )
 
 object FileAttachmentWarnings {
@@ -51,25 +56,32 @@ object FileAttachmentWarnings {
   }
 
   private def checkForNotUploadedFiles(attachments: List[FileAttachment], uploadedFiles: List[UploadedFile]): Option[String] = {
-    val failedToUploadFiles: List[FileAttachmentFailed] = uploadedFiles.map(uploadedFile =>
+    val failedUpscanFiles: List[FileAttachmentUpscanFailed]          = uploadedFiles.map(uploadedFile =>
       uploadedFile.uploadStatus match {
-        case failed: Failed => getFileAttachmentFailed(uploadedFile.fileReference, attachments, failed)
+        case failed: Failed => getFileAttachmentUpscanFailed(uploadedFile.fileReference, attachments, failed)
         case _              => None
       }
     ).flatten
-    val pendingUploadFiles: List[FileAttachmentPending] = uploadedFiles.map(uploadedFile =>
+    val pendingUploadFiles: List[FileAttachmentUploadPending]        = uploadedFiles.map(uploadedFile =>
       uploadedFile.uploadStatus match {
-        case pending: PendingUploadToDeskpro => getFileAttachmentPending(uploadedFile.fileReference, attachments, pending)
+        case pending: PendingUploadToDeskpro => getFileAttachmentPendingUploadToDeskpro(uploadedFile.fileReference, attachments, pending)
         case _                               => None
       }
     ).flatten
-    val filesNotYetUploaded: List[FileAttachment]       = attachments.filterNot(requestedFileAttachment =>
+    val failedUploadToDeskproFiles: List[FileAttachmentUploadFailed] = uploadedFiles.map(uploadedFile =>
+      uploadedFile.uploadStatus match {
+        case failed: FailedUploadToDeskpro => getFileAttachmentFailedUploadToDeskpro(uploadedFile.fileReference, attachments, failed)
+        case _                             => None
+      }
+    ).flatten
+    val filesNotYetUploaded: List[FileAttachment]                    = attachments.filterNot(requestedFileAttachment =>
       uploadedFiles.exists(file => file.fileReference == requestedFileAttachment.fileReference)
     )
-    if (failedToUploadFiles.isEmpty && pendingUploadFiles.isEmpty && filesNotYetUploaded.isEmpty) {
+    if (failedUpscanFiles.isEmpty && pendingUploadFiles.isEmpty && filesNotYetUploaded.isEmpty && failedUploadToDeskproFiles.isEmpty) {
       None
     } else {
-      Some(failedToUploadFiles.map(file => getFileFailedToUploadMessage(file)).mkString ++
+      Some(failedUpscanFiles.map(file => getFileFailedUpscanMessage(file)).mkString ++
+        failedUploadToDeskproFiles.map(file => getFileFailedUploadMessage(file)).mkString ++
         pendingUploadFiles.map(file => getFilePendingUploadMessage(file)).mkString ++
         filesNotYetUploaded.map(file => getFileNotYetUploadedMessage(file)).mkString)
     }
@@ -79,14 +91,18 @@ object FileAttachmentWarnings {
     s"${file.fileName}<br><p class='govuk-body govuk-!-margin-bottom-0 govuk-!-margin-top-1 govuk-!-font-size-16'>The file is in a queue to be scanned for viruses.</p><hr class='govuk-section-break govuk-!-margin-top-2 govuk-!-margin-bottom-3 govuk-section-break--visible'>"
   }
 
-  private def getFileFailedToUploadMessage(file: FileAttachmentFailed) = {
+  private def getFileFailedUpscanMessage(file: FileAttachmentUpscanFailed) = {
     s"${file.fileAttachment.fileName}<br><p class='govuk-body govuk-!-margin-bottom-0 govuk-!-margin-top-1 govuk-!-font-size-16'>${getFailureMessage(
         file.failed
       )}</p><hr class='govuk-section-break govuk-!-margin-top-2 govuk-!-margin-bottom-3 govuk-section-break--visible'>"
   }
 
-  private def getFilePendingUploadMessage(file: FileAttachmentPending) = {
+  private def getFilePendingUploadMessage(file: FileAttachmentUploadPending) = {
     s"${file.fileAttachment.fileName}<br><p class='govuk-body govuk-!-margin-bottom-0 govuk-!-margin-top-1 govuk-!-font-size-16'>The file has passed virus scanning and is awaiting upload.</p><hr class='govuk-section-break govuk-!-margin-top-2 govuk-!-margin-bottom-3 govuk-section-break--visible'>"
+  }
+
+  private def getFileFailedUploadMessage(file: FileAttachmentUploadFailed) = {
+    s"${file.fileAttachment.fileName}<br><p class='govuk-body govuk-!-margin-bottom-0 govuk-!-margin-top-1 govuk-!-font-size-16'>The file has passed virus scanning but has failed to upload.</p><hr class='govuk-section-break govuk-!-margin-top-2 govuk-!-margin-bottom-3 govuk-section-break--visible'>"
   }
 
   private def getFailureMessage(failed: Failed): String = {
@@ -99,11 +115,16 @@ object FileAttachmentWarnings {
     }
   }
 
-  private def getFileAttachmentFailed(fileReference: String, attachments: List[FileAttachment], failed: Failed): Option[FileAttachmentFailed] = {
-    attachments.find(attachment => attachment.fileReference == fileReference).map(attachment => FileAttachmentFailed(attachment, failed))
+  private def getFileAttachmentUpscanFailed(fileReference: String, attachments: List[FileAttachment], failed: Failed): Option[FileAttachmentUpscanFailed] = {
+    attachments.find(attachment => attachment.fileReference == fileReference).map(attachment => FileAttachmentUpscanFailed(attachment, failed))
   }
 
-  private def getFileAttachmentPending(fileReference: String, attachments: List[FileAttachment], pending: PendingUploadToDeskpro): Option[FileAttachmentPending] = {
-    attachments.find(attachment => attachment.fileReference == fileReference).map(attachment => FileAttachmentPending(attachment, pending))
+  private def getFileAttachmentPendingUploadToDeskpro(fileReference: String, attachments: List[FileAttachment], pending: PendingUploadToDeskpro): Option[FileAttachmentUploadPending] = {
+    attachments.find(attachment => attachment.fileReference == fileReference).map(attachment => FileAttachmentUploadPending(attachment, pending))
+  }
+
+  private def getFileAttachmentFailedUploadToDeskpro(fileReference: String, attachments: List[FileAttachment], failed: FailedUploadToDeskpro)
+      : Option[FileAttachmentUploadFailed] = {
+    attachments.find(attachment => attachment.fileReference == fileReference).map(attachment => FileAttachmentUploadFailed(attachment, failed))
   }
 }

@@ -24,6 +24,7 @@ import org.apache.pekko.stream.scaladsl.{FileIO, Source}
 import org.apache.pekko.util.ByteString
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 
+import play.api.http.Status._
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.{Application, Mode}
@@ -67,6 +68,7 @@ class DeskproConnectorISpec
     val supportReason        = "supportReason"
     val teamMemberEmail      = "frank@example.com"
     val brand                = 1
+    val fileReference        = "fileReference"
     val fileName             = "README.md"
     val ticketId             = 3432
     val messageId            = 789
@@ -590,23 +592,39 @@ class DeskproConnectorISpec
       val file: java.nio.file.Path   = Paths.get(fileName)
       val src: Source[ByteString, _] = FileIO.fromPath(file)
 
-      val result = await(objInTest.createBlob(fileName, "text/plain", 4244, src))
+      val result = await(objInTest.createBlob(fileName, "text/plain", 4244, fileReference, src))
 
-      val expectedResponse = DeskproCreateBlobWrapperResponse(
-        DeskproCreateBlobResponse(26854, "26854KPJHXXQWRNRQHBQ0")
-      )
-
-      result shouldBe expectedResponse
+      result shouldBe DeskproBlobCreationSuccess(DeskproCreateBlobResponse(26854, "26854KPJHXXQWRNRQHBQ0"))
     }
 
-    "throw UpstreamErrorResponse when error response returned from deskpro" in new Setup {
-      CreateBlob.stubFailure()
+    "return a failure result when internal server error response returned from deskpro" in new Setup {
+      CreateBlob.stubFailure(INTERNAL_SERVER_ERROR)
       val file: java.nio.file.Path   = Paths.get(fileName)
       val src: Source[ByteString, _] = FileIO.fromPath(file)
 
-      intercept[UpstreamErrorResponse] {
-        await(objInTest.createBlob(fileName, "text/plain", 4244, src))
-      }
+      val result = await(objInTest.createBlob(fileName, "text/plain", 4244, fileReference, src))
+
+      result shouldBe DeskproBlobCreationFailure("Failed to upload file")
+    }
+
+    "return a failure result when bad request response returned from deskpro" in new Setup {
+      CreateBlob.stubFailure(BAD_REQUEST)
+      val file: java.nio.file.Path   = Paths.get(fileName)
+      val src: Source[ByteString, _] = FileIO.fromPath(file)
+
+      val result = await(objInTest.createBlob(fileName, "text/plain", 4244, fileReference, src))
+
+      result shouldBe DeskproBlobCreationFailure("Failed to upload file")
+    }
+
+    "return a failure result when unauthorised response returned from deskpro" in new Setup {
+      CreateBlob.stubFailure(UNAUTHORIZED)
+      val file: java.nio.file.Path   = Paths.get(fileName)
+      val src: Source[ByteString, _] = FileIO.fromPath(file)
+
+      val result = await(objInTest.createBlob(fileName, "text/plain", 4244, fileReference, src))
+
+      result shouldBe DeskproBlobCreationFailure("Failed to upload file")
     }
   }
 
