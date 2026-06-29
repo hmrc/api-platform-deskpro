@@ -86,6 +86,8 @@ class UpscanCallbackDispatcher @Inject() (
 
     for {
       maybePreviousUploadedFile <- uploadedFileRepository.fetchByFileReference(readyCallBack.reference.value)
+      _                          =
+        logger.info(s"Uploading file to deskpro - : ${readyCallBack.reference.value} - fileName: ${readyCallBack.uploadDetails.fileName}, attempt: ${getAttempt(maybePreviousUploadedFile)}")
       source                    <- upscanDownloadConnector.stream(readyCallBack.downloadUrl)
       blobResponseResult        <- deskproConnector.createBlob(
                                      readyCallBack.uploadDetails.fileName,
