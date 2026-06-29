@@ -49,7 +49,7 @@ class UpscanCallbackDispatcher @Inject() (
 
   private def handleSuccessfulCallback(readyCallBack: ReadyCallbackBody)(implicit hc: HeaderCarrier): Future[DeskproTicketMessageResult] = {
     logger.info(s"Upscan callback upload ready: ${readyCallBack.reference.value} - fileName: ${readyCallBack.uploadDetails.fileName}, fileType: ${readyCallBack.uploadDetails.fileMimeType}, size: ${readyCallBack.uploadDetails.size}")
-    def getAttempt(maybePreviousUploadedFile: Option[UploadedFile]): Int                                                = {
+    def getAttempt(maybePreviousUploadedFile: Option[UploadedFile]): Int                   = {
       maybePreviousUploadedFile match {
         case Some(uploadedFile) => uploadedFile.uploadStatus match {
             case failed: UploadStatus.FailedUploadToDeskpro => failed.attempt + 1
@@ -58,7 +58,7 @@ class UpscanCallbackDispatcher @Inject() (
         case _                  => 1
       }
     }
-    def getUploadStatus(blobResponseResult: DeskproBlobCreationResult, maybePreviousUploadedFile: Option[UploadedFile]) = {
+    def getUploadStatus(blobResponseResult: DeskproBlobCreationResult, attempt: Int)       = {
       blobResponseResult match {
         case DeskproBlobCreationSuccess(blobResponse) => UploadStatus.UploadedSuccessfully(
             name = readyCallBack.uploadDetails.fileName,
@@ -72,12 +72,12 @@ class UpscanCallbackDispatcher @Inject() (
             mimeType = readyCallBack.uploadDetails.fileMimeType,
             downloadUrl = readyCallBack.downloadUrl,
             size = readyCallBack.uploadDetails.size,
-            attempt = getAttempt(maybePreviousUploadedFile),
+            attempt = attempt,
             error = message
           )
       }
     }
-    def getBlobDetails(blobResponseResult: DeskproBlobCreationResult): Option[BlobDetails]                              = {
+    def getBlobDetails(blobResponseResult: DeskproBlobCreationResult): Option[BlobDetails] = {
       blobResponseResult match {
         case DeskproBlobCreationSuccess(blobResponse) => Some(BlobDetails(blobResponse.blob_id, blobResponse.blob_auth))
         case _                                        => None
@@ -86,8 +86,10 @@ class UpscanCallbackDispatcher @Inject() (
 
     for {
       maybePreviousUploadedFile <- uploadedFileRepository.fetchByFileReference(readyCallBack.reference.value)
-      _                          =
-        logger.info(s"Uploading file to deskpro - : ${readyCallBack.reference.value} - fileName: ${readyCallBack.uploadDetails.fileName}, attempt: ${getAttempt(maybePreviousUploadedFile)}")
+      attempt                    = getAttempt(maybePreviousUploadedFile)
+      _                          = logger.info(
+                                     s"Uploading file to deskpro - : ${readyCallBack.reference.value} - fileName: ${readyCallBack.uploadDetails.fileName}, attempt: ${attempt}"
+                                   )
       source                    <- upscanDownloadConnector.stream(readyCallBack.downloadUrl)
       blobResponseResult        <- deskproConnector.createBlob(
                                      readyCallBack.uploadDetails.fileName,
@@ -96,7 +98,7 @@ class UpscanCallbackDispatcher @Inject() (
                                      readyCallBack.reference.value,
                                      source
                                    )
-      newUploadedFile           <- uploadedFileRepository.createOrUpdate(UploadedFile(readyCallBack.reference.value, getUploadStatus(blobResponseResult, maybePreviousUploadedFile), instant))
+      newUploadedFile           <- uploadedFileRepository.createOrUpdate(UploadedFile(readyCallBack.reference.value, getUploadStatus(blobResponseResult, attempt), instant))
       result                    <- ticketService.updateMessageAttachmentsIfRequired(readyCallBack.reference.value, getBlobDetails(blobResponseResult))
     } yield result
   }
