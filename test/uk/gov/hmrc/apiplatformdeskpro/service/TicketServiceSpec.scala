@@ -67,7 +67,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
     val userAgent       = "Chrome"
     val ref             = "ref"
     val brand           = 1
-
+    val attachedFiles   = "<h4 class=\"govuk-heading-s govuk-!-margin-bottom-1\">Attached files</h4>"
     val personId        = 34
     val personEmail     = LaxEmailAddress("bob@example.com")
     val status          = Some("resolved")
@@ -85,7 +85,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       personId,
       instant.minus(Duration.ofDays(8)),
       0,
-      "message 4<h4 class='govuk-heading-s govuk-!-margin-bottom-1'>Attached files</h4>fileName.txt<br><p class='govuk-body govuk-!-margin-bottom-0 govuk-!-margin-top-1 govuk-!-font-size-16'>The file is in a queue to be scanned for viruses.</p><hr class='govuk-section-break govuk-!-margin-top-2 govuk-!-margin-bottom-3 govuk-section-break--visible'>",
+      s"message 4${attachedFiles}fileName.txt<br><p class='govuk-body govuk-!-margin-bottom-0 govuk-!-margin-top-1 govuk-!-font-size-16'>The file is in a queue to be scanned for viruses.</p><hr class='govuk-section-break govuk-!-margin-top-2 govuk-!-margin-bottom-3 govuk-section-break--visible'>",
       List.empty
     )
     val message1Wrapper    = DeskproMessageWrapperResponse(deskproMessage1)
@@ -333,7 +333,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       )
       val expectedPerson        = DeskproPerson(fullName, email.text)
       val expectedMessage       =
-        s"$message<h4 class='govuk-heading-s govuk-!-margin-bottom-1'>Attached files</h4>$fileName2<br><p class='govuk-body govuk-!-margin-bottom-0 govuk-!-margin-top-1 govuk-!-font-size-16'>The file is not one of the accepted file types and has not been received.</p><hr class='govuk-section-break govuk-!-margin-top-2 govuk-!-margin-bottom-3 govuk-section-break--visible'>$fileName<br><p class='govuk-body govuk-!-margin-bottom-0 govuk-!-margin-top-1 govuk-!-font-size-16'>The file is in a queue to be scanned for viruses.</p><hr class='govuk-section-break govuk-!-margin-top-2 govuk-!-margin-bottom-3 govuk-section-break--visible'>"
+        s"$message${attachedFiles}$fileName2<br><p class='govuk-body govuk-!-margin-bottom-0 govuk-!-margin-top-1 govuk-!-font-size-16'>The file is not one of the accepted file types and has not been received.</p><hr class='govuk-section-break govuk-!-margin-top-2 govuk-!-margin-bottom-3 govuk-section-break--visible'>$fileName<br><p class='govuk-body govuk-!-margin-bottom-0 govuk-!-margin-top-1 govuk-!-font-size-16'>The file is in a queue to be scanned for viruses.</p><hr class='govuk-section-break govuk-!-margin-top-2 govuk-!-margin-bottom-3 govuk-section-break--visible'>"
       val expectedDeskproTicket =
         CreateDeskproTicket(expectedPerson, subject, DeskproTicketMessage(expectedMessage, expectedPerson, "html", List.empty), brand, fields, List(teamMemberEmail))
 
@@ -563,7 +563,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       val failedUploadStatus = Failed("This file has a virus", "QUARANTINE")
       val failedUploadedFile = UploadedFile(fileReference, failedUploadStatus, instant)
       val expectedMessage    =
-        s"$message<h4 class='govuk-heading-s govuk-!-margin-bottom-1'>Attached files</h4>fileName.txt<br><p class='govuk-body govuk-!-margin-bottom-0 govuk-!-margin-top-1 govuk-!-font-size-16'>The file contains a virus and has not been received.</p><hr class='govuk-section-break govuk-!-margin-top-2 govuk-!-margin-bottom-3 govuk-section-break--visible'>"
+        s"$message${attachedFiles}fileName.txt<br><p class='govuk-body govuk-!-margin-bottom-0 govuk-!-margin-top-1 govuk-!-font-size-16'>The file contains a virus and has not been received.</p><hr class='govuk-section-break govuk-!-margin-top-2 govuk-!-margin-bottom-3 govuk-section-break--visible'>"
 
       when(mockUploadedFileRepo.fetchByFileReference(*)).thenReturn(Future.successful(Some(failedUploadedFile)))
       when(mockDeskproConnector.createMessageWithAttachments(*, *[LaxEmailAddress], *, *)(*)).thenReturn(Future.successful(messageWrapper))
@@ -582,7 +582,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
 
     "return DeskproTicketResponseSuccess and save response when fileReference is present and the file has not been uploaded" in new Setup {
       val expectedMessage =
-        s"$message<h4 class='govuk-heading-s govuk-!-margin-bottom-1'>Attached files</h4>fileName.txt<br><p class='govuk-body govuk-!-margin-bottom-0 govuk-!-margin-top-1 govuk-!-font-size-16'>The file is in a queue to be scanned for viruses.</p><hr class='govuk-section-break govuk-!-margin-top-2 govuk-!-margin-bottom-3 govuk-section-break--visible'>"
+        s"$message${attachedFiles}fileName.txt<br><p class='govuk-body govuk-!-margin-bottom-0 govuk-!-margin-top-1 govuk-!-font-size-16'>The file is in a queue to be scanned for viruses.</p><hr class='govuk-section-break govuk-!-margin-top-2 govuk-!-margin-bottom-3 govuk-section-break--visible'>"
 
       when(mockUploadedFileRepo.fetchByFileReference(*)).thenReturn(Future.successful(None))
       when(mockDeskproConnector.createMessageWithAttachments(*, *[LaxEmailAddress], *, *)(*)).thenReturn(Future.successful(messageWrapper))
@@ -601,7 +601,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
 
     "return DeskproTicketResponseSuccess and save response when fileReference is present and the file has not been uploaded but is there on recheck" in new Setup {
       val expectedMessage =
-        s"$message<h4 class='govuk-heading-s govuk-!-margin-bottom-1'>Attached files</h4>fileName.txt<br><p class='govuk-body govuk-!-margin-bottom-0 govuk-!-margin-top-1 govuk-!-font-size-16'>The file is in a queue to be scanned for viruses.</p><hr class='govuk-section-break govuk-!-margin-top-2 govuk-!-margin-bottom-3 govuk-section-break--visible'>"
+        s"$message${attachedFiles}fileName.txt<br><p class='govuk-body govuk-!-margin-bottom-0 govuk-!-margin-top-1 govuk-!-font-size-16'>The file is in a queue to be scanned for viruses.</p><hr class='govuk-section-break govuk-!-margin-top-2 govuk-!-margin-bottom-3 govuk-section-break--visible'>"
 
       when(mockUploadedFileRepo.fetchByFileReference(eqTo(fileAttachment.fileReference))).thenReturn(Future.successful(None), Future.successful(Some(uploadedFile)))
       when(mockDeskproConnector.createMessageWithAttachments(*, *[LaxEmailAddress], *, *)(*)).thenReturn(Future.successful(messageWrapper))
@@ -673,7 +673,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       verify(mockDeskproConnector).updateMessage(
         eqTo(ticketId),
         eqTo(messageId),
-        eqTo("message 1<h4 class='govuk-heading-s govuk-!-margin-bottom-1'>Attached files</h4>fileName.txt<br><p class='govuk-body govuk-!-margin-bottom-0 govuk-!-margin-top-1 govuk-!-font-size-16'>The file is in a queue to be scanned for viruses.</p><hr class='govuk-section-break govuk-!-margin-top-2 govuk-!-margin-bottom-3 govuk-section-break--visible'>"),
+        eqTo(s"message 1${attachedFiles}fileName.txt<br><p class='govuk-body govuk-!-margin-bottom-0 govuk-!-margin-top-1 govuk-!-font-size-16'>The file is in a queue to be scanned for viruses.</p><hr class='govuk-section-break govuk-!-margin-top-2 govuk-!-margin-bottom-3 govuk-section-break--visible'>"),
         eqTo(existingAttachments),
         eqTo(blobDetails)
       )(*)
@@ -698,7 +698,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       verify(mockDeskproConnector).updateMessage(
         eqTo(ticketId),
         eqTo(messageId),
-        eqTo("message 1<h4 class='govuk-heading-s govuk-!-margin-bottom-1'>Attached files</h4>fileName.txt<br><p class='govuk-body govuk-!-margin-bottom-0 govuk-!-margin-top-1 govuk-!-font-size-16'>The file could not be uploaded - try again.</p><hr class='govuk-section-break govuk-!-margin-top-2 govuk-!-margin-bottom-3 govuk-section-break--visible'>"),
+        eqTo(s"message 1${attachedFiles}fileName.txt<br><p class='govuk-body govuk-!-margin-bottom-0 govuk-!-margin-top-1 govuk-!-font-size-16'>The file could not be uploaded - try again.</p><hr class='govuk-section-break govuk-!-margin-top-2 govuk-!-margin-bottom-3 govuk-section-break--visible'>"),
         eqTo(existingAttachments),
         eqTo(None)
       )(*)

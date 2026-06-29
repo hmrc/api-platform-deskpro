@@ -55,8 +55,6 @@ class UpscanCallbackDispatcherSpec extends AsyncHmrcSpec with FixedClock {
     val uploadedSuccess       = UploadedFile(fileReference.value, uploadSuccess, instant)
     val uploadFailed          = UploadStatus.Failed("message", "failureReason")
     val uploadedFailed        = UploadedFile(fileReference.value, uploadFailed, instant)
-    val uploadPending         = UploadStatus.PendingUploadToDeskpro("filename", "text/plain", url, 1000, 1)
-    val uploadedPending       = UploadedFile(fileReference.value, uploadPending, instant)
     val deskproUploadFailed   = UploadStatus.FailedUploadToDeskpro("filename", "text/plain", url, 1000, 1, "error message")
     val deskproUploadedFailed = UploadedFile(fileReference.value, deskproUploadFailed, instant)
 
@@ -79,19 +77,15 @@ class UpscanCallbackDispatcherSpec extends AsyncHmrcSpec with FixedClock {
       val result = await(underTest.handleCallback(callbackReady))
 
       result shouldBe DeskproTicketMessageSuccess
-      verify(mockUploadedFileRepository).createOrUpdate(eqTo(uploadedPending))
       verify(mockUploadedFileRepository).createOrUpdate(eqTo(uploadedSuccess))
       verify(mockUpscanDownloadConnector).stream(eqTo(url))(*)
       verify(mockDeskproConnector).createBlob(eqTo("filename"), eqTo("text/plain"), eqTo(1000), eqTo(fileReference.value), eqTo(stream))(*)
       verify(mockTicketService).updateMessageAttachmentsIfRequired(eqTo(fileReference.value), eqTo(Some(BlobDetails(1234, "auth"))))(*)
     }
 
-    "successfully add a ready callback to the uploaded files repository where one exists already" in new Setup {
+    "successfully add a ready callback to the uploaded files repository where one failure exists already" in new Setup {
 
-      val uploadPending2   = UploadStatus.PendingUploadToDeskpro("filename", "text/plain", url, 1000, 2)
-      val uploadedPending2 = UploadedFile(fileReference.value, uploadPending2, instant)
-
-      when(mockUploadedFileRepository.fetchByFileReference(*)).thenReturn(Future.successful(Some(uploadedPending)))
+      when(mockUploadedFileRepository.fetchByFileReference(*)).thenReturn(Future.successful(Some(deskproUploadedFailed)))
       when(mockUploadedFileRepository.createOrUpdate(*)).thenReturn(Future.successful(uploadedSuccess))
       when(mockUpscanDownloadConnector.stream(*)(*)).thenReturn(Future.successful(stream))
       when(mockDeskproConnector.createBlob(*, *, *, *, *)(*)).thenReturn(Future.successful(blobReturnSuccess))
@@ -100,7 +94,6 @@ class UpscanCallbackDispatcherSpec extends AsyncHmrcSpec with FixedClock {
       val result = await(underTest.handleCallback(callbackReady))
 
       result shouldBe DeskproTicketMessageSuccess
-      verify(mockUploadedFileRepository).createOrUpdate(eqTo(uploadedPending2))
       verify(mockUploadedFileRepository).createOrUpdate(eqTo(uploadedSuccess))
       verify(mockUpscanDownloadConnector).stream(eqTo(url))(*)
       verify(mockDeskproConnector).createBlob(eqTo("filename"), eqTo("text/plain"), eqTo(1000), eqTo(fileReference.value), eqTo(stream))(*)
@@ -110,7 +103,7 @@ class UpscanCallbackDispatcherSpec extends AsyncHmrcSpec with FixedClock {
     "add a failed to upload to deskpro to the uploaded files repository if create blob fails" in new Setup {
 
       when(mockUploadedFileRepository.fetchByFileReference(*)).thenReturn(Future.successful(None))
-      when(mockUploadedFileRepository.createOrUpdate(*)).thenReturn(Future.successful(uploadedSuccess))
+      when(mockUploadedFileRepository.createOrUpdate(*)).thenReturn(Future.successful(deskproUploadedFailed))
       when(mockUpscanDownloadConnector.stream(*)(*)).thenReturn(Future.successful(stream))
       when(mockDeskproConnector.createBlob(*, *, *, *, *)(*)).thenReturn(Future.successful(DeskproBlobCreationFailure("error message")))
       when(mockTicketService.updateMessageAttachmentsIfRequired(*, *)(*)).thenReturn(Future.successful(DeskproTicketMessageSuccess))
@@ -118,8 +111,27 @@ class UpscanCallbackDispatcherSpec extends AsyncHmrcSpec with FixedClock {
       val result = await(underTest.handleCallback(callbackReady))
 
       result shouldBe DeskproTicketMessageSuccess
-      verify(mockUploadedFileRepository).createOrUpdate(eqTo(uploadedPending))
       verify(mockUploadedFileRepository).createOrUpdate(eqTo(deskproUploadedFailed))
+      verify(mockUpscanDownloadConnector).stream(eqTo(url))(*)
+      verify(mockDeskproConnector).createBlob(eqTo("filename"), eqTo("text/plain"), eqTo(1000), eqTo(fileReference.value), eqTo(stream))(*)
+      verify(mockTicketService).updateMessageAttachmentsIfRequired(eqTo(fileReference.value), eqTo(None))(*)
+    }
+
+    "add a failed to upload to deskpro to the uploaded files repository if create blob fails on second attempt" in new Setup {
+
+      val deskproUploadFailed2   = UploadStatus.FailedUploadToDeskpro("filename", "text/plain", url, 1000, 2, "error message")
+      val deskproUploadedFailed2 = UploadedFile(fileReference.value, deskproUploadFailed2, instant)
+
+      when(mockUploadedFileRepository.fetchByFileReference(*)).thenReturn(Future.successful(Some(deskproUploadedFailed)))
+      when(mockUploadedFileRepository.createOrUpdate(*)).thenReturn(Future.successful(deskproUploadedFailed))
+      when(mockUpscanDownloadConnector.stream(*)(*)).thenReturn(Future.successful(stream))
+      when(mockDeskproConnector.createBlob(*, *, *, *, *)(*)).thenReturn(Future.successful(DeskproBlobCreationFailure("error message")))
+      when(mockTicketService.updateMessageAttachmentsIfRequired(*, *)(*)).thenReturn(Future.successful(DeskproTicketMessageSuccess))
+
+      val result = await(underTest.handleCallback(callbackReady))
+
+      result shouldBe DeskproTicketMessageSuccess
+      verify(mockUploadedFileRepository).createOrUpdate(eqTo(deskproUploadedFailed2))
       verify(mockUpscanDownloadConnector).stream(eqTo(url))(*)
       verify(mockDeskproConnector).createBlob(eqTo("filename"), eqTo("text/plain"), eqTo(1000), eqTo(fileReference.value), eqTo(stream))(*)
       verify(mockTicketService).updateMessageAttachmentsIfRequired(eqTo(fileReference.value), eqTo(None))(*)

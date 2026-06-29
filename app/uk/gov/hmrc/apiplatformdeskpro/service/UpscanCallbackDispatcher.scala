@@ -52,9 +52,8 @@ class UpscanCallbackDispatcher @Inject() (
     def getAttempt(maybePreviousUploadedFile: Option[UploadedFile]): Int                                                = {
       maybePreviousUploadedFile match {
         case Some(uploadedFile) => uploadedFile.uploadStatus match {
-            case pending: UploadStatus.PendingUploadToDeskpro => pending.attempt + 1
-            case failed: UploadStatus.FailedUploadToDeskpro   => failed.attempt + 1
-            case _                                            => 1
+            case failed: UploadStatus.FailedUploadToDeskpro => failed.attempt + 1
+            case _                                          => 1
           }
         case _                  => 1
       }
@@ -78,15 +77,6 @@ class UpscanCallbackDispatcher @Inject() (
           )
       }
     }
-    def getUploadStatusPending(maybePreviousUploadedFile: Option[UploadedFile])                                         = {
-      UploadStatus.PendingUploadToDeskpro(
-        name = readyCallBack.uploadDetails.fileName,
-        mimeType = readyCallBack.uploadDetails.fileMimeType,
-        downloadUrl = readyCallBack.downloadUrl,
-        size = readyCallBack.uploadDetails.size,
-        attempt = getAttempt(maybePreviousUploadedFile)
-      )
-    }
     def getBlobDetails(blobResponseResult: DeskproBlobCreationResult): Option[BlobDetails]                              = {
       blobResponseResult match {
         case DeskproBlobCreationSuccess(blobResponse) => Some(BlobDetails(blobResponse.blob_id, blobResponse.blob_auth))
@@ -96,7 +86,6 @@ class UpscanCallbackDispatcher @Inject() (
 
     for {
       maybePreviousUploadedFile <- uploadedFileRepository.fetchByFileReference(readyCallBack.reference.value)
-      _                         <- uploadedFileRepository.createOrUpdate(UploadedFile(readyCallBack.reference.value, getUploadStatusPending(maybePreviousUploadedFile), instant))
       source                    <- upscanDownloadConnector.stream(readyCallBack.downloadUrl)
       blobResponseResult        <- deskproConnector.createBlob(
                                      readyCallBack.uploadDetails.fileName,
