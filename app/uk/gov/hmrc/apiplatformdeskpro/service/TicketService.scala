@@ -25,7 +25,7 @@ import uk.gov.hmrc.apiplatformdeskpro.connector.DeskproConnector
 import uk.gov.hmrc.apiplatformdeskpro.domain.models._
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.connector._
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.CreateTicketResponseRequest
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.UploadStatus.{Failed, UploadedSuccessfully}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.UploadStatus.UploadedSuccessfully
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.{BlobDetails, DeskproMessageFileAttachment, UploadedFile}
 import uk.gov.hmrc.apiplatformdeskpro.repository.{DeskproMessageFileAttachmentRepository, UploadedFileRepository}
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
@@ -33,11 +33,6 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.common.services.{ClockNow, EitherTHelper}
-
-case class FileAttachmentFailed(
-    fileAttachment: FileAttachment,
-    failed: Failed
-  )
 
 @Singleton
 class TicketService @Inject() (
@@ -52,13 +47,11 @@ class TicketService @Inject() (
 
   private val ET = EitherTHelper.make[DeskproTicketCreationFailed]
 
-  private val fileAttachmentWarningLabel: String = "<h4 class=\"govuk-heading-s govuk-!-margin-bottom-1\">Attached files</h4>"
-
   def submitTicket(request: CreateTicketRequest)(implicit hc: HeaderCarrier): Future[Either[DeskproTicketCreationFailed, DeskproTicketCreated]] = {
     (
       for {
         uploadedFiles      <- ET.liftF(getUploadedFileDetails(request.attachments))
-        messageWithWarnings = addMessageFileUploadWarnings(request.message, request.attachments, uploadedFiles)
+        messageWithWarnings = FileAttachmentWarnings.addMessageFileUploadWarnings(request.message, request.attachments, uploadedFiles)
         createDeskproTicket = createDeskproTicketRequest(request, messageWithWarnings, uploadedFiles)
         ticket             <- ET.fromEitherF(deskproConnector.createTicket(createDeskproTicket))
         ticketId            = ticket.data.id
@@ -109,7 +102,7 @@ class TicketService @Inject() (
   def createMessage(ticketId: Int, request: CreateTicketResponseRequest)(implicit hc: HeaderCarrier): Future[DeskproCreateMessageResponse] = {
     for {
       uploadedFiles       <- getUploadedFileDetails(request.attachments)
-      messageWithWarnings  = addMessageFileUploadWarnings(request.message, request.attachments, uploadedFiles)
+      messageWithWarnings  = FileAttachmentWarnings.addMessageFileUploadWarnings(request.message, request.attachments, uploadedFiles)
       createMessageResult <- deskproConnector.createMessageWithAttachments(ticketId, request.userEmail, messageWithWarnings, getBlobDetails(uploadedFiles))
       maybeMessage        <- saveMessageFileDetails(ticketId, createMessageResult.data.id, request.attachments)
       _                   <- deskproConnector.updateTicketStatus(ticketId, request.status)
@@ -123,56 +116,6 @@ class TicketService @Inject() (
     } else {
       Future.successful(None)
     }
-  }
-
-  private def addMessageFileUploadWarnings(message: String, attachments: List[FileAttachment], uploadedFiles: List[UploadedFile]): String = {
-    checkForNotUploadedFiles(attachments, uploadedFiles) match {
-      case None          => message
-      case Some(warning) => s"$message$fileAttachmentWarningLabel$warning"
-    }
-  }
-
-  private def checkForNotUploadedFiles(attachments: List[FileAttachment], uploadedFiles: List[UploadedFile]): Option[String] = {
-    val failedToUploadFiles: List[FileAttachmentFailed] = uploadedFiles.map(uploadedFile =>
-      uploadedFile.uploadStatus match {
-        case failed: Failed => getFileAttachmentFailed(uploadedFile.fileReference, attachments, failed)
-        case _              => None
-      }
-    ).flatten
-    val filesNotYetUploaded: List[FileAttachment]       = attachments.filterNot(requestedFileAttachment =>
-      uploadedFiles.exists(file => file.fileReference == requestedFileAttachment.fileReference)
-    )
-    (failedToUploadFiles.isEmpty, filesNotYetUploaded.isEmpty) match {
-      case (true, true)   => None
-      case (false, true)  => Some(failedToUploadFiles.map(file => getFileFailedToUploadMessage(file)).mkString)
-      case (true, false)  => Some(filesNotYetUploaded.map(file => getFileNotYetUploadedMessage(file)).mkString)
-      case (false, false) => Some(failedToUploadFiles.map(file => getFileFailedToUploadMessage(file)).mkString ++
-          filesNotYetUploaded.map(file => getFileNotYetUploadedMessage(file)).mkString)
-    }
-  }
-
-  private def getFileNotYetUploadedMessage(file: FileAttachment) = {
-    s"""${file.fileName}<br><p class="govuk-body govuk-!-margin-bottom-0 govuk-!-margin-top-1 govuk-!-font-size-16">The file is in a queue to be scanned for viruses.</p><hr class="govuk-section-break govuk-!-margin-top-2 govuk-!-margin-bottom-3 govuk-section-break--visible">"""
-  }
-
-  private def getFileFailedToUploadMessage(file: FileAttachmentFailed) = {
-    s"""${file.fileAttachment.fileName}<br><p class="govuk-body govuk-!-margin-bottom-0 govuk-!-margin-top-1 govuk-!-font-size-16">${getFailureMessage(
-        file.failed
-      )}</p><hr class="govuk-section-break govuk-!-margin-top-2 govuk-!-margin-bottom-3 govuk-section-break--visible">"""
-  }
-
-  private def getFailureMessage(failed: Failed): String = {
-    if (failed.reason == "REJECTED" && failed.message.contains("MIME type")) {
-      "The file is not one of the accepted file types and has not been received."
-    } else if (failed.reason == "QUARANTINE") {
-      "The file contains a virus and has not been received."
-    } else {
-      "The file could not be uploaded - try again."
-    }
-  }
-
-  private def getFileAttachmentFailed(fileReference: String, attachments: List[FileAttachment], failed: Failed): Option[FileAttachmentFailed] = {
-    attachments.find(attachment => attachment.fileReference == fileReference).map(attachment => FileAttachmentFailed(attachment, failed))
   }
 
   private def getBlobDetails(uploadedFiles: List[UploadedFile]): List[BlobDetails] = {
@@ -232,15 +175,6 @@ class TicketService @Inject() (
     }
   }
 
-  private def amendMessageFileAttachmentWarnings(message: String, attachments: List[FileAttachment], uploadedFiles: List[UploadedFile]): String = {
-    val userMessageWithoutWarning = if (message.contains(fileAttachmentWarningLabel)) {
-      message.substring(0, message.indexOf(fileAttachmentWarningLabel))
-    } else {
-      message
-    }
-    addMessageFileUploadWarnings(userMessageWithoutWarning, attachments, uploadedFiles)
-  }
-
   private def updateMessage(
       fileReference: String,
       messageFileAttachment: DeskproMessageFileAttachment,
@@ -253,7 +187,7 @@ class TicketService @Inject() (
     for {
       attachments   <- deskproConnector.getMessageAttachments(messageFileAttachment.ticketId, messageFileAttachment.messageId)
       message       <- deskproConnector.getMessage(messageFileAttachment.ticketId, messageFileAttachment.messageId)
-      amendedMessage = amendMessageFileAttachmentWarnings(message.data.message, messageFileAttachment.attachments, uploadedFiles)
+      amendedMessage = FileAttachmentWarnings.amendMessageFileAttachmentWarnings(message.data.message, messageFileAttachment.attachments, uploadedFiles)
       result        <- deskproConnector.updateMessage(
                          messageFileAttachment.ticketId,
                          messageFileAttachment.messageId,

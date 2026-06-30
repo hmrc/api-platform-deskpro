@@ -21,9 +21,9 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import uk.gov.hmrc.apiplatformdeskpro.connector.{DeskproConnector, UpscanDownloadConnector}
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.DeskproTicketMessageResult
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.{FailedCallbackBody, ReadyCallbackBody, UpscanCallbackBody}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.{BlobDetails, UploadStatus, UploadedFile}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproBlobCreationFailure, DeskproBlobCreationResult, DeskproBlobCreationSuccess, DeskproTicketMessageResult}
 import uk.gov.hmrc.apiplatformdeskpro.repository.UploadedFileRepository
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.http.HeaderCarrier
@@ -49,25 +49,64 @@ class UpscanCallbackDispatcher @Inject() (
 
   private def handleSuccessfulCallback(readyCallBack: ReadyCallbackBody)(implicit hc: HeaderCarrier): Future[DeskproTicketMessageResult] = {
     logger.info(s"Upscan callback upload ready: ${readyCallBack.reference.value} - fileName: ${readyCallBack.uploadDetails.fileName}, fileType: ${readyCallBack.uploadDetails.fileMimeType}, size: ${readyCallBack.uploadDetails.size}")
+    def getAttempt(maybePreviousUploadedFile: Option[UploadedFile]): Int                   = {
+      maybePreviousUploadedFile match {
+        case Some(uploadedFile) => uploadedFile.uploadStatus match {
+            case failed: UploadStatus.FailedUploadToDeskpro => failed.attempt + 1
+            case _                                          => 1
+          }
+        case _                  => 1
+      }
+    }
+    def getUploadStatus(blobResponseResult: DeskproBlobCreationResult, attempt: Int)       = {
+      blobResponseResult match {
+        case DeskproBlobCreationSuccess(blobResponse) => UploadStatus.UploadedSuccessfully(
+            name = readyCallBack.uploadDetails.fileName,
+            mimeType = readyCallBack.uploadDetails.fileMimeType,
+            downloadUrl = readyCallBack.downloadUrl,
+            size = readyCallBack.uploadDetails.size,
+            blobDetails = BlobDetails(blobResponse.blob_id, blobResponse.blob_auth)
+          )
+        case DeskproBlobCreationFailure(message)      => UploadStatus.FailedUploadToDeskpro(
+            name = readyCallBack.uploadDetails.fileName,
+            mimeType = readyCallBack.uploadDetails.fileMimeType,
+            downloadUrl = readyCallBack.downloadUrl,
+            size = readyCallBack.uploadDetails.size,
+            attempt = attempt,
+            error = message
+          )
+      }
+    }
+    def getBlobDetails(blobResponseResult: DeskproBlobCreationResult): Option[BlobDetails] = {
+      blobResponseResult match {
+        case DeskproBlobCreationSuccess(blobResponse) => Some(BlobDetails(blobResponse.blob_id, blobResponse.blob_auth))
+        case _                                        => None
+      }
+    }
+
     for {
-      source       <- upscanDownloadConnector.stream(readyCallBack.downloadUrl)
-      blobResponse <- deskproConnector.createBlob(readyCallBack.uploadDetails.fileName, readyCallBack.uploadDetails.fileMimeType, readyCallBack.uploadDetails.size, source)
-      uploadStatus  = UploadStatus.UploadedSuccessfully(
-                        name = readyCallBack.uploadDetails.fileName,
-                        mimeType = readyCallBack.uploadDetails.fileMimeType,
-                        downloadUrl = readyCallBack.downloadUrl,
-                        size = readyCallBack.uploadDetails.size,
-                        blobDetails = BlobDetails(blobResponse.data.blob_id, blobResponse.data.blob_auth)
-                      )
-      uploadedFile <- uploadedFileRepository.create(UploadedFile(readyCallBack.reference.value, uploadStatus, instant))
-      result       <- ticketService.updateMessageAttachmentsIfRequired(readyCallBack.reference.value, Some(uploadStatus.blobDetails))
+      maybePreviousUploadedFile <- uploadedFileRepository.fetchByFileReference(readyCallBack.reference.value)
+      attempt                    = getAttempt(maybePreviousUploadedFile)
+      _                          = logger.info(
+                                     s"Uploading file to deskpro - : ${readyCallBack.reference.value} - fileName: ${readyCallBack.uploadDetails.fileName}, attempt: ${attempt}"
+                                   )
+      source                    <- upscanDownloadConnector.stream(readyCallBack.downloadUrl)
+      blobResponseResult        <- deskproConnector.createBlob(
+                                     readyCallBack.uploadDetails.fileName,
+                                     readyCallBack.uploadDetails.fileMimeType,
+                                     readyCallBack.uploadDetails.size,
+                                     readyCallBack.reference.value,
+                                     source
+                                   )
+      newUploadedFile           <- uploadedFileRepository.createOrUpdate(UploadedFile(readyCallBack.reference.value, getUploadStatus(blobResponseResult, attempt), instant))
+      result                    <- ticketService.updateMessageAttachmentsIfRequired(readyCallBack.reference.value, getBlobDetails(blobResponseResult))
     } yield result
   }
 
   private def handleFailedCallback(failedCallBack: FailedCallbackBody)(implicit hc: HeaderCarrier): Future[DeskproTicketMessageResult] = {
     logger.info(s"Upscan callback upload failed: ${failedCallBack.reference.value} - ${failedCallBack.failureDetails.message}, ${failedCallBack.failureDetails.failureReason}")
     for {
-      uploadedFile <- uploadedFileRepository.create(UploadedFile(
+      uploadedFile <- uploadedFileRepository.createOrUpdate(UploadedFile(
                         failedCallBack.reference.value,
                         UploadStatus.Failed(failedCallBack.failureDetails.message, failedCallBack.failureDetails.failureReason),
                         instant

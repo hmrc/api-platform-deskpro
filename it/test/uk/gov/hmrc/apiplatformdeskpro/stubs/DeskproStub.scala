@@ -1958,12 +1958,12 @@ trait DeskproStub {
       )
     }
 
-    def stubFailure() = {
+    def stubFailure(failureStatus: Int) = {
       stubFor(
         post(urlPathEqualTo("/api/v2/blobs/temp"))
           .willReturn(
             aResponse()
-              .withStatus(INTERNAL_SERVER_ERROR)
+              .withStatus(failureStatus)
           )
       )
     }

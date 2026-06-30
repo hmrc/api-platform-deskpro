@@ -62,7 +62,7 @@ class UploadedFileRepository @Inject() (mongo: MongoComponent, val clock: Clock)
 
   override lazy val requiresTtlIndex: Boolean = true
 
-  def create(uploadedFile: UploadedFile): Future[UploadedFile] = {
+  def createOrUpdate(uploadedFile: UploadedFile): Future[UploadedFile] = {
     collection.replaceOne(
       equal("fileReference", uploadedFile.fileReference),
       uploadedFile,

@@ -290,7 +290,8 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
         .execute[BatchResponse]
     }
 
-  def createBlob(fileName: String, fileType: String, fileSize: Long, src: Source[ByteString, _])(implicit hc: HeaderCarrier): Future[DeskproCreateBlobWrapperResponse] = {
+  def createBlob(fileName: String, fileType: String, fileSize: Long, fileReference: String, src: Source[ByteString, _])(implicit hc: HeaderCarrier)
+      : Future[DeskproBlobCreationResult] = {
 
     val filePart: MultipartFormData.Part[Source[ByteString, _]] = MultipartFormData.FilePart(
       "file",
@@ -311,7 +312,24 @@ class DeskproConnector @Inject() (http: HttpClientV2, config: AppConfig, metrics
         .setHeader(AUTHORIZATION -> config.deskproApiKey)
         .setHeader("content-length" -> contentLength.toString())
         .withBody(Source(Seq(filePart)))
-        .execute[DeskproCreateBlobWrapperResponse]
+        .execute[HttpResponse]
+        .map(response =>
+          response.status match {
+            case CREATED      =>
+              logger.info(s"Deskpro blob for file '${fileReference}' created successfully")
+              val blobResponse = response.json.as[DeskproCreateBlobWrapperResponse]
+              DeskproBlobCreationSuccess(blobResponse.data)
+            case BAD_REQUEST  =>
+              logger.error(s"Deskpro blob for file '${fileReference}' failed due to bad request")
+              DeskproBlobCreationFailure("Failed to upload file")
+            case UNAUTHORIZED =>
+              logger.error(s"Deskpro blob for file '${fileReference}' failed as unauthorized")
+              DeskproBlobCreationFailure("Failed to upload file")
+            case _            =>
+              logger.error(s"Deskpro blob for file '${fileReference}' failed with status code ${response.status}")
+              DeskproBlobCreationFailure("Failed to upload file")
+          }
+        )
     }
   }
 

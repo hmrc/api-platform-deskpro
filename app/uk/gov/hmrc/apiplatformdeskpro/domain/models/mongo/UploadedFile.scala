@@ -32,6 +32,15 @@ object UploadStatus {
       reason: String
     ) extends UploadStatus
 
+  case class FailedUploadToDeskpro(
+      name: String,
+      mimeType: String,
+      downloadUrl: URL,
+      size: Long,
+      attempt: Int,
+      error: String
+    ) extends UploadStatus
+
   case class UploadedSuccessfully(
       name: String,
       mimeType: String,
@@ -44,11 +53,13 @@ object UploadStatus {
 
   implicit val urlFormat: Format[URL] = HttpUrlFormat.format
 
-  private implicit val formatFailed: OFormat[Failed]                             = Json.format[Failed]
-  private implicit val formatUploadedSuccessfully: OFormat[UploadedSuccessfully] = Json.format[UploadedSuccessfully]
+  private implicit val formatFailed: OFormat[Failed]                               = Json.format[Failed]
+  private implicit val formatFailedUploadToDeskpro: OFormat[FailedUploadToDeskpro] = Json.format[FailedUploadToDeskpro]
+  private implicit val formatUploadedSuccessfully: OFormat[UploadedSuccessfully]   = Json.format[UploadedSuccessfully]
 
   implicit val format: OFormat[UploadStatus] = Union.from[UploadStatus]("uploadStatus")
     .and[Failed]("Failed")
+    .and[FailedUploadToDeskpro]("FailedUploadToDeskpro")
     .and[UploadedSuccessfully]("UploadedSuccessfully")
     .format
 }
