@@ -71,6 +71,8 @@ class UploadedFileRepository @Inject() (mongo: MongoComponent, val clock: Clock)
   }
 
   def fetchByFileReference(fileReference: String): Future[Option[UploadedFile]] = {
-    collection.find(equal("fileReference", fileReference)).headOption()
+    val file = collection.find(equal("fileReference", fileReference)).headOption()
+    println(s"******In UploadedFileRepository.fetchByFileReference. fileReference:$fileReference, uploadedFile:$file")
+    file
   }
 }

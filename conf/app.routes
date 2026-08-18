@@ -12,3 +12,4 @@ PUT     /person                          uk.gov.hmrc.apiplatformdeskpro.controll
 POST    /person/mark-inactive            uk.gov.hmrc.apiplatformdeskpro.controller.PersonController.markPersonInactive()
 
 POST    /upscan-callback                 uk.gov.hmrc.apiplatformdeskpro.controller.UpscanCallbackController.callback()
+GET     /upscan/file/:fileReference      uk.gov.hmrc.apiplatformdeskpro.controller.UpscanCallbackController.getByFileRef(fileReference: String)
