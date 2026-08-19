@@ -26,6 +26,7 @@ import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers, StubControllerComponentsFactory, StubPlayBodyParsersFactory}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.{BlobDetails, UploadStatus, UploadedFile}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproTicketMessageFailure, DeskproTicketMessageNotFound, DeskproTicketMessageSuccess}
+import uk.gov.hmrc.apiplatformdeskpro.repository.UploadedFileRepository
 import uk.gov.hmrc.apiplatformdeskpro.service.UpscanCallbackDispatcher
 import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
@@ -39,10 +40,11 @@ class UpscanCallbackControllerSpec extends AsyncHmrcSpec with StubControllerComp
     implicit val hc: HeaderCarrier        = HeaderCarrier()
     implicit val cc: ControllerComponents = Helpers.stubControllerComponents()
 
-    val mockService       = mock[UpscanCallbackDispatcher]
-    val mockStubBehaviour = mock[StubBehaviour]
+    val mockService            = mock[UpscanCallbackDispatcher]
+    val uploadedFileRepository = mock[UploadedFileRepository]
+    val mockStubBehaviour      = mock[StubBehaviour]
 
-    val objToTest = new UpscanCallbackController(mockService, cc, BackendAuthComponentsStub(mockStubBehaviour))
+    val objToTest = new UpscanCallbackController(mockService, uploadedFileRepository, cc, BackendAuthComponentsStub(mockStubBehaviour))
 
     val fileReference = "507e60b3-0ee1-411f-9c6e-7261455056c3"
     val url           = new URL("https://example.com/file1")

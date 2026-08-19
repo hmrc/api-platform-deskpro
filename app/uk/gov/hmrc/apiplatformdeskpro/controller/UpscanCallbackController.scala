@@ -18,11 +18,12 @@ package uk.gov.hmrc.apiplatformdeskpro.controller
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
+
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result, Results}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.UpscanCallbackBody
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.UploadedFile
-import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproTicket, DeskproTicketMessageFailure, DeskproTicketMessageNotFound, DeskproTicketMessageSuccess}
+import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproTicketMessageFailure, DeskproTicketMessageNotFound, DeskproTicketMessageSuccess}
 import uk.gov.hmrc.apiplatformdeskpro.repository.UploadedFileRepository
 import uk.gov.hmrc.apiplatformdeskpro.service.UpscanCallbackDispatcher
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
@@ -53,13 +54,13 @@ class UpscanCallbackController @Inject() (
   def getByFileRef(fileReference: String): Action[AnyContent] =
     auth.authorizedAction(predicate = Predicate.Permission(Resource.from("api-platform-deskpro", "tickets/all"), IAAction("READ"))).async {
       implicit request: AuthenticatedRequest[AnyContent, Unit] =>
-      {
-        println(s"*****In UpscanCallbackController.getByFileRef. fileReference:$fileReference")
-        lazy val failed = NotFound(Results.EmptyContent())
+        {
+          println(s"*****In UpscanCallbackController.getByFileRef. fileReference:$fileReference")
+          lazy val failed = NotFound(Results.EmptyContent())
 
-        val success = (f: UploadedFile) => Ok(Json.toJson(f))
-        uploadedFileRepository.fetchByFileReference(fileReference).map(_.fold(failed)(success))
-      }
+          val success = (f: UploadedFile) => Ok(Json.toJson(f))
+          uploadedFileRepository.fetchByFileReference(fileReference).map(_.fold(failed)(success))
+        }
     }
 
   private def recovery: PartialFunction[Throwable, Result] = {
