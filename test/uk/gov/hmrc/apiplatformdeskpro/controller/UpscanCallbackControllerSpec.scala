@@ -16,23 +16,21 @@
 
 package uk.gov.hmrc.apiplatformdeskpro.controller
 
-import java.net.URL
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-
 import play.api.libs.json.Json
 import play.api.mvc.{AnyContentAsText, ControllerComponents, Result}
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers, StubControllerComponentsFactory, StubPlayBodyParsersFactory}
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.mongo.{BlobDetails, UploadStatus, UploadedFile}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.{DeskproTicketMessageFailure, DeskproTicketMessageNotFound, DeskproTicketMessageSuccess}
-import uk.gov.hmrc.apiplatformdeskpro.repository.UploadedFileRepository
 import uk.gov.hmrc.apiplatformdeskpro.service.UpscanCallbackDispatcher
 import uk.gov.hmrc.apiplatformdeskpro.utils.AsyncHmrcSpec
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
 
-import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import java.net.URL
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class UpscanCallbackControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFactory with StubPlayBodyParsersFactory with FixedClock {
 
@@ -41,10 +39,9 @@ class UpscanCallbackControllerSpec extends AsyncHmrcSpec with StubControllerComp
     implicit val cc: ControllerComponents = Helpers.stubControllerComponents()
 
     val mockService            = mock[UpscanCallbackDispatcher]
-    val uploadedFileRepository = mock[UploadedFileRepository]
     val mockStubBehaviour      = mock[StubBehaviour]
 
-    val objToTest = new UpscanCallbackController(mockService, uploadedFileRepository, cc, BackendAuthComponentsStub(mockStubBehaviour))
+    val objToTest = new UpscanCallbackController(mockService, cc, BackendAuthComponentsStub(mockStubBehaviour))
 
     val fileReference = "507e60b3-0ee1-411f-9c6e-7261455056c3"
     val url           = new URL("https://example.com/file1")
