@@ -16,6 +16,9 @@
 
 package uk.gov.hmrc.apiplatformdeskpro.controller
 
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.ExecutionContext
+
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
 import uk.gov.hmrc.apiplatformdeskpro.domain.models.controller.UpscanCallbackBody
@@ -24,9 +27,6 @@ import uk.gov.hmrc.apiplatformdeskpro.service.UpscanCallbackDispatcher
 import uk.gov.hmrc.apiplatformdeskpro.utils.ApplicationLogger
 import uk.gov.hmrc.internalauth.client._
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
 
 @Singleton
 class UpscanCallbackController @Inject() (
