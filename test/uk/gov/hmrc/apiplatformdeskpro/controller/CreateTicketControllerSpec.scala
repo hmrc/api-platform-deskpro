@@ -95,7 +95,7 @@ class CreateTicketControllerSpec extends AsyncHmrcSpec with StubControllerCompon
       val result: Future[Result] = objToTest.createTicket()(request)
 
       status(result) shouldBe CREATED
-      contentAsJson(result) shouldBe Json.parse(s"""{"ref": "$ref"}""")
+      contentAsJson(result) shouldBe Json.parse(s"""{"ref": "$ref","id":$ticketId}""")
     }
 
     "return 400 for an invalid payload" in new Setup {
