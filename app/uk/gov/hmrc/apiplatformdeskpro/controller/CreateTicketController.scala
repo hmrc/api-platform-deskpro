@@ -39,8 +39,8 @@ class CreateTicketController @Inject() (ticketService: TicketService, cc: Contro
         withJsonBodyFromAnyContent[CreateTicketRequest] { parsedRequest =>
           ticketService.submitTicket(parsedRequest)
             .map {
-              case Right(x: DeskproTicketCreated)         => Created(Json.toJson(CreateTicketResponse(Some(x.data.ref))))
-              case Left(_: DeskproTicketCreatedDuplicate) => Created(Json.toJson(CreateTicketResponse(None)))
+              case Right(x: DeskproTicketCreated)         => Created(Json.toJson(CreateTicketResponse(Some(x.data.ref), Some(x.data.id))))
+              case Left(_: DeskproTicketCreatedDuplicate) => Created(Json.toJson(CreateTicketResponse(None, None)))
               case Left(x: DeskproTicketCreationError)    => InternalServerError(x.message)
               case _                                      => InternalServerError
             }
