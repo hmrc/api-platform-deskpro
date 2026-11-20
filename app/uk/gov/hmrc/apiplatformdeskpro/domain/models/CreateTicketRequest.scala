@@ -34,7 +34,8 @@ case class CreateTicketRequest(
     sessionId: Option[String],
     userAgent: Option[String],
     organisationSubmissionId: Option[String],
-    attachments: List[FileAttachment] = List.empty
+    attachments: List[FileAttachment] = List.empty,
+    sandboxApplicationId: Option[String]
   )
 
 object CreateTicketRequest {

@@ -34,6 +34,7 @@ class AppConfig @Inject() (config: ServicesConfig) {
   val deskproSupportReason: String            = config.getString("deskpro.support-reason")
   val deskproReasonKey: String                = config.getString("deskpro.reason-key")
   val deskproApplicationId: String            = config.getString("deskpro.application-id")
+  val deskproSandboxApplicationId: String     = config.getString("deskpro.sandbox-application-id")
   val deskproSessionId: String                = config.getString("deskpro.session-id")
   val deskproService: String                  = config.getString("deskpro.service")
   val deskproReferrer: String                 = config.getString("deskpro.referrer")

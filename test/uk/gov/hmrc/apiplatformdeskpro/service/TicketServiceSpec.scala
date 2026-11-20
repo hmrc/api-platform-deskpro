@@ -56,7 +56,8 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
     val fileName2                = "file-name2.pdf"
     val fileAttachment           = FileAttachment(fileReference, fileName)
     val apiName                  = "apiName"
-    val applicationId            = ApplicationId.random.toString()
+    val applicationId            = ApplicationId.random.toString
+    val sandboxApplicationId     = ApplicationId.random.toString
     val organisation             = "organisation"
     val supportReason            = "supportReason"
     val reasonKey                = "reason-key"
@@ -124,7 +125,8 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
         Some(referrer),
         Some(sessionId),
         Some(userAgent),
-        Some(organisationSubmissionId)
+        Some(organisationSubmissionId),
+        sandboxApplicationId = Some(sandboxApplicationId)
       )
 
       val fields                = Map(
@@ -137,7 +139,8 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
         "14" -> service,
         "15" -> sessionId,
         "16" -> userAgent,
-        "17" -> organisationSubmissionId
+        "17" -> organisationSubmissionId,
+        "18" -> sandboxApplicationId
       )
       val expectedPerson        = DeskproPerson(fullName, email.text)
       val expectedDeskproTicket = CreateDeskproTicket(expectedPerson, subject, DeskproTicketMessage(message, expectedPerson), brand, fields, List(teamMemberEmail))
@@ -166,6 +169,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       when(mockAppConfig.deskproSessionId).thenReturn("15")
       when(mockAppConfig.deskproUserAgent).thenReturn("16")
       when(mockAppConfig.deskproOrganisationSubmissionId).thenReturn("17")
+      when(mockAppConfig.deskproSandboxApplicationId).thenReturn("18")
 
       val result = await(underTest.submitTicket(createTicketRequest))
 
@@ -190,7 +194,8 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
         None,
         None,
         None,
-        None
+        None,
+        sandboxApplicationId = None
       )
 
       val fields: Map[String, String] = Map.empty
@@ -244,7 +249,8 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
         List(
           FileAttachment(fileReference, fileName),
           FileAttachment(fileReference2, fileName2)
-        )
+        ),
+        None
       )
 
       val fields                = Map(
@@ -293,6 +299,7 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
       when(mockAppConfig.deskproService).thenReturn("14")
       when(mockAppConfig.deskproSessionId).thenReturn("15")
       when(mockAppConfig.deskproUserAgent).thenReturn("16")
+      when(mockAppConfig.deskproSandboxApplicationId).thenReturn("18")
 
       val result = await(underTest.submitTicket(createTicketRequest))
 
@@ -324,7 +331,8 @@ class TicketServiceSpec extends AsyncHmrcSpec with FixedClock {
         List(
           FileAttachment(fileReference, fileName),
           FileAttachment(fileReference2, fileName2)
-        )
+        ),
+        None
       )
 
       val fields                = Map(
